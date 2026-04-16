@@ -256,14 +256,16 @@ function print(text, type = "normal") {
   const div = document.createElement("div");
   
   const typeClasses = {
-    normal: "text-gray-300",
-    success: "text-green-400 font-bold",
+    normal: "text-gray-100",
+    success: "text-lime-400 font-semibold",
     error: "text-red-500 font-bold",
-    system: "text-gray-600 italic text-sm", // Welcome banner usually gray
-    info: "text-blue-300",
-    command: "text-green-500",
-    dir: "text-blue-400 font-bold",
-    file: "text-gray-300"
+    system: "text-gray-500 italic text-sm",
+    info: "text-cyan-400",
+    command: "text-lime-500 font-semibold",
+    dir: "text-cyan-400 font-bold",
+    file: "text-gray-300",
+    warning: "text-yellow-400",
+    completion: "text-purple-400"
   };
   
   div.className = typeClasses[type] || typeClasses.normal;
@@ -287,22 +289,22 @@ function updatePrompt() {
 const commands = {
   help: () => {
     const helpText = `
-<span class="text-green-400 font-bold">AVAILABLE COMMANDS:</span>
-  <span class="text-gray-300">ls [dir]</span>      List directory contents
-  <span class="text-gray-300">cd [dir]</span>     Change directory
-  <span class="text-gray-300">pwd</span>          Print working directory
-  <span class="text-gray-300">cat [file]</span>   View raw file content
-  <span class="text-gray-300">view [file]</span>  View file (Markdown supported)
-  <span class="text-gray-300">echo [text]</span>  Print text
-  <span class="text-gray-300">date</span>         Show current date/time
-  <span class="text-gray-300">uname [-a]</span>   System information
-  <span class="text-gray-300">neofetch</span>     System info with logo
-  <span class="text-gray-300">clear</span>        Clear terminal
-  <span class="text-gray-300">whoami</span>       Print current user
-  <span class="text-gray-300">tree [dir]</span>   Show directory tree
-  <span class="text-gray-300">find [pattern]</span> Find files by name
-  <span class="text-gray-300">history [-c]</span>  Show/clear command history
-  <span class="text-gray-300">Ctrl+C</span>       Interrupt/kill current input
+<span class="text-lime-400 font-bold">AVAILABLE COMMANDS:</span>
+  <span class="text-cyan-400">ls [dir]</span>           List directory contents
+  <span class="text-cyan-400">cd [dir]</span>          Change directory
+  <span class="text-cyan-400">pwd</span>               Print working directory
+  <span class="text-cyan-400">cat [file]</span>        View raw file content
+  <span class="text-cyan-400">view [file]</span>       View file (Markdown supported)
+  <span class="text-cyan-400">echo [text]</span>       Print text
+  <span class="text-cyan-400">date</span>              Show current date/time
+  <span class="text-cyan-400">uname [-a]</span>        System information
+  <span class="text-cyan-400">neofetch</span>          System info with logo
+  <span class="text-cyan-400">clear</span>             Clear terminal
+  <span class="text-cyan-400">whoami</span>            Print current user
+  <span class="text-cyan-400">tree [dir]</span>        Show directory tree
+  <span class="text-cyan-400">find [pattern]</span>    Find files by name
+  <span class="text-cyan-400">history [-c]</span>     Show/clear command history
+  <span class="text-yellow-400">Ctrl+C</span>            Interrupt/kill current input
 `;
     print(helpText);
   },
@@ -390,9 +392,9 @@ const commands = {
     let out = "";
     items.forEach(name => {
       const isDir = typeof currentDir[name] === 'object';
-      const icon = isDir ? "[DIR]" : "[FILE]";
-      const colorClass = isDir ? "text-blue-400 font-bold" : "text-gray-300";
-      out += `<span class="${colorClass} inline-block w-40 mr-2">${icon} ${name}</span>`;
+      const icon = isDir ? "📁" : "📄";
+      const colorClass = isDir ? "text-cyan-400 font-bold" : "text-gray-300";
+      out += `<span class="${colorClass} inline-block w-48 mr-2">${icon} ${name}</span>`;
     });
     print(out);
   },
@@ -471,7 +473,7 @@ const commands = {
         const isLastItem = idx === keys.length - 1;
         const isDir = typeof obj[key] === 'object';
         const connector = isLastItem ? "└── " : "├── ";
-        output += `<span class="${isDir ? 'text-blue-400' : 'text-gray-300'}">${prefix}${connector}${key}</span>\n`;
+        output += `<span class="${isDir ? 'text-cyan-400 font-semibold' : 'text-gray-300'} inline-block mr-4">${prefix}${connector}${key}</span>`;
         if (isDir) {
           const newPrefix = prefix + (isLastItem ? "    " : "│   ");
           output += buildTree(obj[key], newPrefix, isLastItem);
@@ -506,7 +508,7 @@ const commands = {
       print(`find: No files matching '${pattern}'`, "error");
     } else {
       results.forEach(r => {
-        const color = r.isDir ? "text-blue-400" : "text-gray-300";
+        const color = r.isDir ? "text-cyan-400 font-semibold" : "text-gray-300";
         print(`<span class="${color}">${r.name}${r.isDir ? '/' : ''}</span>`);
       });
     }
@@ -539,32 +541,47 @@ function handleKey(e) {
     const input = inputField.value;
     const parts = input.split(/\s+/);
     
+    const cmd = parts[0]?.toLowerCase();
     const last = parts[parts.length - 1];
-    const isCmd = parts.length === 1 || (parts.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(parts[0]));
+    const isCmdPosition = parts.length === 1;
+    const isPathArg = parts.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(cmd);
     
     let matches = [];
     
-    if (isCmd) {
+    if (isCmdPosition) {
+      // Auto-complete commands
       const cmds = Object.keys(commands);
       matches = cmds.filter(c => c.startsWith(last));
-    } else {
-      // Support path completion (e.g., "reverse/", "reverse/linux")
-      let currentDir = fileSystem;
-      const pathParts = last.split("/");
+    } else if (isPathArg) {
+      // Auto-complete paths using current working directory
+      let currentDir = getCurrentDirObj();
+      let searchPath = last;
+      const pathParts = searchPath.split("/");
       const partialName = pathParts.pop();
       
-      for (const p of pathParts) {
-        if (currentDir[p] && typeof currentDir[p] === 'object') {
-          currentDir = currentDir[p];
-        } else {
-          currentDir = null;
-          break;
+      // Navigate through specified path if provided
+      if (pathParts.length > 0 && pathParts[0] !== "") {
+        let tempDir = fileSystem;
+        for (const p of pathParts) {
+          if (tempDir[p] && typeof tempDir[p] === 'object') {
+            tempDir = tempDir[p];
+          } else {
+            tempDir = null;
+            break;
+          }
         }
+        if (tempDir) currentDir = tempDir;
       }
       
       if (currentDir) {
-        matches = Object.keys(currentDir).filter(n => n.startsWith(partialName));
-        if (pathParts.length > 0) {
+        matches = Object.keys(currentDir)
+          .filter(n => n.startsWith(partialName))
+          .map(m => {
+            const isDir = typeof currentDir[m] === 'object';
+            return m + (isDir ? '/' : '');
+          });
+        
+        if (pathParts.length > 0 && pathParts[0] !== "") {
           matches = matches.map(m => pathParts.join("/") + "/" + m);
         }
       }
@@ -574,7 +591,12 @@ function handleKey(e) {
       parts[parts.length - 1] = matches[0];
       inputField.value = parts.join(" ");
     } else if (matches.length > 1) {
-      print(`<span class="text-gray-500">${matches.join("  ")}</span>`, "system");
+      // Show suggestions with better formatting
+      const suggestions = matches.map(m => {
+        const isDir = m.endsWith('/');
+        return `<span class="${isDir ? 'text-cyan-400' : 'text-gray-300'}">${m}</span>`;
+      }).join("<span class='text-gray-600 mx-2'>|</span>");
+      print(suggestions, "raw");
     }
     return;
   }
@@ -611,7 +633,7 @@ function handleKey(e) {
 
     // Echo command
     const currentPath = shellState.path.join("/") || "/";
-    print(`<span class="text-green-500 font-bold">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-white">${input}</span>`, "raw");
+    print(`<span class="text-lime-500 font-bold">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-gray-100">${input}</span>`, "raw");
     
     shellState.history.push(input);
     shellState.historyIndex = shellState.history.length;
