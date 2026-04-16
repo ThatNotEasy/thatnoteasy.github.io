@@ -3,172 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CTF Terminal OS v2.0</title>
+<title>Reverse101</title>
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Marked for Markdown parsing -->
+<!-- Marked -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<!-- Highlight.js for syntax highlighting -->
+<!-- Highlight.js -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
-<!-- Font Awesome for Icons (Optional, adds nice touches) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-/* --- CUSTOM FONTS & BASE STYLES --- */
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+/* Minimal Custom CSS for effects Tailwind doesn't have by default */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap');
 
-body {
-  font-family: 'Fira Code', monospace;
-  background-color: #050505;
-  overflow: hidden; /* Prevent body scroll, let terminal scroll */
-}
-
-/* --- CRT & VISUAL EFFECTS --- */
-.terminal-container {
-  position: relative;
-  box-shadow: 0 0 50px rgba(0, 255, 0, 0.1);
-  overflow: hidden;
-}
-
-/* Scanline Overlay */
-.scanlines {
-  background: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0),
-    rgba(255,255,255,0) 50%,
-    rgba(0,0,0,0.2) 50%,
-    rgba(0,0,0,0.2)
-  );
-  background-size: 100% 4px;
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.6;
-}
-
-/* Subtle text glow */
-.glow-text {
-  text-shadow: 0 0 2px rgba(0, 255, 0, 0.5);
-}
+body { font-family: 'Fira Code', monospace; }
 
 /* Scrollbar Styling */
-#output::-webkit-scrollbar {
-  width: 8px;
-}
-#output::-webkit-scrollbar-track {
-  background: #111;
-}
-#output::-webkit-scrollbar-thumb {
-  background: #333;
-  border: 1px solid #555;
-  border-radius: 4px;
-}
-#output::-webkit-scrollbar-thumb:hover {
-  background: #22c55e;
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #030712; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #22c55e; }
+
+/* CRT Scanline Effect */
+.scanlines {
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
 }
 
-/* --- BOOT SCREEN --- */
-#boot-screen {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: black;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #22c55e;
-  transition: opacity 0.8s ease-out;
-}
-
-.boot-text {
-  white-space: pre;
-  font-size: 14px;
-}
-
-/* Utility for Markdown rendered content */
-.markdown-body h1, .markdown-body h2, .markdown-body h3 {
-  color: #22c55e;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-  border-bottom: 1px solid #333;
-  padding-bottom: 0.2em;
-}
-.markdown-body p { margin-bottom: 0.8em; line-height: 1.5; }
-.markdown-body code {
-  background: #111;
-  padding: 2px 4px;
-  border-radius: 3px;
-  color: #eab308;
-}
-.markdown-body pre {
-  background: #111 !important;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 10px;
-  overflow-x: auto;
-}
-.markdown-body pre code {
-  background: transparent;
-  padding: 0;
-  color: inherit;
-}
+/* Blinking Cursor */
+.cursor-blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 </style>
 </head>
 
-<body class="flex items-center justify-center min-h-screen text-gray-300">
+<body class="bg-black min-h-screen flex items-center justify-center p-4 text-gray-300 selection:bg-green-900 selection:text-white">
 
 <!-- BOOT SCREEN -->
-<div id="boot-screen">
-  <div class="mb-4 text-2xl font-bold tracking-widest"><i class="fas fa-terminal mr-2"></i> CTF_OS KERNEL</div>
-  <div id="boot-log" class="boot-text font-mono text-sm text-green-500 opacity-80"></div>
+<div id="boot-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center transition-opacity duration-1000">
+  <div class="text-green-500 text-4xl font-bold tracking-tighter mb-4 animate-pulse">REVERSE101_OS</div>
+  <div id="boot-log" class="font-mono text-xs text-green-700"></div>
 </div>
 
-<!-- MAIN TERMINAL WINDOW -->
-<div class="terminal-container w-full max-w-6xl h-[85vh] flex flex-col rounded-lg border border-gray-700 bg-black" onclick="document.getElementById('cmd').focus()">
+<!-- TERMINAL CONTAINER -->
+<div class="w-full max-w-6xl h-[90vh] flex flex-col bg-gray-950 border border-gray-800 rounded-lg shadow-[0_0_50px_rgba(34,197,94,0.1)] relative overflow-hidden" onclick="document.getElementById('cmd').focus()">
   
-  <!-- CRT Effect Overlay -->
-  <div class="scanlines"></div>
+  <!-- Scanlines -->
+  <div class="scanlines absolute inset-0 z-20 pointer-events-none opacity-40"></div>
 
-  <!-- TOP BAR -->
-  <div class="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 z-10 select-none">
-    <div class="flex gap-2">
-      <div class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></div>
-      <div class="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]"></div>
-      <div class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)]"></div>
+  <!-- HEADER -->
+  <div class="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800 z-30 shrink-0">
+    <div class="flex space-x-2">
+      <div class="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors"></div>
+      <div class="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 transition-colors"></div>
+      <div class="w-3 h-3 rounded-full bg-green-500 hover:bg-green-400 transition-colors"></div>
     </div>
-    <div class="text-gray-400 text-xs tracking-widest uppercase">Session: <span id="session-id">UNKNOWN</span></div>
-    <div class="text-purple-400 text-xs font-bold flex items-center gap-2">
+    <div class="text-xs text-gray-500 font-bold tracking-widest">SESSION: ROOT_ACCESS_GRANTED</div>
+    <div class="flex items-center space-x-2">
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-      CONNECTED
+      <span class="text-[10px] text-green-600 font-bold">ONLINE</span>
     </div>
   </div>
 
-  <!-- OUTPUT AREA (TERMINAL CONTENT) -->
-  <div id="output"
-    class="flex-1 overflow-y-auto p-6 space-y-1 bg-transparent text-sm font-light z-10">
-    <!-- Dynamic content goes here -->
+  <!-- OUTPUT AREA -->
+  <!-- space-y-2 adds the clean line gap between commands -->
+  <div id="output" 
+    class="flex-1 overflow-y-auto p-6 space-y-2 z-10 font-mono text-sm leading-relaxed outline-none whitespace-pre-wrap break-words">
+    <!-- Dynamic Content -->
   </div>
 
   <!-- INPUT AREA -->
-  <div class="flex items-center px-4 py-3 bg-gray-900 border-t border-gray-700 z-10">
-
-    <span id="prompt" class="text-green-400 mr-3 font-bold whitespace-nowrap select-none glow-text">
-      kali@ctf:~$     </span>
-
-    <input id="cmd"
-      class="flex-1 bg-transparent outline-none text-gray-100 font-mono caret-green-400"
-      placeholder="Type 'help' to start..."
+  <div class="flex items-center px-4 py-3 bg-gray-900 border-t border-gray-800 z-30 shrink-0">
+    <span id="prompt" class="text-green-500 mr-3 font-bold select-none">
+      reverse101@root:~$     </span>
+    <input id="cmd" 
+      class="flex-1 bg-transparent outline-none text-green-400 caret-transparent font-mono placeholder-gray-800"
+      placeholder="Enter command..."
       autocomplete="off"
       spellcheck="false"
       onkeydown="handleKey(event)">
-      
-    <div class="ml-2 text-gray-600 text-xs cursor-help" title="Use UP/DOWN arrows for history">
-      <i class="fas fa-history"></i>
-    </div>
+    <div class="w-2.5 h-5 bg-green-500 cursor-blink ml-1 pointer-events-none"></div>
   </div>
 
 </div>
@@ -177,45 +92,40 @@ body {
 /* =========================
    CONFIGURATION
 ========================= */
-// CHANGE THIS TO YOUR GITHUB USERNAME
 const CONFIG = {
-  GITHUB_USER: "YOUR_USERNAME_HERE", // e.g., "johndoe"
-  GITHUB_REPO: "YOUR_USERNAME_HERE.github.io", // e.g., "johndoe.github.io"
+  GITHUB_USER: "YOUR_USERNAME_HERE",
+  GITHUB_REPO: "YOUR_USERNAME_HERE.github.io",
   BRANCH: "main"
 };
 
-// Fallback to local demo data if GitHub fails or config isn't changed
 const IS_DEMO_MODE = CONFIG.GITHUB_USER === "YOUR_USERNAME_HERE";
 
 /* =========================
-   STATE & HISTORY
+   STATE
 ========================= */
 let shellState = {
-  path: ["~"], // Current directory path
-  history: [], // Command history
-  historyIndex: -1, // Current position in history
-  isLocked: false // Prevent input during processing
+  path: ["~"], 
+  history: [], 
+  historyIndex: -1, 
 };
 
 /* =========================
-   SYSTEM INIT & BOOT
+   INIT & BOOT
 ========================= */
 window.addEventListener('load', async () => {
-  document.getElementById('session-id').innerText = "0x" + Math.floor(Math.random()*16777215).toString(16).toUpperCase();
   await playBootSequence();
   initTerminal();
 });
 
 function playBootSequence() {
   return new Promise(resolve => {
-    const bootLog = document.getElementById('boot-log');
+    const bootLog = document.getElementById("boot-log");
     const lines = [
-      "Initializing kernel...",
-      "Loading drivers... [OK]",
-      "Mounting virtual file system... [OK]",
-      "Establishing secure connection...",
-      "Bypassing firewall...",
-      "Access granted."
+      "Loading kernel modules...",
+      "[ OK ] Mounting virtual filesystem...",
+      "[ OK ] Starting networking services...",
+      "[ OK ] Bypassing security protocols...",
+      "[ OK ] Reverse101 Environment Ready."
     ];
     
     let i = 0;
@@ -226,11 +136,12 @@ function playBootSequence() {
       } else {
         clearInterval(interval);
         setTimeout(() => {
-          document.getElementById('boot-screen').style.opacity = '0';
+          const screen = document.getElementById('boot-screen');
+          screen.style.opacity = '0';
           setTimeout(() => {
-            document.getElementById('boot-screen').style.display = 'none';
+            screen.style.display = 'none';
             resolve();
-          }, 800);
+          }, 1000);
         }, 500);
       }
     }, 300);
@@ -243,17 +154,20 @@ function initTerminal() {
 }
 
 function printWelcome() {
-  const art = `
-<span class="text-purple-500">
-  ____  ____  __  _______  ______  ____ 
- / __ \\/ __ \\/  / / __ \ \\/ __  \\/ __ \\
-/ /_/ / / / / / / / /_/ / / /_/ / / / /
-\\____/_/ /_/_/ /_/\\____/ /\\____/_/ /_/ 
+  const art = ```
+<span class="text-green-500 font-bold text-lg">
+    _         __     _         __  __      __  
+   /_\  _ __ /  \ __| |_____ _|  \/  |___ /  \ 
+  / _ \| '_ \ () / _` / -_) \ / |\/| / -_) () |
+ /_/ \_\ .__/\__/\__,_\___/_\_\_|  |_\___|\__/ 
+       |_|                                     ```
 </span>
-<span class="text-gray-400">Reverse Engineering Terminal v2.0</span>
-----------------------------------------
-<span class="text-yellow-400">WARNING:</span> Unauthorized access is a felony.
-Type <span class="text-green-400">'help'</span> for a list of commands.
+<span class="text-gray-600 text-xs block mt-2 mb-4">--------------------------------------------</span>
+<span class="text-white font-bold">Reverse101 CTF Terminal</span>
+<span class="text-gray-500 block">System integrity check: 100%</span>
+<span class="text-gray-500 block">User privileges: ROOT</span>
+<span class="text-gray-600 text-xs block mt-2 mb-4">--------------------------------------------</span>
+Type <span class="text-green-400 font-bold">'help'</span> to see available commands.
 `;
   print(art, "system");
 }
@@ -266,23 +180,22 @@ function print(text, type = "normal") {
   const output = document.getElementById("output");
   const div = document.createElement("div");
   
-  // Base styles + Type specific styles
-  let classes = "break-words leading-relaxed ";
-  const types = {
+  // Tailwind mapping for types
+  const typeClasses = {
     normal: "text-gray-300",
-    success: "text-green-400 glow-text",
-    error: "text-red-400 font-bold",
-    system: "text-purple-400",
+    success: "text-green-400 font-bold",
+    error: "text-red-500 font-bold",
+    system: "text-gray-600 italic text-sm",
     info: "text-blue-300",
-    command: "text-yellow-300 font-bold",
+    command: "text-green-500",
     dir: "text-blue-400 font-bold",
-    file: "text-gray-300 hover:text-white transition-colors cursor-pointer"
+    file: "text-gray-300"
   };
   
-  div.className = classes + (types[type] || types.normal);
+  div.className = typeClasses[type] || typeClasses.normal;
   
-  // Handle raw HTML vs text
-  if (type === 'raw') {
+  // Handle Markdown/HTML
+  if (type === "raw" || type === "system") {
     div.innerHTML = text;
   } else {
     div.innerHTML = text;
@@ -295,25 +208,24 @@ function print(text, type = "normal") {
 function updatePrompt() {
   const p = shellState.path.join("/").replace("~/", "");
   const displayPath = p ? "~/" + p : "~";
-  document.getElementById("prompt").innerText = `kali@ctf:${displayPath}$`;
+  document.getElementById("prompt").innerText = `reverse101@root:${displayPath}$`;
 }
 
 /* =========================
-   COMMANDS LOGIC
+   COMMANDS
 ========================= */
 
 const commands = {
   help: () => {
     const helpText = `
-<span class="text-yellow-300">Available Commands:</span>
-  <span class="text-green-400">ls</span>      List directory contents
-  <span class="text-green-400">cd [dir]</span> Change directory
-  <span class="text-green-400">view [file]</span> View markdown file with rendering
-  <span class="text-green-400">cat [file]</span> View raw file content
-  <span class="text-green-400">tree</span>    Show directory tree structure
-  <span class="text-green-400">clear</span>   Clear terminal screen
-  <span class="text-green-400">whoami</span>  Display current user
-  <span class="text-green-400">date</span>    Display system date
+<span class="text-green-400 font-bold">AVAILABLE COMMANDS:</span>
+  <span class="text-gray-300">ls</span>       List directory contents
+  <span class="text-gray-300">cd [dir]</span>  Change directory
+  <span class="text-gray-300">view [file]</span> Read markdown file
+  <span class="text-gray-300">cat [file]</span>  View raw file content
+  <span class="text-gray-300">tree</span>      Show directory tree
+  <span class="text-gray-300">clear</span>     Clear terminal
+  <span class="text-gray-300">whoami</span>    Print effective userid
 `;
     print(helpText);
   },
@@ -323,11 +235,7 @@ const commands = {
   },
 
   whoami: () => {
-    print("kali (root)", "success");
-  },
-
-  date: () => {
-    print(new Date().toString(), "info");
+    print("reverse101", "success");
   },
 
   ls: async () => {
@@ -336,39 +244,35 @@ const commands = {
       const data = await fetchDir();
       let out = "";
       data.forEach(item => {
-        const icon = item.type === 'dir' ? '<i class="fas fa-folder mr-1"></i>' : '<i class="fas fa-file-code mr-1"></i>';
-        const colorClass = item.type === 'dir' ? "text-blue-400" : "text-gray-300";
-        out += `<span class="${colorClass} inline-block w-32 mr-4">${icon} ${item.name.replace(".md","")}</span>`;
+        const icon = item.type === 'dir' ? "[DIR]" : "[FILE]";
+        const colorClass = item.type === 'dir' ? "text-blue-400 font-bold" : "text-gray-300";
+        // Using inline-block to create grid-like list look
+        out += `<span class="${colorClass} inline-block w-40 mr-2">${icon} ${item.name.replace(".md","")}</span>`;
       });
       print(out);
     } catch (e) {
-      print("Error listing directory: " + e.message, "error");
+      print(`Error: ${e.message}`, "error");
     }
   },
 
   cd: async (dir) => {
     if (IS_DEMO_MODE) return mockFS.cd(dir);
     
-    // Logic for real GitHub path
     if (!dir || dir === "~") {
       shellState.path = ["~"];
     } else if (dir === "..") {
       if (shellState.path.length > 1) shellState.path.pop();
     } else {
-      // Simple validation: try to fetch the dir, if 404, don't change
       try {
         const newPath = [...shellState.path, dir];
-        // Construct URL to check existence
         const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${newPath.slice(1).join("/")}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("Directory not found");
-        
         const data = await res.json();
         if (data.type !== 'dir') throw new Error("Not a directory");
-        
         shellState.path = newPath;
       } catch (e) {
-        print(`cd: ${dir}: No such file or directory`, "error");
+        print(`bash: cd: ${dir}: No such file or directory`, "error");
         return;
       }
     }
@@ -376,35 +280,31 @@ const commands = {
   },
 
   tree: async () => {
-    print("Building directory tree...", "system");
-    if (IS_DEMO_MODE) return print("demo_folder/", "dir");
-    
-    // A simple recursive tree printer
+    print("Fetching directory tree...", "system");
+    if (IS_DEMO_MODE) return print("challenges/ <span class='text-gray-500'>(folder)</span>", "raw");
+
     async function getTree(path, prefix = "") {
       try {
         const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
         const res = await fetch(url);
         if (!res.ok) return;
         const data = await res.json();
-        if (!Array.isArray(data)) return; // Is a file
+        if (!Array.isArray(data)) return; 
 
         data.forEach((item, index) => {
           const isLast = index === data.length - 1;
           const connector = isLast ? "└── " : "├── ";
-          const color = item.type === 'dir' ? "text-blue-400" : "text-gray-400";
+          const color = item.type === 'dir' ? "text-blue-400" : "text-gray-500";
           print(`${prefix}${connector}<span class="${color}">${item.name}</span>`, "raw");
           
           if (item.type === 'dir') {
             const nextPrefix = prefix + (isLast ? "    " : "│   ");
-            getTree(item.path, nextPrefix); // Recursive call
+            getTree(item.path, nextPrefix);
           }
         });
-      } catch (e) {
-        // Ignore rate limit issues deep in tree
-      }
+      } catch (e) {}
     }
     
-    // Start from root relative to current path
     const currentPath = shellState.path.slice(1).join("/");
     await getTree(currentPath);
   },
@@ -414,21 +314,17 @@ const commands = {
       print("usage: view [filename]", "info");
       return;
     }
-    if (IS_DEMO_MODE) return print("# Demo Markdown\n\nThis is a **rendered** markdown file.", "raw");
+    if (IS_DEMO_MODE) return print("# Welcome to Reverse101\n\nThis is the challenge briefing.", "raw");
 
     try {
       const content = await fetchFile(file);
       const html = marked.parse(content);
-      
-      // Wrap in a styled container
-      print(`<div class="markdown-body border border-gray-700 p-4 rounded bg-gray-900/50 my-2">${html}</div>`, "raw");
-      
-      // Highlight code blocks
+      print(`<div class="border-l-2 border-green-500 pl-4 my-2 font-mono">${html}</div>`, "raw");
       document.querySelectorAll("pre code").forEach((block) => {
         hljs.highlightElement(block);
       });
     } catch (e) {
-      print(`view: ${file}: File not found or error parsing.`, "error");
+      print(`view: ${file}: File not found.`, "error");
     }
   },
 
@@ -437,7 +333,7 @@ const commands = {
       print("usage: cat [filename]", "info");
       return;
     }
-    if (IS_DEMO_MODE) return print("This is raw content of the file.\nNo markdown parsing here.", "raw");
+    if (IS_DEMO_MODE) return print("SECRET_KEY = {rev3rse_101}", "raw");
 
     try {
       const content = await fetchFile(file);
@@ -449,64 +345,50 @@ const commands = {
 };
 
 /* =========================
-   API HANDLERS
+   API HELPERS
 ========================= */
 
 async function fetchDir() {
   const path = shellState.path.slice(1).join("/");
   const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Network response was not ok");
+  if (!res.ok) throw new Error("Network error");
   return await res.json();
 }
 
 async function fetchFile(filename) {
-  // Try .md if no extension
   let targetFile = filename;
   if (!filename.includes('.')) targetFile += ".md";
-
   const path = shellState.path.slice(1).join("/");
   const url = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/${CONFIG.BRANCH}/${path}/${targetFile}`;
-  
   const res = await fetch(url);
   if (!res.ok) throw new Error("File not found");
   return await res.text();
 }
 
-// Utility to prevent XSS in cat view
 function escapeHtml(text) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/* =========================
-   MOCK DATA (For Demo Mode)
-========================= */
 const mockFS = {
-  ls: () => {
-    print(`<span class="text-blue-400">[challenges]</span> <span class="text-gray-300">readme.md</span>`, "raw");
-  },
+  ls: () => print(`<span class="text-blue-400 font-bold">[DIR] challenges</span> <span class="text-gray-300">[FILE] readme.md</span>`, "raw"),
   cd: (dir) => {
     if (dir === "challenges") {
       shellState.path = ["~", "challenges"];
       updatePrompt();
     } else {
-      print("Demo mode: only 'challenges' directory exists.", "error");
+      print("Demo mode: only 'challenges' available.", "error");
     }
   }
 };
 
 /* =========================
-   INPUT HANDLING
+   INPUT HANDLER
 ========================= */
 function handleKey(e) {
   const inputField = document.getElementById("cmd");
 
-  // Handle History Navigation
+  // History
   if (e.key === "ArrowUp") {
     e.preventDefault();
     if (shellState.historyIndex > 0) {
@@ -523,26 +405,25 @@ function handleKey(e) {
       inputField.value = "";
     }
   } 
-  // Execute Command
+  // Execute
   else if (e.key === "Enter") {
     const input = inputField.value.trim();
     if (!input) return;
 
-    // Print command to history
-    print(`<span class="text-gray-500 mr-2">[${new Date().toLocaleTimeString()}]</span><span class="text-purple-400 font-bold">${document.getElementById('prompt').innerText.replace('$','')}</span> <span class="text-white">${input}</span>`, "raw");
+    // Echo command
+    const currentPath = shellState.path.join("/").replace("~/","") || "~";
+    print(`<span class="text-green-500 font-bold">reverse101@root:${currentPath}$</span> <span class="text-white">${input}</span>`, "raw");
     
-    // Add to history array
     shellState.history.push(input);
     shellState.historyIndex = shellState.history.length;
 
-    // Parse
     const args = input.split(/\s+/);
     const cmd = args.shift().toLowerCase();
 
     if (commands[cmd]) {
       commands[cmd](...args);
     } else {
-      print(`Command not found: ${cmd}. Type 'help' for assistance.`, "error");
+      print(`bash: ${cmd}: command not found`, "error");
     }
 
     inputField.value = "";
