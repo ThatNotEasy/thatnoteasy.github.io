@@ -2,323 +2,552 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CTF Terminal OS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTF Terminal OS v2.0</title>
 
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-
+<!-- Marked for Markdown parsing -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+<!-- Highlight.js for syntax highlighting -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+<!-- Font Awesome for Icons (Optional, adds nice touches) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-body { font-family: monospace; }
+/* --- CUSTOM FONTS & BASE STYLES --- */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+
+body {
+  font-family: 'Fira Code', monospace;
+  background-color: #050505;
+  overflow: hidden; /* Prevent body scroll, let terminal scroll */
+}
+
+/* --- CRT & VISUAL EFFECTS --- */
+.terminal-container {
+  position: relative;
+  box-shadow: 0 0 50px rgba(0, 255, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Scanline Overlay */
+.scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0,0,0,0.2) 50%,
+    rgba(0,0,0,0.2)
+  );
+  background-size: 100% 4px;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.6;
+}
+
+/* Subtle text glow */
+.glow-text {
+  text-shadow: 0 0 2px rgba(0, 255, 0, 0.5);
+}
+
+/* Scrollbar Styling */
+#output::-webkit-scrollbar {
+  width: 8px;
+}
+#output::-webkit-scrollbar-track {
+  background: #111;
+}
+#output::-webkit-scrollbar-thumb {
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+#output::-webkit-scrollbar-thumb:hover {
+  background: #22c55e;
+}
+
+/* --- BOOT SCREEN --- */
+#boot-screen {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: black;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #22c55e;
+  transition: opacity 0.8s ease-out;
+}
+
+.boot-text {
+  white-space: pre;
+  font-size: 14px;
+}
+
+/* Utility for Markdown rendered content */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  color: #22c55e;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.2em;
+}
+.markdown-body p { margin-bottom: 0.8em; line-height: 1.5; }
+.markdown-body code {
+  background: #111;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: #eab308;
+}
+.markdown-body pre {
+  background: #111 !important;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 10px;
+  overflow-x: auto;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
 </style>
 </head>
 
-<body class="bg-black min-h-screen">
+<body class="flex items-center justify-center min-h-screen text-gray-300">
 
-<div class="max-w-5xl mx-auto p-6">
+<!-- BOOT SCREEN -->
+<div id="boot-screen">
+  <div class="mb-4 text-2xl font-bold tracking-widest"><i class="fas fa-terminal mr-2"></i> CTF_OS KERNEL</div>
+  <div id="boot-log" class="boot-text font-mono text-sm text-green-500 opacity-80"></div>
+</div>
 
-  <!-- HEADER -->
-  <div class="mb-4">
-    <h1 class="text-lg font-bold text-purple-400">CTF LINUX REVERSE TERMINAL</h1>
-    <p class="text-gray-400 text-sm">TAB autocomplete | ↑↓ history | help</p>
+<!-- MAIN TERMINAL WINDOW -->
+<div class="terminal-container w-full max-w-6xl h-[85vh] flex flex-col rounded-lg border border-gray-700 bg-black" onclick="document.getElementById('cmd').focus()">
+  
+  <!-- CRT Effect Overlay -->
+  <div class="scanlines"></div>
+
+  <!-- TOP BAR -->
+  <div class="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 z-10 select-none">
+    <div class="flex gap-2">
+      <div class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></div>
+      <div class="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.8)]"></div>
+      <div class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)]"></div>
+    </div>
+    <div class="text-gray-400 text-xs tracking-widest uppercase">Session: <span id="session-id">UNKNOWN</span></div>
+    <div class="text-purple-400 text-xs font-bold flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      CONNECTED
+    </div>
   </div>
 
-  <!-- OUTPUT -->
-  <div id="output" class="space-y-2 mb-4"></div>
+  <!-- OUTPUT AREA (TERMINAL CONTENT) -->
+  <div id="output"
+    class="flex-1 overflow-y-auto p-6 space-y-1 bg-transparent text-sm font-light z-10">
+    <!-- Dynamic content goes here -->
+  </div>
 
-  <!-- INPUT -->
-  <div class="flex items-center">
-    <span id="prompt" class="mr-2 text-purple-400">kali@ctf:~/reverse$</span>
+  <!-- INPUT AREA -->
+  <div class="flex items-center px-4 py-3 bg-gray-900 border-t border-gray-700 z-10">
+
+    <span id="prompt" class="text-green-400 mr-3 font-bold whitespace-nowrap select-none glow-text">
+      kali@ctf:~$     </span>
+
     <input id="cmd"
-      class="bg-black outline-none w-full text-green-400"
+      class="flex-1 bg-transparent outline-none text-gray-100 font-mono caret-green-400"
+      placeholder="Type 'help' to start..."
+      autocomplete="off"
+      spellcheck="false"
       onkeydown="handleKey(event)">
+      
+    <div class="ml-2 text-gray-600 text-xs cursor-help" title="Use UP/DOWN arrows for history">
+      <i class="fas fa-history"></i>
+    </div>
   </div>
 
 </div>
 
 <script>
-let path = ["reverse"];
-let history = [];
-let historyIndex = -1;
+/* =========================
+   CONFIGURATION
+========================= */
+// CHANGE THIS TO YOUR GITHUB USERNAME
+const CONFIG = {
+  GITHUB_USER: "YOUR_USERNAME_HERE", // e.g., "johndoe"
+  GITHUB_REPO: "YOUR_USERNAME_HERE.github.io", // e.g., "johndoe.github.io"
+  BRANCH: "main"
+};
 
-const commands = ["ls", "cd", "view", "cat", "tree", "clear", "help"];
+// Fallback to local demo data if GitHub fails or config isn't changed
+const IS_DEMO_MODE = CONFIG.GITHUB_USER === "YOUR_USERNAME_HERE";
 
 /* =========================
-   PRINT SYSTEM (COLOR CORE)
+   STATE & HISTORY
 ========================= */
-function print(text, type="normal") {
-  const out = document.getElementById("output");
+let shellState = {
+  path: ["~"], // Current directory path
+  history: [], // Command history
+  historyIndex: -1, // Current position in history
+  isLocked: false // Prevent input during processing
+};
+
+/* =========================
+   SYSTEM INIT & BOOT
+========================= */
+window.addEventListener('load', async () => {
+  document.getElementById('session-id').innerText = "0x" + Math.floor(Math.random()*16777215).toString(16).toUpperCase();
+  await playBootSequence();
+  initTerminal();
+});
+
+function playBootSequence() {
+  return new Promise(resolve => {
+    const bootLog = document.getElementById('boot-log');
+    const lines = [
+      "Initializing kernel...",
+      "Loading drivers... [OK]",
+      "Mounting virtual file system... [OK]",
+      "Establishing secure connection...",
+      "Bypassing firewall...",
+      "Access granted."
+    ];
+    
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < lines.length) {
+        bootLog.innerText += lines[i] + "\n";
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          document.getElementById('boot-screen').style.opacity = '0';
+          setTimeout(() => {
+            document.getElementById('boot-screen').style.display = 'none';
+            resolve();
+          }, 800);
+        }, 500);
+      }
+    }, 300);
+  });
+}
+
+function initTerminal() {
+  printWelcome();
+  document.getElementById('cmd').focus();
+}
+
+function printWelcome() {
+  const art = `
+<span class="text-purple-500">
+  ____  ____  __  _______  ______  ____ 
+ / __ \\/ __ \\/  / / __ \ \\/ __  \\/ __ \\
+/ /_/ / / / / / / / /_/ / / /_/ / / / /
+\\____/_/ /_/_/ /_/\\____/ /\\____/_/ /_/ 
+</span>
+<span class="text-gray-400">Reverse Engineering Terminal v2.0</span>
+----------------------------------------
+<span class="text-yellow-400">WARNING:</span> Unauthorized access is a felony.
+Type <span class="text-green-400">'help'</span> for a list of commands.
+`;
+  print(art, "system");
+}
+
+/* =========================
+   CORE FUNCTIONS
+========================= */
+
+function print(text, type = "normal") {
+  const output = document.getElementById("output");
   const div = document.createElement("div");
-
-  const colors = {
+  
+  // Base styles + Type specific styles
+  let classes = "break-words leading-relaxed ";
+  const types = {
     normal: "text-gray-300",
-    success: "text-green-400",
-    error: "text-red-400",
-    folder: "text-blue-400",
-    command: "text-yellow-300",
-    system: "text-purple-400"
+    success: "text-green-400 glow-text",
+    error: "text-red-400 font-bold",
+    system: "text-purple-400",
+    info: "text-blue-300",
+    command: "text-yellow-300 font-bold",
+    dir: "text-blue-400 font-bold",
+    file: "text-gray-300 hover:text-white transition-colors cursor-pointer"
   };
-
-  div.className = colors[type] || colors.normal;
-  div.innerHTML = text;
-
-  out.appendChild(div);
-  window.scrollTo(0, document.body.scrollHeight);
-}
-
-/* =========================
-   PROMPT
-========================= */
-function updatePrompt() {
-  document.getElementById("prompt").innerText =
-    `kali@ctf:~/${path.slice(1).join("/") || ""}$`;
-}
-
-function getPath() {
-  return path.join("/");
-}
-
-/* =========================
-   FETCH DIR
-========================= */
-async function fetchDir() {
-  const user = location.hostname.split('.')[0];
-  const repo = user + ".github.io";
-
-  const url =
-    `https://api.github.com/repos/${user}/${repo}/contents/${getPath()}`;
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  if (!Array.isArray(data)) return [];
-
-  return data;
-}
-
-/* =========================
-   LS (BLUE FOLDERS)
-========================= */
-async function ls() {
-  const data = await fetchDir();
-
-  if (!data.length) {
-    print("empty directory", "error");
-    return;
-  }
-
-  let out = "";
-
-  data.forEach(item => {
-    if (item.type === "dir") {
-      out += `<span class="text-blue-400">[${item.name}]</span> `;
-    } else {
-      out += `<span class="text-gray-300">${item.name.replace(".md","")}</span> `;
-    }
-  });
-
-  print(out);
-}
-
-/* =========================
-   CD
-========================= */
-function cd(dir) {
-  if (!dir) return;
-
-  if (dir === "..") {
-    if (path.length > 1) path.pop();
+  
+  div.className = classes + (types[type] || types.normal);
+  
+  // Handle raw HTML vs text
+  if (type === 'raw') {
+    div.innerHTML = text;
   } else {
-    path.push(dir);
+    div.innerHTML = text;
   }
 
-  updatePrompt();
-  print(`changed directory: ${getPath()}`, "system");
+  output.appendChild(div);
+  output.scrollTop = output.scrollHeight;
+}
+
+function updatePrompt() {
+  const p = shellState.path.join("/").replace("~/", "");
+  const displayPath = p ? "~/" + p : "~";
+  document.getElementById("prompt").innerText = `kali@ctf:${displayPath}$`;
 }
 
 /* =========================
-   TREE
+   COMMANDS LOGIC
 ========================= */
-async function tree() {
-  const data = await fetchDir();
 
-  data.forEach(item => {
-    if (item.type === "dir") {
-      print("├── " + item.name, "folder");
+const commands = {
+  help: () => {
+    const helpText = `
+<span class="text-yellow-300">Available Commands:</span>
+  <span class="text-green-400">ls</span>      List directory contents
+  <span class="text-green-400">cd [dir]</span> Change directory
+  <span class="text-green-400">view [file]</span> View markdown file with rendering
+  <span class="text-green-400">cat [file]</span> View raw file content
+  <span class="text-green-400">tree</span>    Show directory tree structure
+  <span class="text-green-400">clear</span>   Clear terminal screen
+  <span class="text-green-400">whoami</span>  Display current user
+  <span class="text-green-400">date</span>    Display system date
+`;
+    print(helpText);
+  },
+
+  clear: () => {
+    document.getElementById('output').innerHTML = "";
+  },
+
+  whoami: () => {
+    print("kali (root)", "success");
+  },
+
+  date: () => {
+    print(new Date().toString(), "info");
+  },
+
+  ls: async () => {
+    if (IS_DEMO_MODE) return mockFS.ls();
+    try {
+      const data = await fetchDir();
+      let out = "";
+      data.forEach(item => {
+        const icon = item.type === 'dir' ? '<i class="fas fa-folder mr-1"></i>' : '<i class="fas fa-file-code mr-1"></i>';
+        const colorClass = item.type === 'dir' ? "text-blue-400" : "text-gray-300";
+        out += `<span class="${colorClass} inline-block w-32 mr-4">${icon} ${item.name.replace(".md","")}</span>`;
+      });
+      print(out);
+    } catch (e) {
+      print("Error listing directory: " + e.message, "error");
+    }
+  },
+
+  cd: async (dir) => {
+    if (IS_DEMO_MODE) return mockFS.cd(dir);
+    
+    // Logic for real GitHub path
+    if (!dir || dir === "~") {
+      shellState.path = ["~"];
+    } else if (dir === "..") {
+      if (shellState.path.length > 1) shellState.path.pop();
     } else {
-      print("├── " + item.name);
+      // Simple validation: try to fetch the dir, if 404, don't change
+      try {
+        const newPath = [...shellState.path, dir];
+        // Construct URL to check existence
+        const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${newPath.slice(1).join("/")}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Directory not found");
+        
+        const data = await res.json();
+        if (data.type !== 'dir') throw new Error("Not a directory");
+        
+        shellState.path = newPath;
+      } catch (e) {
+        print(`cd: ${dir}: No such file or directory`, "error");
+        return;
+      }
     }
-  });
-}
+    updatePrompt();
+  },
 
-/* =========================
-   CAT (RAW)
-========================= */
-async function cat(file) {
-  const user = location.hostname.split('.')[0];
-  const repo = user + ".github.io";
+  tree: async () => {
+    print("Building directory tree...", "system");
+    if (IS_DEMO_MODE) return print("demo_folder/", "dir");
+    
+    // A simple recursive tree printer
+    async function getTree(path, prefix = "") {
+      try {
+        const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return; // Is a file
 
-  const url =
-    `https://raw.githubusercontent.com/${user}/${repo}/main/${getPath()}/${file}.md`;
-
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    print("file not found", "error");
-    return;
-  }
-
-  const md = await res.text();
-  print(`<pre class="text-gray-300 whitespace-pre-wrap">${md}</pre>`, "normal");
-}
-
-/* =========================
-   VIEW (MARKDOWN)
-========================= */
-async function view(file) {
-  const user = location.hostname.split('.')[0];
-  const repo = user + ".github.io";
-
-  const url =
-    `https://raw.githubusercontent.com/${user}/${repo}/main/${getPath()}/${file}.md`;
-
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    print("file not found", "error");
-    return;
-  }
-
-  const md = marked.parse(await res.text());
-
-  print(`
-    <div class="border border-purple-500 p-4 rounded">
-      ${md}
-    </div>
-  `);
-
-  setTimeout(() => {
-    document.querySelectorAll("pre code").forEach(b => {
-      hljs.highlightElement(b);
-    });
-  }, 0);
-}
-
-/* =========================
-   AUTOCOMPLETE
-========================= */
-async function autocomplete(input) {
-  const value = input.value.trim();
-  const parts = value.split(" ");
-  const cmd = parts[0];
-
-  if (parts.length === 1) {
-    const match = commands.filter(c => c.startsWith(cmd));
-
-    if (match.length === 1) {
-      input.value = match[0] + " ";
-    } else if (match.length > 1) {
-      print(match.join("   "), "system");
+        data.forEach((item, index) => {
+          const isLast = index === data.length - 1;
+          const connector = isLast ? "└── " : "├── ";
+          const color = item.type === 'dir' ? "text-blue-400" : "text-gray-400";
+          print(`${prefix}${connector}<span class="${color}">${item.name}</span>`, "raw");
+          
+          if (item.type === 'dir') {
+            const nextPrefix = prefix + (isLast ? "    " : "│   ");
+            getTree(item.path, nextPrefix); // Recursive call
+          }
+        });
+      } catch (e) {
+        // Ignore rate limit issues deep in tree
+      }
     }
-    return;
+    
+    // Start from root relative to current path
+    const currentPath = shellState.path.slice(1).join("/");
+    await getTree(currentPath);
+  },
+
+  view: async (file) => {
+    if (!file) {
+      print("usage: view [filename]", "info");
+      return;
+    }
+    if (IS_DEMO_MODE) return print("# Demo Markdown\n\nThis is a **rendered** markdown file.", "raw");
+
+    try {
+      const content = await fetchFile(file);
+      const html = marked.parse(content);
+      
+      // Wrap in a styled container
+      print(`<div class="markdown-body border border-gray-700 p-4 rounded bg-gray-900/50 my-2">${html}</div>`, "raw");
+      
+      // Highlight code blocks
+      document.querySelectorAll("pre code").forEach((block) => {
+        hljs.highlightElement(block);
+      });
+    } catch (e) {
+      print(`view: ${file}: File not found or error parsing.`, "error");
+    }
+  },
+
+  cat: async (file) => {
+    if (!file) {
+      print("usage: cat [filename]", "info");
+      return;
+    }
+    if (IS_DEMO_MODE) return print("This is raw content of the file.\nNo markdown parsing here.", "raw");
+
+    try {
+      const content = await fetchFile(file);
+      print(`<pre class="text-gray-300 whitespace-pre-wrap font-mono text-xs">${escapeHtml(content)}</pre>`, "raw");
+    } catch (e) {
+      print(`cat: ${file}: File not found.`, "error");
+    }
   }
+};
 
-  const items = await fetchDir();
-  const names = items.map(i => i.name.replace(".md",""));
-  const arg = parts[1] || "";
+/* =========================
+   API HANDLERS
+========================= */
 
-  const match = names.filter(n => n.startsWith(arg));
+async function fetchDir() {
+  const path = shellState.path.slice(1).join("/");
+  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Network response was not ok");
+  return await res.json();
+}
 
-  if (match.length === 1) {
-    parts[1] = match[0];
-    input.value = parts.join(" ");
-  } else if (match.length > 1) {
-    print(match.join("   "), "system");
-  }
+async function fetchFile(filename) {
+  // Try .md if no extension
+  let targetFile = filename;
+  if (!filename.includes('.')) targetFile += ".md";
+
+  const path = shellState.path.slice(1).join("/");
+  const url = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/${CONFIG.BRANCH}/${path}/${targetFile}`;
+  
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("File not found");
+  return await res.text();
+}
+
+// Utility to prevent XSS in cat view
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 /* =========================
-   KEY HANDLER
+   MOCK DATA (For Demo Mode)
 ========================= */
-async function handleKey(e) {
-
-  if (e.key === "Tab") {
-    e.preventDefault();
-    autocomplete(e.target);
-    return;
+const mockFS = {
+  ls: () => {
+    print(`<span class="text-blue-400">[challenges]</span> <span class="text-gray-300">readme.md</span>`, "raw");
+  },
+  cd: (dir) => {
+    if (dir === "challenges") {
+      shellState.path = ["~", "challenges"];
+      updatePrompt();
+    } else {
+      print("Demo mode: only 'challenges' directory exists.", "error");
+    }
   }
+};
 
+/* =========================
+   INPUT HANDLING
+========================= */
+function handleKey(e) {
+  const inputField = document.getElementById("cmd");
+
+  // Handle History Navigation
   if (e.key === "ArrowUp") {
-    if (!history.length) return;
-    historyIndex = Math.max(0, historyIndex - 1);
-    e.target.value = history[historyIndex] || "";
-    return;
+    e.preventDefault();
+    if (shellState.historyIndex > 0) {
+      shellState.historyIndex--;
+      inputField.value = shellState.history[shellState.historyIndex];
+    }
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (shellState.historyIndex < shellState.history.length - 1) {
+      shellState.historyIndex++;
+      inputField.value = shellState.history[shellState.historyIndex];
+    } else {
+      shellState.historyIndex = shellState.history.length;
+      inputField.value = "";
+    }
+  } 
+  // Execute Command
+  else if (e.key === "Enter") {
+    const input = inputField.value.trim();
+    if (!input) return;
+
+    // Print command to history
+    print(`<span class="text-gray-500 mr-2">[${new Date().toLocaleTimeString()}]</span><span class="text-purple-400 font-bold">${document.getElementById('prompt').innerText.replace('$','')}</span> <span class="text-white">${input}</span>`, "raw");
+    
+    // Add to history array
+    shellState.history.push(input);
+    shellState.historyIndex = shellState.history.length;
+
+    // Parse
+    const args = input.split(/\s+/);
+    const cmd = args.shift().toLowerCase();
+
+    if (commands[cmd]) {
+      commands[cmd](...args);
+    } else {
+      print(`Command not found: ${cmd}. Type 'help' for assistance.`, "error");
+    }
+
+    inputField.value = "";
   }
-
-  if (e.key === "ArrowDown") {
-    if (!history.length) return;
-    historyIndex = Math.min(history.length - 1, historyIndex + 1);
-    e.target.value = history[historyIndex] || "";
-    return;
-  }
-
-  if (e.key !== "Enter") return;
-
-  const input = e.target.value.trim();
-
-  print("kali@ctf$ " + input, "command");
-
-  history.push(input);
-  historyIndex = history.length;
-
-  const args = input.split(" ");
-  const cmd = args[0];
-
-  switch(cmd) {
-
-    case "help":
-      print(`
-<span class="text-yellow-300">Commands:</span><br>
-ls, cd, view, cat, tree, clear
-`);
-      break;
-
-    case "ls":
-      await ls();
-      break;
-
-    case "cd":
-      cd(args[1]);
-      break;
-
-    case "view":
-      await view(args[1]);
-      break;
-
-    case "cat":
-      await cat(args[1]);
-      break;
-
-    case "tree":
-      await tree();
-      break;
-
-    case "clear":
-      document.getElementById("output").innerHTML = "";
-      break;
-
-    default:
-      print("command not found", "error");
-  }
-
-  e.target.value = "";
 }
-
-/* INIT */
-updatePrompt();
 </script>
 
 </body>
