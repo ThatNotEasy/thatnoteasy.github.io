@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Kali CTF Terminal</title>
+<title>CTF Reverse Terminal</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -23,17 +23,17 @@ body { font-family: monospace; }
 <div class="max-w-5xl mx-auto p-6">
 
   <div class="mb-4">
-    <h1 class="text-xl">kali@ctf:~$ personal writeup terminal</h1>
+    <h1 class="text-lg font-bold">REVERSE ENGINEERING TERMINAL</h1>
     <p class="text-green-600 text-sm">type "help"</p>
   </div>
 
-  <!-- Terminal Output -->
-  <div id="output" class="space-y-4 mb-4"></div>
+  <!-- Output -->
+  <div id="output" class="space-y-2 mb-4"></div>
 
   <!-- Input -->
   <div class="flex items-center">
-    <span class="mr-2">kali@ctf:~$</span>
-    <input id="cmd" autofocus
+    <span id="prompt" class="mr-2">kali@ctf:~/reverse$</span>
+    <input id="cmd"
       class="bg-black outline-none w-full text-green-400"
       onkeydown="handleCommand(event)">
   </div>
@@ -41,54 +41,59 @@ body { font-family: monospace; }
 </div>
 
 <script>
-let posts = JSON.parse(localStorage.getItem("ctf_posts")) || [];
+let path = ["reverse"];
 
-function print(text, isHTML = false) {
+function print(text, html=false) {
   const out = document.getElementById("output");
   const div = document.createElement("div");
-
-  if (isHTML) div.innerHTML = text;
-  else div.innerText = text;
-
+  div.innerHTML = html ? text : text;
   out.appendChild(div);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-function handleCommand(e) {
+function updatePrompt() {
+  document.getElementById("prompt").innerText =
+    `kali@ctf:~/${path.slice(1).join("/") || ""}$`;
+}
+
+function getPath() {
+  return path.join("/");
+}
+
+/* =========================
+   COMMANDS
+========================= */
+async function handleCommand(e) {
   if (e.key !== "Enter") return;
 
   const input = e.target.value.trim();
-  print("kali@ctf:~$ " + input);
+  print("kali@ctf$ " + input);
 
   const args = input.split(" ");
   const cmd = args[0];
 
   switch(cmd) {
+
     case "help":
       print(`
 Commands:
-- post        : create new writeup
-- list        : list all writeups
-- view [id]   : view writeup
-- delete [id] : delete writeup
-- clear       : clear screen
-      `);
+ls
+cd [folder]
+view [file]
+clear
+`);
       break;
 
-    case "post":
-      createPost();
+    case "ls":
+      await ls();
       break;
 
-    case "list":
-      listPosts();
+    case "cd":
+      cd(args[1]);
       break;
 
     case "view":
-      viewPost(args[1]);
-      break;
-
-    case "delete":
-      deletePost(args[1]);
+      await view(args[1]);
       break;
 
     case "clear":
@@ -102,66 +107,82 @@ Commands:
   e.target.value = "";
 }
 
-function createPost() {
-  const title = prompt("Title:");
-  const category = prompt("Category:");
-  const content = prompt("Markdown content:");
+/* =========================
+   FILE SYSTEM (SAME REPO)
+========================= */
+async function ls() {
+  const url = `https://api.github.com/repos/${location.hostname.split('.')[0]}/${location.hostname.split('.')[0]}.github.io/contents/${getPath()}`;
 
-  if (!title || !content) return;
+  const res = await fetch(url);
+  const data = await res.json();
 
-  const post = {
-    id: Date.now(),
-    title,
-    category,
-    content
-  };
-
-  posts.unshift(post);
-  localStorage.setItem("ctf_posts", JSON.stringify(posts));
-
-  print("✔ writeup saved");
-}
-
-function listPosts() {
-  if (posts.length === 0) {
-    print("no writeups");
+  if (!Array.isArray(data)) {
+    print("invalid path");
     return;
   }
 
-  posts.forEach(p => {
-    print(`${p.id} - ${p.title} [${p.category}]`);
+  let out = "";
+
+  data.forEach(item => {
+    if (item.type === "dir") {
+      out += `<span class="text-blue-400">[${item.name}]</span> `;
+    } else if (item.name.endsWith(".md")) {
+      out += item.name.replace(".md", "") + " ";
+    }
   });
+
+  print(out, true);
 }
 
-function viewPost(id) {
-  const post = posts.find(p => p.id == id);
-  if (!post) {
-    print("not found");
+function cd(dir) {
+  if (!dir) return;
+
+  if (dir === "..") {
+    if (path.length > 1) path.pop();
+  } else {
+    path.push(dir);
+  }
+
+  updatePrompt();
+}
+
+/* =========================
+   VIEW FILE
+========================= */
+async function view(file) {
+  if (!file) return;
+
+  const repo = location.hostname.split('.')[0] + ".github.io";
+
+  const url =
+    `https://raw.githubusercontent.com/${location.hostname.split('.')[0]}/${repo}/main/${getPath()}/${file}.md`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    print("file not found");
     return;
   }
 
-  let html = `
+  const md = await res.text();
+
+  const html = `
     <div class="border border-green-500 p-4 rounded mt-2">
-      <h2 class="text-green-300 text-lg">${post.title}</h2>
-      <div class="text-green-600 mb-2">${post.category}</div>
-      <div class="prose prose-invert max-w-none">${marked.parse(post.content)}</div>
+      ${marked.parse(md)}
     </div>
   `;
 
   print(html, true);
 
   setTimeout(() => {
-    document.querySelectorAll("pre code").forEach(block => {
-      hljs.highlightElement(block);
+    document.querySelectorAll("pre code").forEach(b => {
+      hljs.highlightElement(b);
     });
   }, 0);
 }
 
-function deletePost(id) {
-  posts = posts.filter(p => p.id != id);
-  localStorage.setItem("ctf_posts", JSON.stringify(posts));
-  print("deleted");
-}
+/* init */
+updatePrompt();
 </script>
 
 </body>
