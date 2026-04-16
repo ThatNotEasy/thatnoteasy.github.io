@@ -306,39 +306,39 @@ The entire program logic resides within a single large function at **`0x140001f6
                   │
                   ▼
 ┌───────────────────────────────────────────┐
-│  PHASE 5: Payload Assembly                 │
-│  Load 5 DWORD values from .rdata           │
+│  PHASE 5: Payload Assembly                │
+│  Load 5 DWORD values from .rdata          │
 │  Extract low byte from each → "Tjw4R"     │
-│  Append contiguous payload from .rdata     │
+│  Append contiguous payload from .rdata    │
 │  Full string = "Tjw4RTM3N[YkM1htam3>"     │
-│  (20 bytes total)                          │
+│  (20 bytes total)                         │
 └─────────────────┬─────────────────────────┘
                   │
                   ▼
 ┌───────────────────────────────────────────┐
-│  PHASE 6: XOR Decryption                   │
+│  PHASE 6: XOR Decryption                  │
 │  for (i = 0; i < 20; i++)                 │
-│      decrypted[i] = assembled[i] XOR K;    │
-│                                            │
-│  Result: "Wit7QWN0MXZhN2kwbn0="            │
+│      decrypted[i] = assembled[i] XOR K;   │
+│                                           │
+│  Result: "Wit7QWN0MXZhN2kwbn0="           │
 └─────────────────┬─────────────────────────┘
                   │
                   ▼
 ┌───────────────────────────────────────────┐
-│  PHASE 7: Base64 Decode                    │
-│  decoded = base64_decode(decrypted)         │
-│                                            │
-│  Result: "Z+{Act1va7i0n}"                  │
+│  PHASE 7: Base64 Decode                   │
+│  decoded = base64_decode(decrypted)       │
+│                                           │
+│  Result: "Z+{Act1va7i0n}"                 │
 └─────────────────┬─────────────────────────┘
                   │
                   ▼
 ┌───────────────────────────────────────────┐
-│  PHASE 8: Key Comparison                   │
-│  if (strcmp(key_buffer, decoded) == 0)     │
-│      → SUCCESS                             │
-│  else                                      │
-│      printf("Try Again:");                 │
-│      → loop back to Phase 3                 │
+│  PHASE 8: Key Comparison                  │
+│  if (strcmp(key_buffer, decoded) == 0)    │
+│      → SUCCESS                            │
+│  else                                     │
+│      printf("Try Again:");                │
+│      → loop back to Phase 3               │
 └───────────────────────────────────────────┘
 ```
 

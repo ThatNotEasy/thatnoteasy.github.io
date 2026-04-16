@@ -35,6 +35,66 @@ body { font-family: 'Fira Code', monospace; }
 /* Blinking Cursor */
 .cursor-blink { animation: blink 1s step-end infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Prose styles for markdown */
+.prose {
+  color: #e5e7eb;
+}
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  color: #60a5fa;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+.prose h1 { font-size: 1.875em; }
+.prose h2 { font-size: 1.5em; }
+.prose h3 { font-size: 1.25em; }
+.prose p {
+  margin-bottom: 0.75em;
+  line-height: 1.6;
+}
+.prose code:not(pre code) {
+  background-color: #1f2937;
+  color: #fbbf24;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25em;
+  font-size: 0.9em;
+}
+.prose pre {
+  background-color: #0f172a;
+  border: 1px solid #374151;
+  border-radius: 0.5em;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.prose pre code {
+  background-color: transparent;
+  color: #e5e7eb;
+  padding: 0;
+}
+.prose ul, .prose ol {
+  margin-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.prose li {
+  margin-bottom: 0.25em;
+  color: #d1d5db;
+}
+.prose a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.prose a:hover {
+  color: #93c5fd;
+}
+.prose blockquote {
+  border-left: 4px solid #60a5fa;
+  padding-left: 1em;
+  margin-left: 0;
+  color: #9ca3af;
+  font-style: italic;
+}
 </style>
 </head>
 
@@ -44,6 +104,21 @@ body { font-family: 'Fira Code', monospace; }
 <div id="boot-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center transition-opacity duration-1000">
   <div class="text-green-500 text-4xl font-bold tracking-tighter mb-4 animate-pulse">LINUX_KERNEL</div>
   <div id="boot-log" class="font-mono text-xs text-green-700"></div>
+</div>
+
+<!-- MODAL FOR FILE VIEWING -->
+<div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-40 flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
+      <span id="modal-title" class="text-cyan-400 font-semibold">File Viewer</span>
+      <button onclick="closeFileModal()" class="text-gray-400 hover:text-gray-200 text-xl font-bold">✕</button>
+    </div>
+    <!-- Modal Content -->
+    <div id="modal-content" class="flex-1 overflow-y-auto p-6 prose prose-invert max-w-none">
+      <!-- Rendered markdown will go here -->
+    </div>
+  </div>
 </div>
 
 <!-- TERMINAL CONTAINER -->
@@ -452,14 +527,24 @@ const commands = {
     if (currentDir[file]) {
       if (typeof currentDir[file] === 'string') {
         const content = currentDir[file];
-        // Parse Markdown if content exists
+        // Parse Markdown
         const html = marked.parse(content);
-        print(`<div class="border-l-2 border-green-500 pl-4 my-2 font-mono markdown-body">${html}</div>`, "raw");
+        
+        // Show in modal
+        document.getElementById('modal-title').textContent = `📄 ${file}`;
+        const modalContent = document.getElementById('modal-content');
+        modalContent.innerHTML = html;
         
         // Highlight code blocks
-        document.querySelectorAll("pre code").forEach((block) => {
-          hljs.highlightElement(block);
-        });
+        setTimeout(() => {
+          modalContent.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+          });
+        }, 0);
+        
+        // Show modal
+        document.getElementById('file-modal').classList.remove('hidden');
+        print(`[View] Opening ${file}...`, "info");
       } else {
         print(`view: ${file}: Is a directory`, "error");
       }
@@ -532,6 +617,28 @@ const commands = {
     }
   }
 };
+
+/* =========================
+   MODAL FUNCTIONS
+ ========================= */
+function closeFileModal() {
+  document.getElementById('file-modal').classList.add('hidden');
+}
+
+// Close modal when clicking outside of it
+document.addEventListener('click', (event) => {
+  const modal = document.getElementById('file-modal');
+  if (event.target === modal) {
+    closeFileModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeFileModal();
+  }
+});
 
 /* =========================
     INPUT HANDLER
