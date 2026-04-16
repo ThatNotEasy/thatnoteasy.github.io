@@ -47,7 +47,7 @@ body { font-family: 'Fira Code', monospace; }
 </div>
 
 <!-- TERMINAL CONTAINER -->
-<div class="w-full max-w-6xl h-[90vh] flex flex-col bg-gray-950 border border-gray-800 rounded-lg shadow-[0_0_50px_rgba(34,197,94,0.1)] relative overflow-hidden" onclick="document.getElementById('cmd').focus()">
+<div class="w-full max-w-full h-[90vh] flex flex-col bg-gray-950 border border-gray-800 rounded-lg shadow-[0_0_50px_rgba(34,197,94,0.1)] relative overflow-hidden" onclick="document.getElementById('cmd').focus()">
   
   <!-- Scanlines -->
   <div class="scanlines absolute inset-0 z-20 pointer-events-none opacity-40"></div>
@@ -394,7 +394,7 @@ const commands = {
       const isDir = typeof currentDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
       const colorClass = isDir ? "text-cyan-400 font-bold" : "text-gray-300";
-      out += `<span class="${colorClass} inline-block w-48 mr-2">${icon} ${name}</span>`;
+      out += `<span class="${colorClass} block py-1">${icon}  ${name}</span>`;
     });
     print(out);
   },
