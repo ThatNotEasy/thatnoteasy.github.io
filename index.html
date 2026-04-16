@@ -74,7 +74,7 @@ body { font-family: 'Fira Code', monospace; }
 
   <!-- INPUT AREA -->
   <div class="flex items-center px-3 py-1 bg-gray-900 border-t border-gray-800 z-30 shrink-0">
-    <span id="prompt" class="text-lime-500 text-sm font-semibold select-none mr-2">
+    <span id="prompt" class="text-sm font-semibold select-none mr-2 whitespace-nowrap">
       $</span>
     <input id="cmd" 
       class="flex-1 bg-transparent outline-none text-gray-100 caret-transparent font-mono text-sm placeholder-gray-700"
@@ -276,10 +276,12 @@ function print(text, type = "normal") {
 }
 
 function updatePrompt() {
-  const p = shellState.path.join("/");
-  const displayPath = p || "/";
-  const currentDir = shellState.path.length > 0 ? shellState.path[shellState.path.length - 1] : "~";
-  document.getElementById("prompt").innerText = `${CONFIG.USER}@${CONFIG.HOST} (${currentDir}):~# `;
+  const fullPath = shellState.path.join("/") || "/";
+  const displayPath = fullPath === "" ? "~" : `/reverse/${fullPath}`;
+  
+  const promptHTML = `<span class="text-lime-400">${CONFIG.USER}</span><span class="text-gray-500">@</span><span class="text-cyan-400">${CONFIG.HOST}</span><span class="text-gray-600"> in </span><span class="text-yellow-400">${displayPath}</span><span class="text-lime-500"> ❯ </span>`;
+  
+  document.getElementById("prompt").innerHTML = promptHTML;
 }
 
 /* =========================
@@ -290,7 +292,7 @@ const commands = {
   help: () => {
     const helpText = `
 <span class="text-lime-400 font-bold">AVAILABLE COMMANDS:</span>
-  <span class="text-cyan-400">ls [dir]</span>           List directory contents
+  <span class="text-cyan-400">ls [dir]</span>          List directory contents
   <span class="text-cyan-400">cd [dir]</span>          Change directory
   <span class="text-cyan-400">pwd</span>               Print working directory
   <span class="text-cyan-400">cat [file]</span>        View raw file content
@@ -303,8 +305,8 @@ const commands = {
   <span class="text-cyan-400">whoami</span>            Print current user
   <span class="text-cyan-400">tree [dir]</span>        Show directory tree
   <span class="text-cyan-400">find [pattern]</span>    Find files by name
-  <span class="text-cyan-400">history [-c]</span>     Show/clear command history
-  <span class="text-yellow-400">Ctrl+C</span>            Interrupt/kill current input
+  <span class="text-cyan-400">history [-c]</span>      Show/clear command history
+  <span class="text-yellow-400">Ctrl+C</span>          Interrupt/kill current input
 `;
     print(helpText);
   },
