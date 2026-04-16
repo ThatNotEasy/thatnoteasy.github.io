@@ -108,13 +108,13 @@ async function loadFileSystem() {
     { dir: "windows", name: "Find-The-Key.md" }
   ];
 
-  const fs = { "reverse": { "linux": {}, "windows": {}, "android": {} } };
+  const fs = { "linux": {}, "windows": {}, "android": {} };
 
   for (const f of files) {
     try {
       const res = await fetch(`reverse/${f.dir}/${f.name}`);
       if (res.ok) {
-        fs.reverse[f.dir][f.name] = await res.text();
+        fs[f.dir][f.name] = await res.text();
       }
     } catch (e) {}
   }
@@ -126,7 +126,7 @@ async function loadFileSystem() {
     STATE
  ========================= */
 let shellState = {
-  path: ["~"],
+  path: ["reverse"],
   history: [], 
   historyIndex: -1, 
 };
@@ -140,8 +140,7 @@ let fileSystem = {};
 // Helper to get the object reference of the current directory
 function getCurrentDirObj() {
   let current = fileSystem;
-  // Start at 1 to skip root "~"
-  for (let i = 1; i < shellState.path.length; i++) {
+  for (let i = 0; i < shellState.path.length; i++) {
     const segment = shellState.path[i];
     if (current[segment] && typeof current[segment] === 'object') {
       current = current[segment];
@@ -195,6 +194,7 @@ function playBootSequence() {
 function initTerminal() {
   printWelcome();
   document.getElementById('cmd').focus();
+  updatePrompt();
 }
 
 function printWelcome() {
@@ -208,10 +208,9 @@ function printWelcome() {
     /'\\_   _/\`
     \\___)=(___/
 </span>
-<span class="text-white font-bold">Welcome to Ubuntu 22.04 LTS (GNU/Linux 5.15.0-generic x86_64)</span>
-<span class="text-gray-400">System load: 0.01</span>
-<span class="text-gray-400">Users logged in: 1</span>
-<span class="text-gray-400">Usage of /: 12.5% of 50.0GB</span>
+<span class="text-white font-bold">Reverse Engineering Writeups Repository</span>
+<span class="text-gray-400">Content: CTF challenges, crackmes, binary analysis</span>
+<span class="text-gray-400">Platforms: Linux, Windows, Android</span>
 <span class="text-gray-600 mt-2">Type <span class="text-green-400">'help'</span> for a list of commands.</span>
 `;
   print(tuxArt, "system");
@@ -244,8 +243,8 @@ function print(text, type = "normal") {
 }
 
 function updatePrompt() {
-  const p = shellState.path.join("/").replace("~/", "");
-  const displayPath = p ? "~/" + p : "~";
+  const p = shellState.path.join("/");
+  const displayPath = p || "/";
   document.getElementById("prompt").innerText = `${CONFIG.USER}@${CONFIG.HOST}:${displayPath}$`;
 }
 
@@ -270,7 +269,8 @@ const commands = {
   <span class="text-gray-300">whoami</span>       Print current user
   <span class="text-gray-300">tree [dir]</span>   Show directory tree
   <span class="text-gray-300">find [pattern]</span> Find files by name
-  <span class="text-gray-300">history</span>      Show command history
+  <span class="text-gray-300">history [-c]</span>  Show/clear command history
+  <span class="text-gray-300">Ctrl+C</span>       Interrupt/kill current input
 `;
     print(helpText);
   },
@@ -284,8 +284,8 @@ const commands = {
   },
 
   pwd: () => {
-    const p = shellState.path.join("/").replace("~/", "");
-    print(p ? "~/" + p : "~", "info");
+    const p = shellState.path.join("/");
+    print(p || "/", "info");
   },
 
   echo: (...args) => {
@@ -366,13 +366,12 @@ const commands = {
   },
 
   cd: (dir) => {
-    if (!dir || dir === "~") {
-      shellState.path = ["~"];
+    if (!dir || dir === "/" || dir === "~") {
+      shellState.path = [];
     } else if (dir === "..") {
-      if (shellState.path.length > 1) shellState.path.pop();
+      if (shellState.path.length > 0) shellState.path.pop();
     } else {
       const currentDir = getCurrentDirObj();
-      // Check if item exists and is a directory
       if (currentDir[dir] && typeof currentDir[dir] === 'object') {
         shellState.path.push(dir);
       } else {
@@ -481,10 +480,18 @@ const commands = {
     }
   },
 
-  history: () => {
-    shellState.history.forEach((cmd, i) => {
-      print(`  ${i + 1}  ${cmd}`, "normal");
-    });
+  history: (...args) => {
+    if (args.includes("-c")) {
+      shellState.history = [];
+      shellState.historyIndex = -1;
+      print("History cleared", "success");
+    } else if (shellState.history.length === 0) {
+      print("No history", "system");
+    } else {
+      shellState.history.forEach((cmd, i) => {
+        print(`  ${i + 1}  ${cmd}`, "normal");
+      });
+    }
   }
 };
 
@@ -540,6 +547,14 @@ function handleKey(e) {
     return;
   }
 
+  // Ctrl+C to interrupt
+  if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    print("^C", "error");
+    inputField.value = "";
+    return;
+  }
+
   // History
   if (e.key === "ArrowUp") {
     e.preventDefault();
@@ -563,7 +578,7 @@ function handleKey(e) {
     if (!input) return;
 
     // Echo command
-    const currentPath = shellState.path.join("/").replace("~/","") || "~";
+    const currentPath = shellState.path.join("/") || "/";
     print(`<span class="text-green-500 font-bold">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-white">${input}</span>`, "raw");
     
     shellState.history.push(input);
