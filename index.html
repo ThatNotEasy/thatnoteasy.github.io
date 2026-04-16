@@ -73,16 +73,16 @@ body { font-family: 'Fira Code', monospace; }
   </div>
 
   <!-- INPUT AREA -->
-  <div class="flex items-center px-4 py-3 bg-gray-900 border-t border-gray-800 z-30 shrink-0">
-    <span id="prompt" class="text-green-500 mr-3 font-bold select-none">
-      guest@localhost:~$     </span>
+  <div class="flex items-center px-3 py-1 bg-gray-900 border-t border-gray-800 z-30 shrink-0">
+    <span id="prompt" class="text-lime-500 text-sm font-semibold select-none mr-2">
+      $</span>
     <input id="cmd" 
-      class="flex-1 bg-transparent outline-none text-green-400 caret-transparent font-mono placeholder-gray-800"
+      class="flex-1 bg-transparent outline-none text-gray-100 caret-transparent font-mono text-sm placeholder-gray-700"
       placeholder="Enter command..."
       autocomplete="off"
       spellcheck="false"
       onkeydown="handleKey(event)">
-    <div class="w-2.5 h-5 bg-green-500 cursor-blink ml-1 pointer-events-none"></div>
+    <div class="w-2 h-4 bg-lime-500 cursor-blink ml-1 pointer-events-none"></div>
   </div>
 
 </div>
@@ -242,7 +242,7 @@ function printWelcome() {
 <span class="text-white font-bold">Reverse Engineering Writeups Repository</span>
 <span class="text-gray-400">Content: CTF challenges, crackmes, binary analysis</span>
 <span class="text-gray-400">Platforms: Linux, Windows, Android</span><br>
-<span class="text-gray-600 mt-2">Type <span class="text-green-400">'help'</span> for a list of commands.</span>
+<span class="text-gray-600 mt-2">Type <span class="text-green-400">'help'</span> for a list of commands.</span><br>
 `;
   print(tuxArt, "system");
 }
@@ -405,9 +405,11 @@ const commands = {
     } else if (dir === "..") {
       if (shellState.path.length > 0) shellState.path.pop();
     } else {
+      // Remove trailing slash if present
+      const cleanDir = dir.replace(/\/$/, '');
       const currentDir = getCurrentDirObj();
-      if (currentDir[dir] && typeof currentDir[dir] === 'object') {
-        shellState.path.push(dir);
+      if (currentDir[cleanDir] && typeof currentDir[cleanDir] === 'object') {
+        shellState.path.push(cleanDir);
       } else {
         print(`bash: cd: ${dir}: No such file or directory`, "error");
         return;
