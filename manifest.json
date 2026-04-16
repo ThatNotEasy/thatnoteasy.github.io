@@ -1,0 +1,9 @@
+{
+  "structure": [
+    { "dir": "linux", "name": "CrackMe-By-ZenithSouu.md" },
+    { "dir": "linux", "name": "poc.py" },
+    { "dir": "windows", "name": "Find-The-Key.md" },
+    { "dir": "android", "name": "" }
+  ],
+  "directories": ["linux", "windows", "android"]
+}

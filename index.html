@@ -98,25 +98,55 @@ const CONFIG = {
 
 /* =========================
     VIRTUAL FILE SYSTEM (VFS)
-    Loaded from reverse/ directory
+    Loaded from reverse/ directory via manifest.json
  ========================= */
 
 async function loadFileSystem() {
-  const files = [
-    { dir: "linux", name: "CrackMe-By-ZenithSouu.md" },
-    { dir: "linux", name: "poc.py" },
-    { dir: "windows", name: "Find-The-Key.md" }
-  ];
+  const fs = {};
+  let files = [];
 
-  const fs = { "linux": {}, "windows": {}, "android": {} };
+  // Try to load manifest first
+  try {
+    const manifestRes = await fetch('manifest.json');
+    if (manifestRes.ok) {
+      const manifest = await manifestRes.json();
+      
+      // Initialize all directories
+      if (manifest.directories) {
+        manifest.directories.forEach(dir => {
+          fs[dir] = {};
+        });
+      }
+      
+      // Load all files from manifest
+      files = manifest.structure || [];
+    }
+  } catch (e) {
+    console.warn('Could not load manifest.json, using fallback');
+    // Fallback to hardcoded files
+    files = [
+      { dir: "linux", name: "CrackMe-By-ZenithSouu.md" },
+      { dir: "linux", name: "poc.py" },
+      { dir: "windows", name: "Find-The-Key.md" }
+    ];
+    fs["linux"] = {};
+    fs["windows"] = {};
+    fs["android"] = {};
+  }
 
+  // Fetch all files
   for (const f of files) {
+    // Skip empty entries
+    if (!f.name || f.name.trim() === '') continue;
+    
     try {
       const res = await fetch(`reverse/${f.dir}/${f.name}`);
       if (res.ok) {
         fs[f.dir][f.name] = await res.text();
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`Failed to load reverse/${f.dir}/${f.name}`);
+    }
   }
 
   return fs;
