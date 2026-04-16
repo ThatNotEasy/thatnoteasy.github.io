@@ -1,97 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CTF Terminal Writeup</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<title>Kali CTF Terminal</title>
 
-  <style>
-    body {
-      font-family: "Courier New", monospace;
-    }
+<script src="https://cdn.tailwindcss.com"></script>
 
-    .cursor::after {
-      content: "_";
-      animation: blink 1s infinite;
-    }
+<!-- Markdown -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0; }
-    }
-  </style>
+<!-- Highlight.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+
+<style>
+body { font-family: monospace; }
+</style>
 </head>
 
 <body class="bg-black text-green-400 min-h-screen">
 
-<div class="max-w-4xl mx-auto p-6">
+<div class="max-w-5xl mx-auto p-6">
 
-  <!-- Header -->
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold">[ CTF WRITEUP TERMINAL ]</h1>
-    <p class="text-green-600 text-sm">type your writeup like a hacker...</p>
+  <div class="mb-4">
+    <h1 class="text-xl">kali@ctf:~$ personal writeup terminal</h1>
+    <p class="text-green-600 text-sm">type "help"</p>
   </div>
 
-  <!-- Terminal Input -->
-  <div class="bg-black border border-green-500 p-4 rounded-lg shadow-lg">
+  <!-- Terminal Output -->
+  <div id="output" class="space-y-4 mb-4"></div>
 
-    <div class="flex items-center mb-2">
-      <span class="mr-2">></span>
-      <input id="title" placeholder="challenge_name"
-        class="bg-black outline-none w-full text-green-400">
-    </div>
-
-    <div class="flex items-center mb-2">
-      <span class="mr-2">></span>
-      <input id="category" placeholder="category (web/pwn/crypto)"
-        class="bg-black outline-none w-full text-green-400">
-    </div>
-
-    <div class="flex items-start mb-2">
-      <span class="mr-2">></span>
-      <textarea id="content" rows="5"
-        placeholder="writeup details..."
-        class="bg-black outline-none w-full text-green-400 resize-none"></textarea>
-    </div>
-
-    <button onclick="addPost()"
-      class="mt-3 border border-green-500 px-4 py-1 hover:bg-green-500 hover:text-black transition">
-      EXECUTE
-    </button>
-
+  <!-- Input -->
+  <div class="flex items-center">
+    <span class="mr-2">kali@ctf:~$</span>
+    <input id="cmd" autofocus
+      class="bg-black outline-none w-full text-green-400"
+      onkeydown="handleCommand(event)">
   </div>
-
-  <!-- Output -->
-  <div id="terminalOutput" class="mt-6 space-y-4"></div>
 
 </div>
 
 <script>
 let posts = JSON.parse(localStorage.getItem("ctf_posts")) || [];
 
-function typeEffect(element, text, speed = 10) {
-  let i = 0;
-  element.innerHTML = "";
+function print(text, isHTML = false) {
+  const out = document.getElementById("output");
+  const div = document.createElement("div");
 
-  function typing() {
-    if (i < text.length) {
-      element.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(typing, speed);
-    }
-  }
-  typing();
+  if (isHTML) div.innerHTML = text;
+  else div.innerText = text;
+
+  out.appendChild(div);
+  window.scrollTo(0, document.body.scrollHeight);
 }
 
-function addPost() {
-  const title = document.getElementById("title").value;
-  const category = document.getElementById("category").value;
-  const content = document.getElementById("content").value;
+function handleCommand(e) {
+  if (e.key !== "Enter") return;
 
-  if (!title || !content) {
-    alert("Missing input.");
-    return;
+  const input = e.target.value.trim();
+  print("kali@ctf:~$ " + input);
+
+  const args = input.split(" ");
+  const cmd = args[0];
+
+  switch(cmd) {
+    case "help":
+      print(`
+Commands:
+- post        : create new writeup
+- list        : list all writeups
+- view [id]   : view writeup
+- delete [id] : delete writeup
+- clear       : clear screen
+      `);
+      break;
+
+    case "post":
+      createPost();
+      break;
+
+    case "list":
+      listPosts();
+      break;
+
+    case "view":
+      viewPost(args[1]);
+      break;
+
+    case "delete":
+      deletePost(args[1]);
+      break;
+
+    case "clear":
+      document.getElementById("output").innerHTML = "";
+      break;
+
+    default:
+      print("command not found");
   }
+
+  e.target.value = "";
+}
+
+function createPost() {
+  const title = prompt("Title:");
+  const category = prompt("Category:");
+  const content = prompt("Markdown content:");
+
+  if (!title || !content) return;
 
   const post = {
     id: Date.now(),
@@ -103,57 +119,49 @@ function addPost() {
   posts.unshift(post);
   localStorage.setItem("ctf_posts", JSON.stringify(posts));
 
-  renderPosts();
-
-  document.getElementById("title").value = "";
-  document.getElementById("category").value = "";
-  document.getElementById("content").value = "";
+  print("✔ writeup saved");
 }
 
-function renderPosts() {
-  const container = document.getElementById("terminalOutput");
-  container.innerHTML = "";
+function listPosts() {
+  if (posts.length === 0) {
+    print("no writeups");
+    return;
+  }
 
-  posts.forEach(post => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "border border-green-500 p-4 rounded";
-
-    const titleEl = document.createElement("div");
-    const contentEl = document.createElement("pre");
-
-    titleEl.className = "font-bold text-green-300";
-    contentEl.className = "whitespace-pre-wrap mt-2";
-
-    wrapper.innerHTML = `
-      <div>> ${post.title} <span class="text-green-600">[${post.category}]</span></div>
-      <pre class="whitespace-pre-wrap mt-2" id="content-${post.id}"></pre>
-
-      <div class="mt-3 flex gap-3 text-sm">
-        <button onclick="copyPost(${post.id})" class="hover:text-white">[copy]</button>
-        <button onclick="deletePost(${post.id})" class="hover:text-red-400">[delete]</button>
-      </div>
-    `;
-
-    container.appendChild(wrapper);
-
-    const contentBox = document.getElementById(`content-${post.id}`);
-    typeEffect(contentBox, post.content);
+  posts.forEach(p => {
+    print(`${p.id} - ${p.title} [${p.category}]`);
   });
 }
 
+function viewPost(id) {
+  const post = posts.find(p => p.id == id);
+  if (!post) {
+    print("not found");
+    return;
+  }
+
+  let html = `
+    <div class="border border-green-500 p-4 rounded mt-2">
+      <h2 class="text-green-300 text-lg">${post.title}</h2>
+      <div class="text-green-600 mb-2">${post.category}</div>
+      <div class="prose prose-invert max-w-none">${marked.parse(post.content)}</div>
+    </div>
+  `;
+
+  print(html, true);
+
+  setTimeout(() => {
+    document.querySelectorAll("pre code").forEach(block => {
+      hljs.highlightElement(block);
+    });
+  }, 0);
+}
+
 function deletePost(id) {
-  posts = posts.filter(p => p.id !== id);
+  posts = posts.filter(p => p.id != id);
   localStorage.setItem("ctf_posts", JSON.stringify(posts));
-  renderPosts();
+  print("deleted");
 }
-
-function copyPost(id) {
-  const post = posts.find(p => p.id === id);
-  navigator.clipboard.writeText(post.content);
-  alert("Copied to clipboard.");
-}
-
-renderPosts();
 </script>
 
 </body>
