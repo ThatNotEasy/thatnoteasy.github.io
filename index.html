@@ -43,34 +43,36 @@ body { font-family: 'Fira Code', monospace; }
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
   color: #ff1744;
   font-weight: bold;
-  margin-top: 0.75em;
-  margin-bottom: 0.35em;
+  margin-top: 0.5em;
+  margin-bottom: 0.25em;
   text-shadow: 0 0 10px #ff1744;
 }
 .prose h1 { font-size: 1.25em; }
 .prose h2 { font-size: 1.1em; }
 .prose h3 { font-size: 1em; }
 .prose p {
-  margin-bottom: 0.75em;
-  line-height: 1.6;
+  margin-bottom: 0.4em;
+  line-height: 1.4;
   color: #ff0000;
+  font-size: 0.9em;
 }
 .prose code:not(pre code) {
   background-color: #000000;
   color: #ffff00;
-  padding: 0.2em 0.4em;
-  border-radius: 0.25em;
-  font-size: 0.9em;
+  padding: 0.15em 0.3em;
+  border-radius: 0.2em;
+  font-size: 0.85em;
   border: 1px solid #ff0000;
 }
 .prose pre {
   background-color: #000000;
   border: 2px solid #ff0000;
-  border-radius: 0.5em;
-  padding: 1em;
+  border-radius: 0.3em;
+  padding: 0.6em;
   overflow-x: auto;
-  margin: 1em 0;
+  margin: 0.4em 0;
   box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.1);
+  font-size: 0.85em;
 }
 .prose pre code {
   background-color: transparent;
@@ -78,11 +80,12 @@ body { font-family: 'Fira Code', monospace; }
   padding: 0;
 }
 .prose ul, .prose ol {
-  margin-left: 1.5em;
-  margin-bottom: 0.75em;
+  margin-left: 1.2em;
+  margin-bottom: 0.4em;
+  font-size: 0.9em;
 }
 .prose li {
-  margin-bottom: 0.25em;
+  margin-bottom: 0.1em;
   color: #ff0000;
 }
 .prose a {
@@ -95,11 +98,28 @@ body { font-family: 'Fira Code', monospace; }
   text-shadow: 0 0 15px #ff4444;
 }
 .prose blockquote {
-  border-left: 4px solid #ff00ff;
-  padding-left: 1em;
+  border-left: 3px solid #ff00ff;
+  padding-left: 0.8em;
   margin-left: 0;
   color: #ff1744;
   font-style: italic;
+  font-size: 0.9em;
+  margin: 0.3em 0;
+}
+.prose table {
+  font-size: 0.85em;
+  margin: 0.3em 0;
+}
+.prose th {
+  background-color: #1a1a1a;
+  color: #ff1744;
+  padding: 0.4em;
+  border: 1px solid #ff0000;
+}
+.prose td {
+  color: #ff0000;
+  padding: 0.3em 0.4em;
+  border: 1px solid #ff0000;
 }
 </style>
 </head>
