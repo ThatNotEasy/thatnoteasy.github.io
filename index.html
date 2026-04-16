@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Personal Linux Terminal</title>
+<title>Ap0dexMe0</title>
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -97,44 +97,57 @@ const CONFIG = {
 };
 
 /* =========================
-   VIRTUAL FILE SYSTEM (VFS)
-========================= */
-const fileSystem = {
-  "readme.txt": "Welcome to your personal web terminal.\n\nYou can use ls, cd, cat, and view.",
-  "todo.md": "# Tasks\n\n- [ ] Check emails\n- [ ] Update website\n- [ ] Backup data",
-  "Documents": {
-    "notes.txt": "Meeting at 10:00 AM\nBring the laptop",
-    "resume.pdf": "This is a simulated PDF file.",
-    "Work": {
-      "project_plan.md": "## Q4 Roadmap\n1. Design\n2. Development\n3. Testing"
+    VIRTUAL FILE SYSTEM (VFS)
+    Loaded from reverse/ directory
+ ========================= */
+
+async function loadFileSystem() {
+  const fileList = [
+    { path: "reverse/linux/CrackMe-By-ZenithSouu.md" },
+    { path: "reverse/linux/poc.py" },
+    { path: "reverse/windows/Find-The-Key.md" }
+  ];
+
+  const fs = {
+    "reverse": {
+      "linux": {},
+      "windows": {},
+      "android": {}
     }
-  },
-  "Downloads": {
-    "image.png": "Simulated image file.",
-    "installer.sh": "#!/bin/bash\necho 'Installing...'"
-  },
-  ".bashrc": `
-# Personal .bashrc configuration
-export EDITOR=vim
-alias ll='ls -la'
-alias grep='grep --color=auto'
-`,
-  "projects": {
-    "website": {
-      "index.html": "<h1>Hello World</h1>",
-      "style.css": "body { background: black; }"
+  };
+
+  for (const file of fileList) {
+    try {
+      const response = await fetch(file.path);
+      if (response.ok) {
+        const content = await response.text();
+        const parts = file.path.split("/");
+        const category = parts[0];
+        const subdir = parts[1];
+        const fileName = parts[parts.length - 1];
+        
+        if (!fs[category]) fs[category] = {};
+        if (!fs[category][subdir]) fs[category][subdir] = {};
+        fs[category][subdir][fileName] = content;
+      }
+    } catch (e) {
+      console.warn(`Failed to load ${file.path}:`, e);
     }
   }
-};
+
+  return fs;
+}
 
 /* =========================
-   STATE
-========================= */
+    STATE
+ ========================= */
 let shellState = {
-  path: ["~"], // The current path stack
+  path: ["~"],
   history: [], 
   historyIndex: -1, 
 };
+
+let fileSystem = {};
 
 /* =========================
    CORE LOGIC
@@ -160,6 +173,7 @@ function getCurrentDirObj() {
 ========================= */
 window.addEventListener('load', async () => {
   await playBootSequence();
+  fileSystem = await loadFileSystem();
   initTerminal();
 });
 
