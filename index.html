@@ -92,7 +92,7 @@ body { font-family: 'Fira Code', monospace; }
    CONFIGURATION
 ========================= */
 const CONFIG = {
-  USER: "guest",      // Change this to your name
+  USER: "reverse101",  // Change this to your name
   HOST: "localhost",  // Change this to your hostname
 };
 
@@ -149,7 +149,8 @@ async function loadFileSystem() {
     }
   }
 
-  return fs;
+  // Wrap in reverse directory
+  return { reverse: fs };
 }
 
 /* =========================
@@ -275,7 +276,8 @@ function print(text, type = "normal") {
 function updatePrompt() {
   const p = shellState.path.join("/");
   const displayPath = p || "/";
-  document.getElementById("prompt").innerText = `${CONFIG.USER}@${CONFIG.HOST}:${displayPath}$`;
+  const currentDir = shellState.path.length > 0 ? shellState.path[shellState.path.length - 1] : "~";
+  document.getElementById("prompt").innerText = `${CONFIG.USER}@${CONFIG.HOST} (${currentDir}):~# `;
 }
 
 /* =========================
