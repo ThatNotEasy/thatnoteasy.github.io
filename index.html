@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CTF Reverse Terminal OS</title>
+<title>CTF Terminal OS</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Markdown -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<!-- Highlight.js -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
 
@@ -18,43 +16,55 @@ body { font-family: monospace; }
 </style>
 </head>
 
-<body class="bg-black text-green-400 min-h-screen">
+<body class="bg-black min-h-screen">
 
 <div class="max-w-5xl mx-auto p-6">
 
-  <!-- Header -->
+  <!-- HEADER -->
   <div class="mb-4">
-    <h1 class="text-lg font-bold">CTF REVERSE ENGINEERING TERMINAL</h1>
-    <p class="text-green-600 text-sm">type "help" | TAB for autocomplete</p>
+    <h1 class="text-lg font-bold text-purple-400">CTF LINUX REVERSE TERMINAL</h1>
+    <p class="text-gray-400 text-sm">TAB autocomplete | ↑↓ history | help</p>
   </div>
 
-  <!-- Output -->
+  <!-- OUTPUT -->
   <div id="output" class="space-y-2 mb-4"></div>
 
-  <!-- Input -->
+  <!-- INPUT -->
   <div class="flex items-center">
-    <span id="prompt" class="mr-2">kali@ctf:~/reverse$</span>
+    <span id="prompt" class="mr-2 text-purple-400">kali@ctf:~/reverse$</span>
     <input id="cmd"
       class="bg-black outline-none w-full text-green-400"
-      onkeydown="handleCommand(event)">
+      onkeydown="handleKey(event)">
   </div>
 
 </div>
 
 <script>
-/* =========================
-   STATE
-========================= */
 let path = ["reverse"];
-const commands = ["ls", "cd", "view", "clear", "help"];
+let history = [];
+let historyIndex = -1;
+
+const commands = ["ls", "cd", "view", "cat", "tree", "clear", "help"];
 
 /* =========================
-   PRINT
+   PRINT SYSTEM (COLOR CORE)
 ========================= */
-function print(text, html=false) {
+function print(text, type="normal") {
   const out = document.getElementById("output");
   const div = document.createElement("div");
-  div.innerHTML = html ? text : text;
+
+  const colors = {
+    normal: "text-gray-300",
+    success: "text-green-400",
+    error: "text-red-400",
+    folder: "text-blue-400",
+    command: "text-yellow-300",
+    system: "text-purple-400"
+  };
+
+  div.className = colors[type] || colors.normal;
+  div.innerHTML = text;
+
   out.appendChild(div);
   window.scrollTo(0, document.body.scrollHeight);
 }
@@ -72,42 +82,7 @@ function getPath() {
 }
 
 /* =========================
-   AUTOCOMPLETE (TAB)
-========================= */
-async function autocomplete(input) {
-  const value = input.value.trim();
-  const parts = value.split(" ");
-  const cmd = parts[0];
-
-  // COMMAND autocomplete
-  if (parts.length === 1) {
-    const match = commands.filter(c => c.startsWith(cmd));
-
-    if (match.length === 1) {
-      input.value = match[0] + " ";
-    } else if (match.length > 1) {
-      print(match.join("   "));
-    }
-    return;
-  }
-
-  // FILE autocomplete
-  const arg = parts[1] || "";
-  const items = await fetchDir();
-
-  const names = items.map(i => i.name.replace(".md", ""));
-  const match = names.filter(n => n.startsWith(arg));
-
-  if (match.length === 1) {
-    parts[1] = match[0];
-    input.value = parts.join(" ");
-  } else if (match.length > 1) {
-    print(match.join("   "));
-  }
-}
-
-/* =========================
-   FETCH GITHUB DIR
+   FETCH DIR
 ========================= */
 async function fetchDir() {
   const user = location.hostname.split('.')[0];
@@ -125,10 +100,15 @@ async function fetchDir() {
 }
 
 /* =========================
-   LS
+   LS (BLUE FOLDERS)
 ========================= */
 async function ls() {
   const data = await fetchDir();
+
+  if (!data.length) {
+    print("empty directory", "error");
+    return;
+  }
 
   let out = "";
 
@@ -136,11 +116,11 @@ async function ls() {
     if (item.type === "dir") {
       out += `<span class="text-blue-400">[${item.name}]</span> `;
     } else {
-      out += item.name.replace(".md", "") + " ";
+      out += `<span class="text-gray-300">${item.name.replace(".md","")}</span> `;
     }
   });
 
-  print(out, true);
+  print(out);
 }
 
 /* =========================
@@ -156,14 +136,28 @@ function cd(dir) {
   }
 
   updatePrompt();
+  print(`changed directory: ${getPath()}`, "system");
 }
 
 /* =========================
-   VIEW (REAL MARKDOWN)
+   TREE
 ========================= */
-async function view(file) {
-  if (!file) return;
+async function tree() {
+  const data = await fetchDir();
 
+  data.forEach(item => {
+    if (item.type === "dir") {
+      print("├── " + item.name, "folder");
+    } else {
+      print("├── " + item.name);
+    }
+  });
+}
+
+/* =========================
+   CAT (RAW)
+========================= */
+async function cat(file) {
   const user = location.hostname.split('.')[0];
   const repo = user + ".github.io";
 
@@ -173,43 +167,112 @@ async function view(file) {
   const res = await fetch(url);
 
   if (!res.ok) {
-    print("file not found");
+    print("file not found", "error");
     return;
   }
 
   const md = await res.text();
+  print(`<pre class="text-gray-300 whitespace-pre-wrap">${md}</pre>`, "normal");
+}
 
-  const html = marked.parse(md);
+/* =========================
+   VIEW (MARKDOWN)
+========================= */
+async function view(file) {
+  const user = location.hostname.split('.')[0];
+  const repo = user + ".github.io";
 
-  const wrapped = `
-    <div class="border border-green-500 p-4 rounded mt-2">
-      ${html}
+  const url =
+    `https://raw.githubusercontent.com/${user}/${repo}/main/${getPath()}/${file}.md`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    print("file not found", "error");
+    return;
+  }
+
+  const md = marked.parse(await res.text());
+
+  print(`
+    <div class="border border-purple-500 p-4 rounded">
+      ${md}
     </div>
-  `;
-
-  print(wrapped, true);
+  `);
 
   setTimeout(() => {
-    document.querySelectorAll("pre code").forEach(block => {
-      hljs.highlightElement(block);
+    document.querySelectorAll("pre code").forEach(b => {
+      hljs.highlightElement(b);
     });
   }, 0);
 }
 
 /* =========================
-   MAIN COMMAND HANDLER
+   AUTOCOMPLETE
 ========================= */
-async function handleCommand(e) {
+async function autocomplete(input) {
+  const value = input.value.trim();
+  const parts = value.split(" ");
+  const cmd = parts[0];
+
+  if (parts.length === 1) {
+    const match = commands.filter(c => c.startsWith(cmd));
+
+    if (match.length === 1) {
+      input.value = match[0] + " ";
+    } else if (match.length > 1) {
+      print(match.join("   "), "system");
+    }
+    return;
+  }
+
+  const items = await fetchDir();
+  const names = items.map(i => i.name.replace(".md",""));
+  const arg = parts[1] || "";
+
+  const match = names.filter(n => n.startsWith(arg));
+
+  if (match.length === 1) {
+    parts[1] = match[0];
+    input.value = parts.join(" ");
+  } else if (match.length > 1) {
+    print(match.join("   "), "system");
+  }
+}
+
+/* =========================
+   KEY HANDLER
+========================= */
+async function handleKey(e) {
+
   if (e.key === "Tab") {
     e.preventDefault();
     autocomplete(e.target);
     return;
   }
 
+  if (e.key === "ArrowUp") {
+    if (!history.length) return;
+    historyIndex = Math.max(0, historyIndex - 1);
+    e.target.value = history[historyIndex] || "";
+    return;
+  }
+
+  if (e.key === "ArrowDown") {
+    if (!history.length) return;
+    historyIndex = Math.min(history.length - 1, historyIndex + 1);
+    e.target.value = history[historyIndex] || "";
+    return;
+  }
+
   if (e.key !== "Enter") return;
 
   const input = e.target.value.trim();
-  print("kali@ctf$ " + input);
+
+  print("kali@ctf$ " + input, "command");
+
+  history.push(input);
+  historyIndex = history.length;
 
   const args = input.split(" ");
   const cmd = args[0];
@@ -218,11 +281,8 @@ async function handleCommand(e) {
 
     case "help":
       print(`
-Commands:
-ls
-cd [dir]
-view [file]
-clear
+<span class="text-yellow-300">Commands:</span><br>
+ls, cd, view, cat, tree, clear
 `);
       break;
 
@@ -238,12 +298,20 @@ clear
       await view(args[1]);
       break;
 
+    case "cat":
+      await cat(args[1]);
+      break;
+
+    case "tree":
+      await tree();
+      break;
+
     case "clear":
       document.getElementById("output").innerHTML = "";
       break;
 
     default:
-      print("command not found");
+      print("command not found", "error");
   }
 
   e.target.value = "";
