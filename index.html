@@ -102,37 +102,21 @@ const CONFIG = {
  ========================= */
 
 async function loadFileSystem() {
-  const fileList = [
-    { path: "reverse/linux/CrackMe-By-ZenithSouu.md" },
-    { path: "reverse/linux/poc.py" },
-    { path: "reverse/windows/Find-The-Key.md" }
+  const files = [
+    { dir: "linux", name: "CrackMe-By-ZenithSouu.md" },
+    { dir: "linux", name: "poc.py" },
+    { dir: "windows", name: "Find-The-Key.md" }
   ];
 
-  const fs = {
-    "reverse": {
-      "linux": {},
-      "windows": {},
-      "android": {}
-    }
-  };
+  const fs = { "reverse": { "linux": {}, "windows": {}, "android": {} } };
 
-  for (const file of fileList) {
+  for (const f of files) {
     try {
-      const response = await fetch(file.path);
-      if (response.ok) {
-        const content = await response.text();
-        const parts = file.path.split("/");
-        const category = parts[0];
-        const subdir = parts[1];
-        const fileName = parts[parts.length - 1];
-        
-        if (!fs[category]) fs[category] = {};
-        if (!fs[category][subdir]) fs[category][subdir] = {};
-        fs[category][subdir][fileName] = content;
+      const res = await fetch(`reverse/${f.dir}/${f.name}`);
+      if (res.ok) {
+        fs.reverse[f.dir][f.name] = await res.text();
       }
-    } catch (e) {
-      console.warn(`Failed to load ${file.path}:`, e);
-    }
+    } catch (e) {}
   }
 
   return fs;
