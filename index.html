@@ -38,14 +38,14 @@ body { font-family: 'Fira Code', monospace; }
 
 /* Prose styles for markdown */
 .prose {
-  color: #ff0000;
+  color: #00ff41;
 }
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-  color: #ff1744;
+  color: #ff00ff;
   font-weight: bold;
   margin-top: 0.5em;
   margin-bottom: 0.25em;
-  text-shadow: 0 0 10px #ff1744;
+  text-shadow: 0 0 10px #ff00ff;
 }
 .prose h1 { font-size: 1.25em; }
 .prose h2 { font-size: 1.1em; }
@@ -53,30 +53,30 @@ body { font-family: 'Fira Code', monospace; }
 .prose p {
   margin-bottom: 0.4em;
   line-height: 1.4;
-  color: #ff0000;
+  color: #00ff41;
   font-size: 0.9em;
 }
 .prose code:not(pre code) {
   background-color: #000000;
-  color: #ffff00;
+  color: #00ffff;
   padding: 0.15em 0.3em;
   border-radius: 0.2em;
   font-size: 0.85em;
-  border: 1px solid #ff0000;
+  border: 1px solid #00ffff;
 }
 .prose pre {
   background-color: #000000;
-  border: 2px solid #ff0000;
+  border: 2px solid #0088ff;
   border-radius: 0.3em;
   padding: 0.6em;
   overflow-x: auto;
   margin: 0.4em 0;
-  box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.1);
+  box-shadow: inset 0 0 20px rgba(0, 136, 255, 0.1);
   font-size: 0.85em;
 }
 .prose pre code {
   background-color: transparent;
-  color: #ff0000;
+  color: #00ff41;
   padding: 0;
 }
 .prose ul, .prose ol {
@@ -86,22 +86,22 @@ body { font-family: 'Fira Code', monospace; }
 }
 .prose li {
   margin-bottom: 0.1em;
-  color: #ff0000;
+  color: #00ff41;
 }
 .prose a {
-  color: #ff1744;
+  color: #ff6600;
   text-decoration: underline;
-  text-shadow: 0 0 8px #ff1744;
+  text-shadow: 0 0 8px #ff6600;
 }
 .prose a:hover {
-  color: #ff4444;
-  text-shadow: 0 0 15px #ff4444;
+  color: #ff9933;
+  text-shadow: 0 0 15px #ff9933;
 }
 .prose blockquote {
-  border-left: 3px solid #ff00ff;
+  border-left: 3px solid #00ffff;
   padding-left: 0.8em;
   margin-left: 0;
-  color: #ff1744;
+  color: #ff9900;
   font-style: italic;
   font-size: 0.9em;
   margin: 0.3em 0;
@@ -112,14 +112,14 @@ body { font-family: 'Fira Code', monospace; }
 }
 .prose th {
   background-color: #1a1a1a;
-  color: #ff1744;
+  color: #00ffff;
   padding: 0.4em;
-  border: 1px solid #ff0000;
+  border: 1px solid #00ffff;
 }
 .prose td {
-  color: #ff0000;
+  color: #00ff41;
   padding: 0.3em 0.4em;
-  border: 1px solid #ff0000;
+  border: 1px solid #0088ff;
 }
 </style>
 </head>
@@ -335,10 +335,10 @@ function printWelcome() {
     /'\\\\_   _/\`
     \\\\___)=(___/
 </span>
-<span class="text-red-600 font-bold" style="text-shadow: 0 0 8px #ff0000;">Reverse Engineering Writeups Repository</span>
-<span class="text-red-900">Content: CTF challenges, crackmes, binary analysis</span>
-<span class="text-red-900">Platforms: Linux, Windows, Android</span><br>
-<span class="text-red-900 mt-2">Type <span class="text-red-600" style="text-shadow: 0 0 6px #ff0000;">'help'</span> for a list of commands.</span><br>
+<span class="text-magenta-500 font-bold" style="text-shadow: 0 0 8px #ff00ff;">Reverse Engineering Writeups Repository</span>
+<span class="text-green-400">Content: CTF challenges, crackmes, binary analysis</span>
+<span class="text-blue-400">Platforms: Linux, Windows, Android</span><br>
+<span class="text-yellow-400 mt-2">Type <span class="text-cyan-400" style="text-shadow: 0 0 6px #00ffff;\">'help'</span> for a list of commands.</span><br>
 `;
   print(tuxArt, "system");
 }
@@ -353,15 +353,15 @@ function print(text, type = "normal") {
   
   const typeClasses = {
     normal: "text-red-600",
-    success: "text-red-500 font-semibold",
-    error: "text-red-700 font-bold",
-    system: "text-red-900 italic text-sm",
-    info: "text-red-600",
-    command: "text-red-600 font-semibold",
-    dir: "text-red-500 font-bold",
-    file: "text-red-600",
-    warning: "text-yellow-400",
-    completion: "text-red-400",
+    success: "text-green-400 font-semibold",
+    error: "text-magenta-500 font-bold",
+    system: "text-yellow-500 italic text-sm",
+    info: "text-cyan-400",
+    command: "text-green-400 font-semibold",
+    dir: "text-cyan-400 font-bold",
+    file: "text-yellow-400",
+    warning: "text-orange-400",
+    completion: "text-blue-400",
     raw: "text-red-600"
   };
   
@@ -376,7 +376,7 @@ function updatePrompt() {
   const fullPath = shellState.path.join("/") || "/";
   const displayPath = fullPath === "" ? "~" : `/reverse/${fullPath}`;
   
-  const promptHTML = `<span class="text-red-600" style="text-shadow: 0 0 8px #ff0000;">${CONFIG.USER}</span><span class="text-red-900">@</span><span class="text-red-600" style="text-shadow: 0 0 8px #ff1744;">${CONFIG.HOST}</span><span class="text-red-900"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-red-600" style="text-shadow: 0 0 8px #ff0000;"> ❯ </span>`;
+  const promptHTML = `<span class="text-cyan-400" style="text-shadow: 0 0 8px #00ffff;">${CONFIG.USER}</span><span class="text-green-600">@</span><span class="text-magenta-500" style="text-shadow: 0 0 8px #ff00ff;">${CONFIG.HOST}</span><span class="text-cyan-600"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;"> ❯ </span>`;
   
   document.getElementById("prompt").innerHTML = promptHTML;
 }
@@ -492,8 +492,8 @@ const commands = {
     items.forEach(name => {
       const isDir = typeof currentDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
-      const colorClass = isDir ? "text-red-500 font-bold" : "text-red-600";
-      out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #ff0000;' : ''}">${icon}  ${name}</span>`;
+      const colorClass = isDir ? "text-cyan-400 font-bold" : "text-yellow-400";
+      out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon}  ${name}</span>`;
     });
     print(out);
   },
@@ -530,7 +530,7 @@ const commands = {
         // Escape HTML for display
         const safeContent = currentDir[file]
           .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        print(`<pre class="text-red-600 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);">${safeContent}</pre>`, "raw");
+        print(`<pre class="text-yellow-400 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(255, 255, 0, 0.3);">${safeContent}</pre>`, "raw");
       } else {
         print(`cat: ${file}: Is a directory`, "error");
       }
@@ -587,7 +587,7 @@ const commands = {
         const isLastItem = idx === keys.length - 1;
         const isDir = typeof obj[key] === 'object';
         const connector = isLastItem ? "└── " : "├── ";
-        output += `<span class="text-red-500 font-semibold inline-block mr-4" style="text-shadow: 0 0 8px #ff0000;">${prefix}${connector}${key}</span>`;
+        output += `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'} font-semibold inline-block mr-4" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${prefix}${connector}${key}</span>`;
         if (isDir) {
           const newPrefix = prefix + (isLastItem ? "    " : "│   ");
           output += buildTree(obj[key], newPrefix, isLastItem);
@@ -622,8 +622,8 @@ const commands = {
       print(`find: No files matching '${pattern}'`, "error");
     } else {
       results.forEach(r => {
-        const color = r.isDir ? "text-red-500 font-semibold" : "text-red-600";
-        print(`<span class="${color}" style="${r.isDir ? 'text-shadow: 0 0 8px #ff0000;' : ''}">${r.name}${r.isDir ? '/' : ''}</span>`);
+        const color = r.isDir ? "text-cyan-400 font-semibold" : "text-yellow-400";
+        print(`<span class="${color}" style="${r.isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${r.name}${r.isDir ? '/' : ''}</span>`);
       });
     }
   },
@@ -738,8 +738,8 @@ function handleKey(e) {
       // Show suggestions with better formatting
       const suggestions = matches.map(m => {
         const isDir = m.endsWith('/');
-        return `<span class="${isDir ? 'text-red-500' : 'text-red-600'}" style="text-shadow: 0 0 6px rgba(255, 0, 0, 0.5);">${m}</span>`;
-      }).join("<span class='text-red-900 mx-2'>|</span>");
+        return `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'}" style="text-shadow: 0 0 6px ${isDir ? 'rgba(0, 255, 255, 0.5)' : 'rgba(255, 255, 0, 0.5)'};">${m}</span>`;
+      }).join("<span class='text-magenta-700 mx-2'>|</span>");
       print(suggestions, "raw");
     }
     return;
@@ -777,7 +777,7 @@ function handleKey(e) {
 
     // Echo command
     const currentPath = shellState.path.join("/") || "/";
-    print(`<span class="text-red-600 font-bold" style="text-shadow: 0 0 8px #ff0000;">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-red-600">${input}</span>`, "raw");
+    print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-cyan-400">${input}</span>`, "raw");
     
     shellState.history.push(input);
     shellState.historyIndex = shellState.history.length;
