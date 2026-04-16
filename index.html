@@ -257,12 +257,20 @@ const commands = {
   help: () => {
     const helpText = `
 <span class="text-green-400 font-bold">AVAILABLE COMMANDS:</span>
-  <span class="text-gray-300">ls</span>       List directory contents
-  <span class="text-gray-300">cd [dir]</span>  Change directory
-  <span class="text-gray-300">view [file]</span> Read file (Markdown supported)
-  <span class="text-gray-300">cat [file]</span>  View raw file content
-  <span class="text-gray-300">clear</span>     Clear terminal
-  <span class="text-gray-300">whoami</span>    Print effective userid
+  <span class="text-gray-300">ls [dir]</span>      List directory contents
+  <span class="text-gray-300">cd [dir]</span>     Change directory
+  <span class="text-gray-300">pwd</span>          Print working directory
+  <span class="text-gray-300">cat [file]</span>   View raw file content
+  <span class="text-gray-300">view [file]</span>  View file (Markdown supported)
+  <span class="text-gray-300">echo [text]</span>  Print text
+  <span class="text-gray-300">date</span>         Show current date/time
+  <span class="text-gray-300">uname [-a]</span>   System information
+  <span class="text-gray-300">neofetch</span>     System info with logo
+  <span class="text-gray-300">clear</span>        Clear terminal
+  <span class="text-gray-300">whoami</span>       Print current user
+  <span class="text-gray-300">tree [dir]</span>   Show directory tree
+  <span class="text-gray-300">find [pattern]</span> Find files by name
+  <span class="text-gray-300">history</span>      Show command history
 `;
     print(helpText);
   },
@@ -275,8 +283,70 @@ const commands = {
     print(CONFIG.USER, "success");
   },
 
-  ls: () => {
-    const currentDir = getCurrentDirObj();
+  pwd: () => {
+    const p = shellState.path.join("/").replace("~/", "");
+    print(p ? "~/" + p : "~", "info");
+  },
+
+  echo: (...args) => {
+    print(args.join(" "), "normal");
+  },
+
+  date: () => {
+    print(new Date().toString(), "info");
+  },
+
+  uname: (...args) => {
+    if (args.includes("-a")) {
+      print("Linux thatnoteasy 6.1.0-generic x86_64 GNU/Linux", "info");
+    } else {
+      print("Linux", "info");
+    }
+  },
+
+  neofetch: () => {
+    const ascii = `
+<span class="text-blue-400">
+        .-''''-.
+      .'  _  '.  
+     /   (o)o  \\
+    |   '._.'   |
+     '.        .'
+       '-....-'
+</span>
+<span class="text-gray-300">
+  thatnoteasy@localhost
+  ---------------
+  OS: thatnoteasy.github.io
+  Host: Web Terminal
+  Kernel: JavaScript
+  Shell: bash (custom)
+  Terminal: Browser
+  CPU: Web Assembly
+  Memory: Infinite
+</span>`;
+    print(ascii);
+  },
+
+  ls: (dir) => {
+    let currentDir;
+    
+    if (dir) {
+      // Handle path like "reverse/linux" or just "reverse"
+      const parts = dir.split("/");
+      currentDir = fileSystem;
+      for (const p of parts) {
+        if (currentDir[p] && typeof currentDir[p] === 'object') {
+          currentDir = currentDir[p];
+        } else {
+          print(`ls: cannot access '${dir}': No such directory`, "error");
+          return;
+        }
+      }
+    } else {
+      currentDir = getCurrentDirObj();
+    }
+    
     if (!currentDir) return print("Error: Directory corrupted", "error");
 
     const items = Object.keys(currentDir);
@@ -290,7 +360,6 @@ const commands = {
       const isDir = typeof currentDir[name] === 'object';
       const icon = isDir ? "[DIR]" : "[FILE]";
       const colorClass = isDir ? "text-blue-400 font-bold" : "text-gray-300";
-      // Adjust width for cleaner column look
       out += `<span class="${colorClass} inline-block w-40 mr-2">${icon} ${name}</span>`;
     });
     print(out);
@@ -360,14 +429,116 @@ const commands = {
     } else {
       print(`view: ${file}: No such file`, "error");
     }
+  },
+
+  tree: (dir = ".") => {
+    const currentDir = dir === "." ? getCurrentDirObj() : fileSystem;
+    const buildTree = (obj, prefix = "", isLast = true) => {
+      let output = "";
+      const keys = Object.keys(obj);
+      keys.forEach((key, idx) => {
+        const isLastItem = idx === keys.length - 1;
+        const isDir = typeof obj[key] === 'object';
+        const connector = isLastItem ? "└── " : "├── ";
+        output += `<span class="${isDir ? 'text-blue-400' : 'text-gray-300'}">${prefix}${connector}${key}</span>\n`;
+        if (isDir) {
+          const newPrefix = prefix + (isLastItem ? "    " : "│   ");
+          output += buildTree(obj[key], newPrefix, isLastItem);
+        }
+      });
+      return output;
+    };
+    const treeOutput = buildTree(currentDir);
+    print(treeOutput || "(empty)", "normal");
+  },
+
+  find: (pattern) => {
+    if (!pattern) {
+      print("usage: find [pattern]", "info");
+      return;
+    }
+    const results = [];
+    const search = (obj, path = "") => {
+      for (const key in obj) {
+        const currentPath = path ? path + "/" + key : key;
+        if (key.includes(pattern)) {
+          const isDir = typeof obj[key] === 'object';
+          results.push({ name: currentPath, isDir });
+        }
+        if (typeof obj[key] === 'object') {
+          search(obj[key], currentPath);
+        }
+      }
+    };
+    search(fileSystem);
+    if (results.length === 0) {
+      print(`find: No files matching '${pattern}'`, "error");
+    } else {
+      results.forEach(r => {
+        const color = r.isDir ? "text-blue-400" : "text-gray-300";
+        print(`<span class="${color}">${r.name}${r.isDir ? '/' : ''}</span>`);
+      });
+    }
+  },
+
+  history: () => {
+    shellState.history.forEach((cmd, i) => {
+      print(`  ${i + 1}  ${cmd}`, "normal");
+    });
   }
 };
 
 /* =========================
-   INPUT HANDLER
-========================= */
+    INPUT HANDLER
+ ========================= */
 function handleKey(e) {
   const inputField = document.getElementById("cmd");
+
+  // Tab auto-completion
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const input = inputField.value;
+    const parts = input.split(/\s+/);
+    
+    const last = parts[parts.length - 1];
+    const isCmd = parts.length === 1 || (parts.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(parts[0]));
+    
+    let matches = [];
+    
+    if (isCmd) {
+      const cmds = Object.keys(commands);
+      matches = cmds.filter(c => c.startsWith(last));
+    } else {
+      // Support path completion (e.g., "reverse/", "reverse/linux")
+      let currentDir = fileSystem;
+      const pathParts = last.split("/");
+      const partialName = pathParts.pop();
+      
+      for (const p of pathParts) {
+        if (currentDir[p] && typeof currentDir[p] === 'object') {
+          currentDir = currentDir[p];
+        } else {
+          currentDir = null;
+          break;
+        }
+      }
+      
+      if (currentDir) {
+        matches = Object.keys(currentDir).filter(n => n.startsWith(partialName));
+        if (pathParts.length > 0) {
+          matches = matches.map(m => pathParts.join("/") + "/" + m);
+        }
+      }
+    }
+    
+    if (matches.length === 1) {
+      parts[parts.length - 1] = matches[0];
+      inputField.value = parts.join(" ");
+    } else if (matches.length > 1) {
+      print(`<span class="text-gray-500">${matches.join("  ")}</span>`, "system");
+    }
+    return;
+  }
 
   // History
   if (e.key === "ArrowUp") {
