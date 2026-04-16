@@ -22,12 +22,12 @@ body { font-family: 'Fira Code', monospace; }
 /* Scrollbar Styling */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #000000; }
-::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 4px; box-shadow: 0 0 10px #00ff41; }
-::-webkit-scrollbar-thumb:hover { background: #00ff88; box-shadow: 0 0 15px #00ff88; }
+::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 4px; box-shadow: 0 0 10px #ff0000; }
+::-webkit-scrollbar-thumb:hover { background: #ff4444; box-shadow: 0 0 15px #ff4444; }
 
 /* CRT Scanline Effect */
 .scanlines {
-  background: linear-gradient(rgba(0, 255, 65, 0.03) 50%, rgba(0, 0, 0, 0.5) 50%), linear-gradient(90deg, rgba(0, 255, 65, 0.05), rgba(0, 255, 200, 0.03), rgba(255, 0, 100, 0.03));
+  background: linear-gradient(rgba(255, 0, 0, 0.03) 50%, rgba(0, 0, 0, 0.5) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(255, 50, 50, 0.03), rgba(255, 100, 100, 0.03));
   background-size: 100% 2px, 3px 100%;
   pointer-events: none;
 }
@@ -38,22 +38,22 @@ body { font-family: 'Fira Code', monospace; }
 
 /* Prose styles for markdown */
 .prose {
-  color: #00ff41;
+  color: #ff0000;
 }
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-  color: #00ffff;
+  color: #ff1744;
   font-weight: bold;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
-  text-shadow: 0 0 10px #00ffff;
+  margin-top: 0.75em;
+  margin-bottom: 0.35em;
+  text-shadow: 0 0 10px #ff1744;
 }
-.prose h1 { font-size: 1.875em; }
-.prose h2 { font-size: 1.5em; }
-.prose h3 { font-size: 1.25em; }
+.prose h1 { font-size: 1.25em; }
+.prose h2 { font-size: 1.1em; }
+.prose h3 { font-size: 1em; }
 .prose p {
   margin-bottom: 0.75em;
   line-height: 1.6;
-  color: #00ff41;
+  color: #ff0000;
 }
 .prose code:not(pre code) {
   background-color: #000000;
@@ -61,20 +61,20 @@ body { font-family: 'Fira Code', monospace; }
   padding: 0.2em 0.4em;
   border-radius: 0.25em;
   font-size: 0.9em;
-  border: 1px solid #00ff41;
+  border: 1px solid #ff0000;
 }
 .prose pre {
   background-color: #000000;
-  border: 2px solid #00ff41;
+  border: 2px solid #ff0000;
   border-radius: 0.5em;
   padding: 1em;
   overflow-x: auto;
   margin: 1em 0;
-  box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+  box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.1);
 }
 .prose pre code {
   background-color: transparent;
-  color: #00ff41;
+  color: #ff0000;
   padding: 0;
 }
 .prose ul, .prose ol {
@@ -83,63 +83,63 @@ body { font-family: 'Fira Code', monospace; }
 }
 .prose li {
   margin-bottom: 0.25em;
-  color: #00ff41;
+  color: #ff0000;
 }
 .prose a {
-  color: #00ffff;
+  color: #ff1744;
   text-decoration: underline;
-  text-shadow: 0 0 8px #00ffff;
+  text-shadow: 0 0 8px #ff1744;
 }
 .prose a:hover {
-  color: #00ff88;
-  text-shadow: 0 0 15px #00ff88;
+  color: #ff4444;
+  text-shadow: 0 0 15px #ff4444;
 }
 .prose blockquote {
   border-left: 4px solid #ff00ff;
   padding-left: 1em;
   margin-left: 0;
-  color: #00ffff;
+  color: #ff1744;
   font-style: italic;
 }
 </style>
 </head>
 
-<body class="bg-black min-h-screen flex items-center justify-center p-4 text-green-400 selection:bg-green-900 selection:text-black">
+<body class="bg-black min-h-screen flex items-center justify-center p-4 text-red-600 selection:bg-red-900 selection:text-black">
 
 <!-- BOOT SCREEN -->
 <div id="boot-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center transition-opacity duration-1000">
-  <div class="text-green-400 text-4xl font-bold tracking-tighter mb-4 animate-pulse" style="text-shadow: 0 0 20px #00ff41; font-family: 'Courier New'">SYSTEM_BOOT</div>
-  <div id="boot-log" class="font-mono text-xs text-green-400" style="text-shadow: 0 0 10px #00ff41;"></div>
+  <div class="text-red-600 text-4xl font-bold tracking-tighter mb-4 animate-pulse" style="text-shadow: 0 0 20px #ff0000; font-family: 'Courier New'">SYSTEM_BOOT</div>
+  <div id="boot-log" class="font-mono text-xs text-red-600" style="text-shadow: 0 0 10px #ff0000;"></div>
 </div>
 
 <!-- MODAL FOR FILE VIEWING -->
-<div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-40 flex items-center justify-center p-2">
-  <div class="bg-black border-2 border-green-400 rounded-xl shadow-2xl max-w-7xl w-full max-h-[70vh] flex flex-col overflow-hidden" style="box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);">
+<div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-40 flex items-center justify-center p-2">
+  <div class="bg-black border-2 border-cyan-500 rounded-lg shadow-2xl max-w-6xl w-full max-h-[60vh] flex flex-col overflow-hidden" style="box-shadow: 0 0 25px rgba(34, 211, 238, 0.4);">
     <!-- Modal Header -->
-    <div class="bg-black px-6 py-4 border-b-2 border-green-400 flex items-center justify-between" style="box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">⚔️</span>
+    <div class="bg-black px-4 py-2 border-b-2 border-cyan-500 flex items-center justify-between" style="box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.08);">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">📋</span>
         <div>
-          <div id="modal-title" class="text-green-400 font-bold text-lg" style="text-shadow: 0 0 10px #00ff41;">FILE_VIEWER</div>
-          <div id="modal-subtitle" class="text-green-700 text-xs mt-1">[ Press ESC to close ]</div>
+          <div id="modal-title" class="text-cyan-400 font-bold text-sm" style="text-shadow: 0 0 8px #22d3ee;">FILE_VIEWER</div>
+          <div id="modal-subtitle" class="text-cyan-700 text-xs mt-0.5">[ ESC to close ]</div>
         </div>
       </div>
-      <button onclick="closeFileModal()" class="text-green-400 hover:text-cyan-400 hover:bg-gray-900 rounded-lg p-2 transition-all" style="text-shadow: 0 0 8px #00ff41;">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      <button onclick="closeFileModal()" class="text-cyan-400 hover:text-cyan-300 hover:bg-gray-900 rounded-lg p-1 transition-all" style="text-shadow: 0 0 6px #22d3ee;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
       </button>
     </div>
     
     <!-- Modal Content -->
-    <div id="modal-content" class="flex-1 overflow-y-auto overflow-x-auto p-8 prose prose-invert max-w-none bg-black">
+    <div id="modal-content" class="flex-1 overflow-y-auto overflow-x-auto p-4 prose prose-sm prose-invert max-w-none bg-black">
       <!-- Rendered markdown will go here -->
     </div>
     
     <!-- Modal Footer -->
-    <div class="bg-black border-t-2 border-green-400 px-6 py-4 flex items-center justify-end gap-3" style="box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.05);">
-      <button onclick="copyModalContent()" class="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-black rounded-lg font-semibold transition-all text-sm" style="box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);">
+    <div class="bg-black border-t-2 border-cyan-500 px-4 py-2 flex items-center justify-end gap-2" style="box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.05);">
+      <button onclick="copyModalContent()" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-black rounded font-semibold transition-all text-xs" style="box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);">
         <span>📋</span> Copy
       </button>
-      <button onclick="closeFileModal()" class="flex items-center gap-2 px-4 py-2 bg-green-400 hover:bg-green-300 text-black rounded-lg font-semibold transition-all text-sm" style="box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);">
+      <button onclick="closeFileModal()" class="flex items-center gap-1 px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-black rounded font-semibold transition-all text-xs" style="box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);">
         <span>✕</span> Close
       </button>
     </div>
@@ -147,42 +147,42 @@ body { font-family: 'Fira Code', monospace; }
 </div>
 
 <!-- TERMINAL CONTAINER -->
-<div class="w-full max-w-full h-[90vh] flex flex-col bg-black border-2 border-green-400 rounded-lg shadow-2xl relative overflow-hidden" onclick="document.getElementById('cmd').focus()" style="box-shadow: 0 0 40px rgba(0, 255, 65, 0.3);">
+<div class="w-full max-w-full h-[90vh] flex flex-col bg-black border-2 border-red-600 rounded-lg shadow-2xl relative overflow-hidden" onclick="document.getElementById('cmd').focus()" style="box-shadow: 0 0 40px rgba(255, 0, 0, 0.3);">
   
   <!-- Scanlines -->
   <div class="scanlines absolute inset-0 z-20 pointer-events-none opacity-40"></div>
 
   <!-- HEADER -->
-  <div class="flex items-center justify-between px-4 py-2 bg-black border-b-2 border-green-400 z-30 shrink-0" style="box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.05);">
+  <div class="flex items-center justify-between px-4 py-2 bg-black border-b-2 border-red-600 z-30 shrink-0" style="box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.05);">
     <div class="flex space-x-2">
       <div class="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors"></div>
       <div class="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 transition-colors"></div>
       <div class="w-3 h-3 rounded-full bg-green-400 hover:bg-green-300 transition-colors"></div>
     </div>
-    <div class="text-xs text-green-400 font-bold tracking-widest" style="text-shadow: 0 0 10px #00ff41;">[ REVERSE_SHELL ]</div>
+    <div class="text-xs text-red-600 font-bold tracking-widest" style="text-shadow: 0 0 10px #ff0000;">[ REVERSE_SHELL ]</div>
     <div class="flex items-center space-x-2">
-      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse" style="box-shadow: 0 0 8px #00ff41;"></span>
-      <span class="text-[10px] text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">ACTIVE</span>
+      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse" style="box-shadow: 0 0 8px #ff0000;"></span>
+      <span class="text-[10px] text-red-600 font-bold" style="text-shadow: 0 0 8px #ff0000;">ACTIVE</span>
     </div>
   </div>
 
   <!-- OUTPUT AREA -->
   <div id="output" 
-    class="flex-1 overflow-y-auto overflow-x-auto p-6 space-y-2 z-10 font-mono text-sm leading-relaxed outline-none whitespace-pre text-green-400" style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);">
+    class="flex-1 overflow-y-auto overflow-x-auto p-6 space-y-2 z-10 font-mono text-sm leading-relaxed outline-none whitespace-pre text-red-600" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);">
     <!-- Dynamic Content -->
   </div>
 
   <!-- INPUT AREA -->
-  <div class="flex items-center px-3 py-1 bg-black border-t-2 border-green-400 z-30 shrink-0" style="box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.05);">
-    <span id="prompt" class="text-green-400 text-sm font-semibold select-none mr-2 whitespace-nowrap" style="text-shadow: 0 0 10px #00ff41;">
+  <div class="flex items-center px-3 py-1 bg-black border-t-2 border-red-600 z-30 shrink-0" style="box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.05);">
+    <span id="prompt" class="text-red-600 text-sm font-semibold select-none mr-2 whitespace-nowrap" style="text-shadow: 0 0 10px #ff0000;">
       $</span>
     <input id="cmd" 
-      class="flex-1 bg-transparent outline-none text-green-400 caret-transparent font-mono text-sm placeholder-green-900" style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);"
+      class="flex-1 bg-transparent outline-none text-red-600 caret-transparent font-mono text-sm placeholder-red-900" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);"
       placeholder="enter command..."
       autocomplete="off"
       spellcheck="false"
       onkeydown="handleKey(event)">
-    <div class="w-2 h-4 bg-green-400 cursor-blink ml-1 pointer-events-none" style="box-shadow: 0 0 10px #00ff41;"></div>
+    <div class="w-2 h-4 bg-red-600 cursor-blink ml-1 pointer-events-none" style="box-shadow: 0 0 10px #ff0000;"></div>
   </div>
 
 </div>
@@ -315,10 +315,10 @@ function printWelcome() {
     /'\\\\_   _/\`
     \\\\___)=(___/
 </span>
-<span class=\"text-green-400 font-bold\" style=\"text-shadow: 0 0 8px #00ff41;\">Reverse Engineering Writeups Repository</span>
-<span class=\"text-green-600\">Content: CTF challenges, crackmes, binary analysis</span>
-<span class=\"text-green-600\">Platforms: Linux, Windows, Android</span><br>
-<span class=\"text-green-600 mt-2\">Type <span class=\"text-cyan-400\" style=\"text-shadow: 0 0 6px #00ffff;\">'help'</span> for a list of commands.</span><br>
+<span class="text-red-600 font-bold" style="text-shadow: 0 0 8px #ff0000;">Reverse Engineering Writeups Repository</span>
+<span class="text-red-900">Content: CTF challenges, crackmes, binary analysis</span>
+<span class="text-red-900">Platforms: Linux, Windows, Android</span><br>
+<span class="text-red-900 mt-2">Type <span class="text-red-600" style="text-shadow: 0 0 6px #ff0000;">'help'</span> for a list of commands.</span><br>
 `;
   print(tuxArt, "system");
 }
@@ -332,17 +332,17 @@ function print(text, type = "normal") {
   const div = document.createElement("div");
   
   const typeClasses = {
-    normal: "text-green-400",
-    success: "text-green-400 font-semibold",
-    error: "text-red-600 font-bold",
-    system: "text-green-700 italic text-sm",
-    info: "text-cyan-400",
-    command: "text-green-400 font-semibold",
-    dir: "text-green-300 font-bold",
-    file: "text-green-400",
+    normal: "text-red-600",
+    success: "text-red-500 font-semibold",
+    error: "text-red-700 font-bold",
+    system: "text-red-900 italic text-sm",
+    info: "text-red-600",
+    command: "text-red-600 font-semibold",
+    dir: "text-red-500 font-bold",
+    file: "text-red-600",
     warning: "text-yellow-400",
-    completion: "text-cyan-400",
-    raw: "text-green-400"
+    completion: "text-red-400",
+    raw: "text-red-600"
   };
   
   div.className = typeClasses[type] || typeClasses.normal;
@@ -356,7 +356,7 @@ function updatePrompt() {
   const fullPath = shellState.path.join("/") || "/";
   const displayPath = fullPath === "" ? "~" : `/reverse/${fullPath}`;
   
-  const promptHTML = `<span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}</span><span class="text-green-700">@</span><span class="text-cyan-400" style="text-shadow: 0 0 8px #00ffff;">${CONFIG.HOST}</span><span class="text-green-700"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;"> ❯ </span>`;
+  const promptHTML = `<span class="text-red-600" style="text-shadow: 0 0 8px #ff0000;">${CONFIG.USER}</span><span class="text-red-900">@</span><span class="text-red-600" style="text-shadow: 0 0 8px #ff1744;">${CONFIG.HOST}</span><span class="text-red-900"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-red-600" style="text-shadow: 0 0 8px #ff0000;"> ❯ </span>`;
   
   document.getElementById("prompt").innerHTML = promptHTML;
 }
@@ -472,8 +472,8 @@ const commands = {
     items.forEach(name => {
       const isDir = typeof currentDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
-      const colorClass = isDir ? "text-green-300 font-bold" : "text-green-400";
-      out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #00ff41;' : ''}">${icon}  ${name}</span>`;
+      const colorClass = isDir ? "text-red-500 font-bold" : "text-red-600";
+      out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #ff0000;' : ''}">${icon}  ${name}</span>`;
     });
     print(out);
   },
@@ -510,7 +510,7 @@ const commands = {
         // Escape HTML for display
         const safeContent = currentDir[file]
           .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        print(`<pre class="text-green-400 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);">${safeContent}</pre>`, "raw");
+        print(`<pre class="text-red-600 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);">${safeContent}</pre>`, "raw");
       } else {
         print(`cat: ${file}: Is a directory`, "error");
       }
@@ -567,7 +567,7 @@ const commands = {
         const isLastItem = idx === keys.length - 1;
         const isDir = typeof obj[key] === 'object';
         const connector = isLastItem ? "└── " : "├── ";
-        output += `<span class="text-green-300 font-semibold inline-block mr-4" style="text-shadow: 0 0 8px #00ff41;">${prefix}${connector}${key}</span>`;
+        output += `<span class="text-red-500 font-semibold inline-block mr-4" style="text-shadow: 0 0 8px #ff0000;">${prefix}${connector}${key}</span>`;
         if (isDir) {
           const newPrefix = prefix + (isLastItem ? "    " : "│   ");
           output += buildTree(obj[key], newPrefix, isLastItem);
@@ -602,8 +602,8 @@ const commands = {
       print(`find: No files matching '${pattern}'`, "error");
     } else {
       results.forEach(r => {
-        const color = r.isDir ? "text-green-300 font-semibold" : "text-green-400";
-        print(`<span class="${color}" style="${r.isDir ? 'text-shadow: 0 0 8px #00ff41;' : ''}">${r.name}${r.isDir ? '/' : ''}</span>`);
+        const color = r.isDir ? "text-red-500 font-semibold" : "text-red-600";
+        print(`<span class="${color}" style="${r.isDir ? 'text-shadow: 0 0 8px #ff0000;' : ''}">${r.name}${r.isDir ? '/' : ''}</span>`);
       });
     }
   },
@@ -718,8 +718,8 @@ function handleKey(e) {
       // Show suggestions with better formatting
       const suggestions = matches.map(m => {
         const isDir = m.endsWith('/');
-        return `<span class="${isDir ? 'text-green-300' : 'text-green-400'}" style="text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);">${m}</span>`;
-      }).join("<span class='text-green-700 mx-2'>|</span>");
+        return `<span class="${isDir ? 'text-red-500' : 'text-red-600'}" style="text-shadow: 0 0 6px rgba(255, 0, 0, 0.5);">${m}</span>`;
+      }).join("<span class='text-red-900 mx-2'>|</span>");
       print(suggestions, "raw");
     }
     return;
@@ -757,7 +757,7 @@ function handleKey(e) {
 
     // Echo command
     const currentPath = shellState.path.join("/") || "/";
-    print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-green-400">${input}</span>`, "raw");
+    print(`<span class="text-red-600 font-bold" style="text-shadow: 0 0 8px #ff0000;">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-red-600">${input}</span>`, "raw");
     
     shellState.history.push(input);
     shellState.historyIndex = shellState.history.length;
