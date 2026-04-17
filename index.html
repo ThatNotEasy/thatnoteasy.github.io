@@ -266,7 +266,7 @@ let fileSystem = {};
 
 // Helper to get the object reference of the current directory
 function getCurrentDirObj() {
-  let current = fileSystem;
+  let current = fileSystem.reverse;
   for (let i = 0; i < shellState.path.length; i++) {
     const segment = shellState.path[i];
     if (current[segment] && typeof current[segment] === 'object') {
@@ -374,7 +374,7 @@ function print(text, type = "normal") {
 
 function updatePrompt() {
   const fullPath = shellState.path.join("/") || "/";
-  const displayPath = fullPath === "" ? "~" : `/reverse/${fullPath}`;
+  const displayPath = fullPath === "" ? "/reverse" : fullPath;
   
   const promptHTML = `<span class="text-cyan-400" style="text-shadow: 0 0 8px #00ffff;">${CONFIG.USER}</span><span class="text-green-600">@</span><span class="text-magenta-500" style="text-shadow: 0 0 8px #ff00ff;">${CONFIG.HOST}</span><span class="text-cyan-600"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;"> ❯ </span>`;
   
@@ -418,7 +418,8 @@ const commands = {
 
   pwd: () => {
     const p = shellState.path.join("/");
-    print(p || "/", "info");
+    const displayPath = p === "" ? "/reverse" : p;
+    print(displayPath, "info");
   },
 
   echo: (...args) => {
@@ -461,26 +462,35 @@ const commands = {
     print(ascii);
   },
 
-  ls: (dir) => {
-    let currentDir;
-    
-    if (dir) {
-      // Handle path like "reverse/linux" or just "reverse"
-      const parts = dir.split("/");
-      currentDir = fileSystem;
-      for (const p of parts) {
-        if (currentDir[p] && typeof currentDir[p] === 'object') {
-          currentDir = currentDir[p];
-        } else {
-          print(`ls: cannot access '${dir}': No such directory`, "error");
-          return;
-        }
-      }
-    } else {
-      currentDir = getCurrentDirObj();
-    }
-    
-    if (!currentDir) return print("Error: Directory corrupted", "error");
+   ls: (dir) => {
+     let currentDir;
+     
+     if (dir) {
+       // Handle path like "reverse/linux" or just "linux"
+       const parts = dir.split("/").filter(p => p);
+       // All accessible paths are under fileSystem.reverse
+       currentDir = fileSystem.reverse;
+       let startIdx = 0;
+       
+       // If path starts with "reverse", skip it
+       if (parts[0] === "reverse") {
+         startIdx = 1;
+       }
+       
+       for (let i = startIdx; i < parts.length; i++) {
+         const p = parts[i];
+         if (currentDir[p] && typeof currentDir[p] === 'object') {
+           currentDir = currentDir[p];
+         } else {
+           print(`ls: cannot access '${dir}': No such directory`, "error");
+           return;
+         }
+       }
+     } else {
+       currentDir = getCurrentDirObj();
+     }
+     
+     if (!currentDir) return print("Error: Directory corrupted", "error");
 
     const items = Object.keys(currentDir);
     if (items.length === 0) {
@@ -579,7 +589,26 @@ const commands = {
   },
 
   tree: (dir = ".") => {
-    const currentDir = dir === "." ? getCurrentDirObj() : fileSystem;
+    let currentDir;
+    if (dir === ".") {
+      currentDir = getCurrentDirObj();
+    } else {
+      const parts = dir.split("/").filter(p => p);
+      currentDir = fileSystem.reverse;
+      let startIdx = 0;
+      if (parts[0] === "reverse") {
+        startIdx = 1;
+      }
+      for (let i = startIdx; i < parts.length; i++) {
+        const p = parts[i];
+        if (currentDir[p] && typeof currentDir[p] === 'object') {
+          currentDir = currentDir[p];
+        } else {
+          print(`tree: cannot access '${dir}': No such directory`, "error");
+          return;
+        }
+      }
+    }
     const buildTree = (obj, prefix = "", isLast = true) => {
       let output = "";
       const keys = Object.keys(obj);
@@ -617,7 +646,7 @@ const commands = {
         }
       }
     };
-    search(fileSystem);
+    search(fileSystem.reverse);
     if (results.length === 0) {
       print(`find: No files matching '${pattern}'`, "error");
     } else {
@@ -696,40 +725,62 @@ function handleKey(e) {
       // Auto-complete commands
       const cmds = Object.keys(commands);
       matches = cmds.filter(c => c.startsWith(last));
-    } else if (isPathArg) {
-      // Auto-complete paths using current working directory
-      let currentDir = getCurrentDirObj();
-      let searchPath = last;
-      const pathParts = searchPath.split("/");
-      const partialName = pathParts.pop();
-      
-      // Navigate through specified path if provided
-      if (pathParts.length > 0 && pathParts[0] !== "") {
-        let tempDir = fileSystem;
-        for (const p of pathParts) {
-          if (tempDir[p] && typeof tempDir[p] === 'object') {
-            tempDir = tempDir[p];
-          } else {
-            tempDir = null;
-            break;
-          }
-        }
-        if (tempDir) currentDir = tempDir;
-      }
-      
-      if (currentDir) {
-        matches = Object.keys(currentDir)
-          .filter(n => n.startsWith(partialName))
-          .map(m => {
-            const isDir = typeof currentDir[m] === 'object';
-            return m + (isDir ? '/' : '');
-          });
-        
-        if (pathParts.length > 0 && pathParts[0] !== "") {
-          matches = matches.map(m => pathParts.join("/") + "/" + m);
-        }
-      }
-    }
+      } else if (isPathArg) {
+       // Auto-complete paths using current working directory
+       let currentDir = getCurrentDirObj();
+       let searchPath = last;
+       const pathParts = searchPath.split("/");
+       const partialName = pathParts.pop();
+       
+       // Navigate through specified path if provided
+       if (pathParts.length > 0) {
+         let tempDir = fileSystem.reverse;
+         const startIdx = pathParts[0] === "reverse" ? 1 : 0;
+         for (let i = startIdx; i < pathParts.length; i++) {
+           const p = pathParts[i];
+           if (tempDir[p] && typeof tempDir[p] === 'object') {
+             tempDir = tempDir[p];
+           } else {
+             tempDir = null;
+             break;
+           }
+         }
+         if (tempDir) currentDir = tempDir;
+       }
+       
+       if (currentDir) {
+         matches = Object.keys(currentDir)
+           .filter(n => n.startsWith(partialName))
+           .map(m => {
+             const isDir = typeof currentDir[m] === 'object';
+             return m + (isDir ? '/' : '');
+           });
+         
+         if (pathParts.length > 0) {
+           matches = matches.map(m => pathParts.join("/") + "/" + m);
+         }
+       }
+     }
+         }
+         if (tempDir) currentDir = tempDir;
+       } else {
+         // No path parts, start from current directory's parent? Actually we are already in currentDir
+       }
+       
+       if (currentDir) {
+         matches = Object.keys(currentDir)
+           .filter(n => n.startsWith(partialName))
+           .map(m => {
+             const isDir = typeof currentDir[m] === 'object';
+             return m + (isDir ? '/' : '');
+           });
+         
+         if (pathParts.length > 0) {
+           const prefix = pathParts[0] === "reverse" ? ["reverse"] : pathParts;
+           matches = matches.map(m => prefix.join("/") + "/" + m);
+         }
+       }
+     }
     
     if (matches.length === 1) {
       parts[parts.length - 1] = matches[0];
@@ -775,9 +826,10 @@ function handleKey(e) {
     const input = inputField.value.trim();
     if (!input) return;
 
-    // Echo command
-    const currentPath = shellState.path.join("/") || "/";
-    print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-cyan-400">${input}</span>`, "raw");
+     // Echo command
+     const currentPath = shellState.path.join("/") || "/";
+     const displayPathForOutput = currentPath === "" ? "/reverse" : currentPath;
+     print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:${displayPathForOutput}$</span> <span class="text-cyan-400">${input}</span>`, "raw");
     
     shellState.history.push(input);
     shellState.historyIndex = shellState.history.length;
