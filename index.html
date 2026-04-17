@@ -225,25 +225,36 @@ async function loadFileSystem() {
   const fs = {};
   let files = [];
 
-  const manifestRes = await fetch('manifest.json');
-  const manifest = await manifestRes.json();
-  
-  // Initialize all directories
-  manifest.directories.forEach(dir => {
-    fs[dir] = {};
-  });
-  
-  // Load all files from manifest
-  files = manifest.structure || [];
-
-  // Fetch all files
-  for (const f of files) {
-    if (!f.name || f.name.trim() === '') continue;
+  try {
+    const manifestRes = await fetch('manifest.json');
+    if (!manifestRes.ok) throw new Error('manifest.json not found');
+    const manifest = await manifestRes.json();
     
-    const res = await fetch(`reverse/${f.dir}/${f.name}`);
-    if (res.ok) {
-      fs[f.dir][f.name] = await res.text();
+    // Initialize all directories
+    manifest.directories.forEach(dir => {
+      fs[dir] = {};
+    });
+    
+    // Load all files from manifest (filter out empty names)
+    files = (manifest.structure || []).filter(f => f.name && f.name.trim() !== '');
+
+    // Fetch all files
+    for (const f of files) {
+      if (!f.name || f.name.trim() === '') continue;
+      
+      const res = await fetch(`reverse/${f.dir}/${f.name}`);
+      if (res.ok) {
+        fs[f.dir][f.name] = await res.text();
+      } else {
+        console.warn(`Failed to load: reverse/${f.dir}/${f.name}`);
+      }
     }
+  } catch (error) {
+    console.error('Error loading file system:', error);
+    // Initialize with empty directories if manifest fails
+    ["linux", "windows", "android"].forEach(dir => {
+      fs[dir] = {};
+    });
   }
 
   return { reverse: fs };
@@ -282,14 +293,22 @@ function getCurrentDirObj() {
    INIT & BOOT
 ========================= */
 window.addEventListener('load', async () => {
-  await playBootSequence();
-  fileSystem = await loadFileSystem();
-  initTerminal();
+  try {
+    await playBootSequence();
+    fileSystem = await loadFileSystem();
+    initTerminal();
+  } catch (error) {
+    console.error('Boot error:', error);
+    // Still try to initialize terminal even if boot sequence fails
+    fileSystem = await loadFileSystem();
+    initTerminal();
+  }
 });
 
 function playBootSequence() {
   return new Promise(resolve => {
     const bootLog = document.getElementById("boot-log");
+    const screen = document.getElementById('boot-screen');
     const lines = [
       `[ ${new Date().toLocaleTimeString()}] Loading Linux kernel 6.1.0...`,
       "[ OK ] Started Dispatch Password Requests to Console Key Watch.",
@@ -297,6 +316,12 @@ function playBootSequence() {
       "[ OK ] Started Network Manager.",
       `[ OK ] Logged in as ${CONFIG.USER}`
     ];
+    
+    if (!bootLog || !screen) {
+      console.error('Boot elements not found');
+      resolve();
+      return;
+    }
     
     let i = 0;
     const interval = setInterval(() => {
@@ -306,7 +331,6 @@ function playBootSequence() {
       } else {
         clearInterval(interval);
         setTimeout(() => {
-          const screen = document.getElementById('boot-screen');
           screen.style.opacity = '0';
           setTimeout(() => {
             screen.style.display = 'none';
@@ -315,6 +339,16 @@ function playBootSequence() {
         }, 500);
       }
     }, 400);
+    
+    // Safety: force resolve after 10 seconds max
+    setTimeout(() => {
+      clearInterval(interval);
+      screen.style.opacity = '0';
+      setTimeout(() => {
+        screen.style.display = 'none';
+        resolve();
+      }, 1000);
+    }, 10000);
   });
 }
 
