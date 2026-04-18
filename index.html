@@ -285,6 +285,18 @@ body { font-family: 'Fira Code', 'JetBrains Mono', monospace; background: #000; 
   </div>
 </div>
 
+<!-- ===== ASCII BANNER TEMPLATE (no JS escaping issues) ===== -->
+<template id="ascii-banner">
+  ___        _____     _          ___  ___      _____ 
+ / _ \      |  _  |   | |         |  \/  |     |  _  |
+/ /_\ \_ __ | |/' | __| | _____  _| .  . | ___ | |/' |
+|  _  | '_ \|  /| |/ _` |/ _ \ \/ / |\/| |/ _ \|  /| |
+| | | | |_) | |_/ / (_| |  __/>  <| |  | |  __/\ |_/ /
+\_| |_/ .__/ \___/ \__,_|\___/_/\_\_|  |_/ \___| \___/
+      | |                                             
+      |_|                                             
+</template>
+
 <!-- ===== MAIN TERMINAL ===== -->
 <div class="relative z-10 flex items-center justify-center min-h-screen p-2 md:p-4" onclick="document.getElementById('cmd').focus()">
   <div class="w-full h-[95vh] flex flex-col bg-black rounded-lg border border-matrix/30 neon-border relative overflow-hidden animate-fade-in terminal-container">
@@ -1138,22 +1150,16 @@ async function playBootSequence() {
    INIT
 ========================================= */
 function printWelcome() {
-  const banner = `
-<span class="text-matrix" style="text-shadow: 0 0 8px #00ff41;">
-  &#9616;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9616;
-  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██╗</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">██╗</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██████╗</span>&nbsp;<span style="color:#00ff41;">███████╗</span>&nbsp;<span style="color:#ff6600;">███████╗</span>&nbsp;&nbsp;&nbsp;&#9616;
-  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">██║</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██╔══██╗</span><span style="color:#00ff41;">██╔════╝</span>&nbsp;<span style="color:#ff6600;">██╔════╝</span>&nbsp;&nbsp;&nbsp;&#9616;
-  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">█████╗██║</span>&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██████╔╝</span><span style="color:#00ff41;">███████╗</span>&nbsp;<span style="color:#ff6600;">███████╗</span>&nbsp;&nbsp;&nbsp;&#9616;
-  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">╚════╝██║</span>&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██╔═══╝ </span><span style="color:#00ff41;">╚════██║</span>&nbsp;<span style="color:#ff6600;">╚════██║</span>&nbsp;&nbsp;&nbsp;&#9616;
-  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">██║</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██║</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ff41;">███████║</span><span style="color:#ff6600;">███████║</span>&nbsp;&nbsp;&nbsp;&#9616;
-  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">╚═╝</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">╚═╝</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">╚═╝</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ff41;">╚══════╝</span><span style="color:#ff6600;">╚══════╝</span>&nbsp;&nbsp;&nbsp;&#9616;
-  &#9616;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9616;
-</span>
-<span class="out-highlight font-bold mt-2">  Reverse Engineering Writeups Terminal</span>
-<span class="text-matrix/50 text-xs mt-1">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span>
-<span class="out-dim text-xs mt-1">  ────────────────────────────────────────────</span>
-<span class="text-matrix/60 text-xs mt-2">  Type <span class="out-info">'help'</span> for commands &bull; <span class="out-info">'neofetch'</span> for system info</span>
-<span class="out-dim text-xs">  <span class="text-neonRed/60">&#9679;</span> Tab completion enabled &bull; Ctrl+C to cancel &bull; Ctrl+L to clear</span>`;
+  var bannerEl = document.getElementById('ascii-banner');
+  var artText = bannerEl ? bannerEl.innerHTML : 'Ap0dexMe0';
+  var safeArt = artText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  var banner =
+    '<pre style="color:#00ff41;text-shadow:0 0 8px #00ff41;font-weight:bold;margin:0 0 6px 0;line-height:1.3;">' + safeArt + '</pre>' +
+    '<span class="out-highlight font-bold">  Reverse Engineering Writeups</span><br>' +
+    '<span class="text-matrix/50 text-xs">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span><br>' +
+    '<span class="out-dim text-xs">  ' + '\u2500'.repeat(43) + '</span><br>' +
+    '<span class="text-matrix/60 text-xs">  Type <span class="out-info">\'help\'</span> for commands &bull; <span class="out-info">\'neofetch\'</span> for system info</span><br>' +
+    '<span class="out-dim text-xs">  <span class="text-neonRed/60">&#9679;</span> Tab completion enabled &bull; Ctrl+C to cancel &bull; Ctrl+L to clear</span>';
   print(banner, 'raw');
 }
 
