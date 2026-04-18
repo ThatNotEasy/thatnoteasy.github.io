@@ -13,7 +13,6 @@
 6. [Patch Implementation](#6-patch-implementation)
 7. [Patcher Tool](#7-patcher-tool)
 8. [Results and Verification](#8-results-and-verification)
-9. [Conclusions](#9-conclusions)
 
 ---
 
@@ -433,43 +432,3 @@ python3 tbm_patcher.py --dump-info --input TBM.exe
 - **Message loop** - `PeekMessage`/`TranslateMessage`/`DispatchMessage` intact
 
 ---
-
-## 9. Conclusions
-
-### Key Insights
-
-1. **Attack the kill vector, not the detection.** The crackme has ~24+ independent detection mechanisms, but they all funnel through a single kill function (`TerminateProcess`). Patching the 175 call sites neutralizes all of them simultaneously, without needing to understand each individual check.
-
-2. **Prevention beats circumvention.** Rather than trying to satisfy the watchdog handshake protocol (which would require implementing the correct `0xACBE` XOR response encoding), we prevent the pipe from being created. Rather than bypassing handle stripping, we prevent the driver from loading.
-
-3. **The guard thread army is a paper tiger.** 182 threads with 290 `GetTickCount64` calls sounds intimidating, but they all share the same `TerminateProcess` IAT entry. A single regex pass (`FF 15` targeting `0x140064310`) disables the entire army.
-
-4. **XOR string obfuscation is trivially reversible.** The position-dependent XOR `(i + 0x30)` cipher in WatchdogMain.exe was decoded completely, revealing the full protocol specification.
-
-5. **The kernel driver's self-integrity check is the strongest protection.** It reads its own `.text` section from disk and verifies CRC32 + FNV-1a. However, since we prevent the driver from loading entirely, this check never executes.
-
-### Why Simple Memory Patching Fails (and Why Our Approach Works)
-
-Simple memory patching (e.g., Cheat Engine writing to health variable) fails because:
-- Handle stripping prevents `PROCESS_VM_WRITE`
-- The watchdog detects CRC32 changes via heartbeat
-- Guard threads detect timing anomalies
-- The kernel driver blocks injection tools
-
-Our approach succeeds because:
-- We patch the binary on **disk** (before execution), so runtime protections haven't initialized
-- We remove the **kill mechanism** rather than trying to evade detection
-- We prevent the **kernel driver** from loading, eliminating Ring-0 protections entirely
-- We prevent the **watchdog** from connecting, eliminating the external check loop
-
-### Files Produced
-
-| File | Description |
-|------|-------------|
-| `TBM_patched.exe` | Patched game binary (god mode + speed + all protections neutralized) |
-| `tbm_patcher.py` | Universal patcher script (configurable cheats) |
-| `TBMKEv1_Reverse_Engineering_Writeup.docx` | Full technical analysis document |
-
----
-
-*This analysis was conducted through purely static analysis using `objdump`, `strings`, and Python binary manipulation. No Windows environment or debugger was used. The patched binary preserves all game logic while neutralizing all anti-tamper mechanisms.*
