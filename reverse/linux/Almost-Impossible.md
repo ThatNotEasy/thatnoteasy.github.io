@@ -588,25 +588,13 @@ Decrypted flag: b'ALMOST_W'
 QR payload:     16777232:414C4D4F53545F57
 ```
 
-The PoC generates a PNG image (`poc_artifact.png`) containing a QR code with this payload. When fed to the binary's VERIFY function, it produces **"Access granted."**
+The PoC generates a PNG image (`/assets/img/poc_artifact.png`) containing a QR code with this payload. When fed to the binary's VERIFY function, it produces **"Access granted."**
 
 ### 9.4 PoC Artifacts
 
 | File                  | Description                                          |
 |-----------------------|------------------------------------------------------|
-| `poc.py`              | Complete Python PoC script with brute-force solver    |
-| `poc_artifact.png`    | QR code PNG with valid payload (→ Access granted)     |
-| `bad_artifact.png`    | QR code PNG with wrong scalar (→ Access denied)       |
-
-### 9.5 Performance Estimate
-
-| Metric                    | Value                        |
-|---------------------------|------------------------------|
-| Search space              | 16,777,216 values            |
-| EC point multiplication   | ~50,000/sec (pure Python)    |
-| Estimated time (Python)   | ~5–6 minutes                 |
-| Estimated time (C/OpenSSL)| <1 second                    |
-
-Using the `ecdsa` Python library, brute-forcing takes several minutes. With OpenSSL's optimized EC operations in C, this could be reduced to under a second. The binary could be further accelerated using batched point operations (e.g., Shamir's trick or windowed methods).
-
+| `poc.py`              | Complete Python PoC script with brute-force solver   |
+| `/assets/img/poc_artifact.png`    | QR code PNG with valid payload (→ Access granted)    |
+| `/assets/img/bad_artifact.png`    | QR code PNG with wrong scalar (→ Access denied)      |
 ---
