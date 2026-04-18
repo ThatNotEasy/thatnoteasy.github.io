@@ -3,434 +3,501 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ap0dexMe0</title>
+<title>Ap0dexMe0 // Reverse Shell Terminal</title>
+<meta name="description" content="Reverse Engineering Writeups - Hacker Terminal">
+<meta name="theme-color" content="#000000">
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Marked -->
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        matrix:  '#00ff41',
+        matrixDim: '#00aa2a',
+        neonCyan: '#00ffff',
+        neonPink: '#ff00ff',
+        neonRed: '#ff0040',
+        neonOrange: '#ff6600',
+        neonYellow: '#ffe600',
+        hackerBg: '#0a0a0a',
+        hackerPanel: '#0d1117',
+        hackerBorder: '#1a2332',
+      },
+      fontFamily: {
+        mono: ['Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Courier New', 'monospace'],
+      },
+      animation: {
+        'flicker': 'flicker 0.15s infinite',
+        'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+        'slide-up': 'slideUp 0.4s ease-out',
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'scanline': 'scanline 8s linear infinite',
+        'glitch1': 'glitch1 2.5s infinite linear alternate-reverse',
+        'glitch2': 'glitch2 3s infinite linear alternate-reverse',
+        'typing': 'typing 3s steps(30) 1s forwards, blink 0.5s step-end infinite alternate',
+        'matrix-fade': 'matrixFade 1.5s ease-out forwards',
+        'status-blink': 'statusBlink 1.2s step-end infinite',
+      },
+    }
+  }
+}
+</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Marked + Highlight.js -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<!-- Highlight.js -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap');
+/* ===== BASE ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Fira Code', 'JetBrains Mono', monospace; background: #000; overflow: hidden; }
 
-body { font-family: 'Fira Code', monospace; }
+/* ===== SCROLLBARS ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 3px; box-shadow: 0 0 8px rgba(0,255,65,0.4); }
+::-webkit-scrollbar-thumb:hover { background: #00ff41; box-shadow: 0 0 14px rgba(0,255,65,0.7); }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #000000; }
-::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 4px; box-shadow: 0 0 10px #ff0000; }
-::-webkit-scrollbar-thumb:hover { background: #ff4444; box-shadow: 0 0 15px #ff4444; }
+.modal-scroll::-webkit-scrollbar { width: 8px; }
+.modal-scroll::-webkit-scrollbar-track { background: #080808; }
+.modal-scroll::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; box-shadow: 0 0 10px rgba(0,255,255,0.4); }
 
-/* Modal Scrollbar */
-.modal-scroll::-webkit-scrollbar { width: 10px; }
-.modal-scroll::-webkit-scrollbar-track { background: #0a0a0a; }
-.modal-scroll::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
-.modal-scroll::-webkit-scrollbar-thumb:hover { background: #00cccc; box-shadow: 0 0 15px rgba(0, 255, 255, 0.8); }
+/* ===== MATRIX CANVAS ===== */
+#matrix-bg { position: fixed; inset: 0; z-index: 0; opacity: 0.06; pointer-events: none; }
 
-/* CRT Scanline Effect */
-.scanlines {
-  background: linear-gradient(rgba(255, 0, 0, 0.03) 50%, rgba(0, 0, 0, 0.5) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(255, 50, 50, 0.03), rgba(255, 100, 100, 0.03));
-  background-size: 100% 2px, 3px 100%;
-  pointer-events: none;
+/* ===== CRT EFFECTS ===== */
+.crt-overlay {
+  position: fixed; inset: 0; z-index: 50; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px
+  );
 }
-
-/* Blinking Cursor */
-.cursor-blink { animation: blink 1s step-end infinite; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-/* Modal Animations */
-@keyframes modalOpen {
-  0% { opacity: 0; transform: scale(0.95); }
-  100% { opacity: 1; transform: scale(1); }
+.crt-overlay::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.5) 100%);
 }
-.modal-animate { animation: modalOpen 0.2s ease-out; }
-
-/* Glitch Effect for Header */
-.glitch-text {
-  position: relative;
-}
-.glitch-text::before,
-.glitch-text::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-.glitch-text::before {
-  left: 2px;
-  text-shadow: -1px 0 #ff00ff;
-  clip: rect(24px, 550px, 90px, 0);
-  animation: glitch-anim-1 3s infinite linear alternate-reverse;
-}
-.glitch-text::after {
-  left: -2px;
-  text-shadow: -1px 0 #00ffff;
-  clip: rect(85px, 550px, 140px, 0);
-  animation: glitch-anim-2 2.5s infinite linear alternate-reverse;
-}
-@keyframes glitch-anim-1 {
-  0% { clip: rect(20px, 9999px, 15px, 0); }
-  100% { clip: rect(95px, 9999px, 100px, 0); }
-}
-@keyframes glitch-anim-2 {
-  0% { clip: rect(120px, 9999px, 125px, 0); }
-  100% { clip: rect(5px, 9999px, 10px, 0); }
+.vignette {
+  position: fixed; inset: 0; z-index: 49; pointer-events: none;
+  box-shadow: inset 0 0 150px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.6);
 }
 
-/* Modal Scroll Container */
-.modal-scroll {
-  overscroll-behavior: contain;
-}
+/* ===== ANIMATIONS ===== */
+@keyframes flicker { 0% { opacity: 0.97; } 5% { opacity: 0.85; } 10% { opacity: 0.98; } 20% { opacity: 0.92; } 100% { opacity: 0.98; } }
+@keyframes glowPulse { 0%, 100% { text-shadow: 0 0 8px #00ff41, 0 0 16px rgba(0,255,65,0.3); } 50% { text-shadow: 0 0 16px #00ff41, 0 0 32px rgba(0,255,65,0.6), 0 0 48px rgba(0,255,65,0.2); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+@keyframes glitch1 { 0% { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 2px); } 20% { clip-path: inset(92% 0 1% 0); transform: translate(1px, -1px); } 40% { clip-path: inset(43% 0 1% 0); transform: translate(-1px, 3px); } 60% { clip-path: inset(25% 0 58% 0); transform: translate(3px, 1px); } 80% { clip-path: inset(54% 0 7% 0); transform: translate(-3px, -2px); } 100% { clip-path: inset(58% 0 43% 0); transform: translate(2px, -3px); } }
+@keyframes glitch2 { 0% { clip-path: inset(65% 0 13% 0); transform: translate(2px, -1px); } 20% { clip-path: inset(15% 0 62% 0); transform: translate(-3px, 2px); } 40% { clip-path: inset(78% 0 1% 0); transform: translate(1px, -3px); } 60% { clip-path: inset(2% 0 78% 0); transform: translate(-2px, 1px); } 80% { clip-path: inset(92% 0 3% 0); transform: translate(3px, 3px); } 100% { clip-path: inset(31% 0 52% 0); transform: translate(-1px, -2px); } }
+@keyframes matrixFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes statusBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes bootProgress { from { width: 0%; } to { width: 100%; } }
+@keyframes textFlicker { 0% { opacity: 1; } 3% { opacity: 0.4; } 6% { opacity: 1; } 7% { opacity: 0.8; } 8% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes borderGlow { 0%, 100% { box-shadow: 0 0 20px rgba(0,255,65,0.2), inset 0 0 20px rgba(0,255,65,0.05); } 50% { box-shadow: 0 0 40px rgba(0,255,65,0.4), inset 0 0 30px rgba(0,255,65,0.1); } }
+@keyframes modalOpen { 0% { opacity: 0; transform: scale(0.92) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 
-/* ==================== CUSTOM MARKED RENDERER STYLES ==================== */
-.prose {
-  color: #00ff41;
-  max-width: none;
-}
-.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-  font-weight: bold;
-  margin-top: 0.5em;
-  margin-bottom: 0.25em;
-  text-shadow: 0 0 10px #ff00ff;
-  border-bottom: 1px solid rgba(255, 0, 255, 0.3);
-  padding-bottom: 0.2em;
-}
-.prose h1 { font-size: 1.75em; color: #ff00ff; }
-.prose h2 { font-size: 1.45em; color: #00ffff; }
-.prose h3 { font-size: 1.25em; color: #00ff41; }
-.prose h4 { font-size: 1.1em; color: #ffff00; }
-.prose h5 { font-size: 1em; color: #ff9900; }
-.prose h6 { font-size: 0.95em; color: #ff6600; }
+/* ===== GLITCH TEXT ===== */
+.glitch { position: relative; display: inline-block; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.glitch::before { color: #ff00ff; animation: glitch1 2.5s infinite linear alternate-reverse; z-index: -1; }
+.glitch::after { color: #00ffff; animation: glitch2 3s infinite linear alternate-reverse; z-index: -1; }
+.glitch:hover::before { animation-duration: 0.3s; }
+.glitch:hover::after { animation-duration: 0.3s; }
 
-.prose pre {
-  background-color: #0d0d0d;
-  border: 1px solid #0088ff;
-  border-radius: 0.4em;
-  padding: 1em;
-  overflow-x: auto;
-  margin: 0.8em 0;
-  box-shadow: inset 0 0 20px rgba(0, 136, 255, 0.1), 0 0 10px rgba(0, 136, 255, 0.2);
-  position: relative;
-}
-.prose pre::before {
-  content: attr(data-lang);
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: #0088ff;
-  color: #000;
-  font-size: 0.7em;
-  padding: 0.2em 0.6em;
-  border-bottom-left-radius: 0.4em;
-  font-weight: bold;
-  opacity: 0.9;
-}
-.prose code:not(pre code) {
-  background-color: rgba(0, 255, 255, 0.1);
-  color: #00ffff;
-  padding: 0.15em 0.4em;
-  border-radius: 0.2em;
-  font-size: 0.9em;
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
-}
-.prose pre code {
-  background-color: transparent;
-  color: #00ff41;
-  padding: 0;
-  border: none;
-  font-size: 0.9em;
-  line-height: 1.5;
-}
-.prose a {
-  color: #ff6600;
-  text-decoration: none;
-  border-bottom: 1px dotted #ff6600;
-  text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
-}
-.prose a:hover {
-  color: #ff9933;
-  border-bottom-style: solid;
-}
-.prose img {
-  max-width: 100%;
-  border: 2px solid #00ffff;
-  border-radius: 0.3em;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-  transition: all 0.2s;
-}
-.prose img:hover {
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-  transform: scale(1.02);
-}
-.prose blockquote {
-  border-left: 4px solid #ff00ff;
-  padding-left: 1.2em;
-  color: #ff9900;
-  background: rgba(255, 0, 255, 0.08);
-  border-radius: 0 6px 6px 0;
+/* ===== CURSOR ===== */
+.cursor-blink { animation: statusBlink 1s step-end infinite; }
+
+/* ===== NEON BORDER ===== */
+.neon-border { animation: borderGlow 3s ease-in-out infinite; }
+
+/* ===== PROSE / MARKDOWN STYLES ===== */
+.prose-hacker { color: #00ff41; max-width: none; line-height: 1.7; }
+.prose-hacker h1,.prose-hacker h2,.prose-hacker h3,.prose-hacker h4,.prose-hacker h5,.prose-hacker h6 { font-weight: 700; margin-top: 1.2em; margin-bottom: 0.4em; border-bottom: 1px solid rgba(0,255,65,0.2); padding-bottom: 0.3em; }
+.prose-hacker h1 { font-size: 1.8em; color: #ff00ff; text-shadow: 0 0 12px #ff00ff; }
+.prose-hacker h2 { font-size: 1.5em; color: #00ffff; text-shadow: 0 0 12px #00ffff; }
+.prose-hacker h3 { font-size: 1.25em; color: #00ff41; text-shadow: 0 0 10px #00ff41; }
+.prose-hacker h4 { font-size: 1.1em; color: #ffe600; text-shadow: 0 0 8px #ffe600; }
+.prose-hacker h5 { font-size: 1em; color: #ff6600; }
+.prose-hacker h6 { font-size: 0.95em; color: #ff0040; }
+.prose-hacker p { margin-bottom: 0.8em; }
+.prose-hacker pre { background: #0a0a0a; border: 1px solid #1a3a1a; border-left: 3px solid #00ff41; border-radius: 4px; padding: 1em; overflow-x: auto; margin: 1em 0; position: relative; box-shadow: inset 0 0 30px rgba(0,255,65,0.05); }
+.prose-hacker pre::before { content: attr(data-lang); position: absolute; top: 0; right: 0; background: #00ff41; color: #000; font-size: 0.65em; padding: 0.15em 0.5em; border-bottom-left-radius: 4px; font-weight: 700; }
+.prose-hacker code:not(pre code) { background: rgba(0,255,65,0.1); color: #00ff41; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; border: 1px solid rgba(0,255,65,0.25); }
+.prose-hacker pre code { background: transparent; color: #c8e6c9; padding: 0; border: none; }
+.prose-hacker a { color: #ff6600; text-decoration: none; border-bottom: 1px dotted #ff6600; transition: all 0.2s; }
+.prose-hacker a:hover { color: #ff9933; border-bottom: 1px solid #ff9933; text-shadow: 0 0 8px #ff6600; }
+.prose-hacker img { max-width: 100%; border: 2px solid #00ffff; border-radius: 4px; box-shadow: 0 0 20px rgba(0,255,255,0.4); transition: all 0.3s; margin: 1em 0; }
+.prose-hacker img:hover { box-shadow: 0 0 35px rgba(0,255,255,0.7); transform: scale(1.01); }
+.prose-hacker blockquote { border-left: 3px solid #ff00ff; padding-left: 1.2em; color: #ff9900; background: rgba(255,0,255,0.06); border-radius: 0 4px 4px 0; margin: 1em 0; }
+.prose-hacker ul, .prose-hacker ol { padding-left: 1.5em; margin-bottom: 0.8em; }
+.prose-hacker li { margin-bottom: 0.3em; }
+.prose-hacker li::marker { color: #00ff41; }
+.prose-hacker hr { border: none; border-top: 1px solid rgba(0,255,65,0.2); margin: 1.5em 0; }
+.prose-hacker table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+.prose-hacker th, .prose-hacker td { border: 1px solid rgba(0,255,65,0.2); padding: 0.5em 0.8em; text-align: left; }
+.prose-hacker th { background: rgba(0,255,65,0.08); color: #00ff41; font-weight: 600; }
+
+/* ===== TERMINAL PROMPT ===== */
+.prompt-user { color: #00ff41; text-shadow: 0 0 8px #00ff41; }
+.prompt-at { color: #888; }
+.prompt-host { color: #ff00ff; text-shadow: 0 0 8px #ff00ff; }
+.prompt-path { color: #00ffff; text-shadow: 0 0 6px #00ffff; }
+.prompt-arrow { color: #00ff41; text-shadow: 0 0 8px #00ff41; }
+
+/* ===== OUTPUT TYPES ===== */
+.out-error { color: #ff0040; font-weight: 600; }
+.out-success { color: #00ff41; font-weight: 600; }
+.out-system { color: #ffe600; font-style: italic; }
+.out-info { color: #00ffff; }
+.out-command { color: #888; }
+.out-dir { color: #00ffff; font-weight: 700; }
+.out-file { color: #ffe600; }
+.out-dim { color: #555; }
+.out-highlight { color: #ff00ff; text-shadow: 0 0 6px #ff00ff; }
+
+/* ===== MODAL ===== */
+.modal-animate { animation: modalOpen 0.25s ease-out; }
+
+/* ===== BOOT ===== */
+.boot-progress { height: 2px; background: linear-gradient(90deg, #00ff41, #00ffff, #00ff41); animation: bootProgress 2s ease-out forwards; box-shadow: 0 0 12px #00ff41; }
+
+/* ===== TOOLTIP ===== */
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #00ff41; padding: 4px 10px; border-radius: 4px; font-size: 0.7em; white-space: nowrap; border: 1px solid #00ff41; box-shadow: 0 0 10px rgba(0,255,65,0.3); z-index: 100; pointer-events: none; }
+
+/* ===== SELECTION ===== */
+::selection { background: rgba(0,255,65,0.3); color: #fff; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .terminal-container { border-width: 1px !important; }
+  .modal-header-actions { flex-wrap: wrap; gap: 4px !important; }
 }
 </style>
 </head>
 
-<body class="bg-black min-h-screen flex items-center justify-center p-4 text-red-600 selection:bg-red-900 selection:text-black">
+<body class="bg-black min-h-screen text-matrix selection:bg-matrix/30 selection:text-white">
 
-<!-- BOOT SCREEN -->
-<div id="boot-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center transition-opacity duration-1000">
-  <div class="text-red-600 text-4xl font-bold tracking-tighter mb-4 animate-pulse" style="text-shadow: 0 0 20px #ff0000; font-family: 'Courier New'">SYSTEM_BOOT</div>
-  <div id="boot-log" class="font-mono text-xs text-red-600" style="text-shadow: 0 0 10px #ff0000;"></div>
+<!-- ===== MATRIX RAIN BACKGROUND ===== -->
+<canvas id="matrix-bg"></canvas>
+
+<!-- ===== CRT OVERLAY ===== -->
+<div class="crt-overlay"></div>
+<div class="vignette"></div>
+
+<!-- ===== BOOT SCREEN ===== -->
+<div id="boot-screen" class="fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center p-6">
+  <div class="w-full max-w-lg">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="text-matrix text-5xl md:text-6xl font-bold tracking-tighter mb-2 animate-flicker" style="text-shadow: 0 0 30px #00ff41, 0 0 60px rgba(0,255,65,0.4);">
+        <span class="glitch" data-text="Ap0dexMe0">Ap0dexMe0</span>
+      </div>
+      <div class="text-matrixDim text-xs tracking-[0.3em] mt-3">REVERSE ENGINEERING TERMINAL v3.0</div>
+    </div>
+
+    <!-- Boot Log -->
+    <div id="boot-log" class="font-mono text-[11px] text-matrix/70 space-y-0.5 mb-6" style="text-shadow: 0 0 4px rgba(0,255,65,0.3);"></div>
+
+    <!-- Progress Bar -->
+    <div class="w-full bg-hackerPanel border border-hackerBorder rounded-sm overflow-hidden mb-3">
+      <div id="boot-progress" class="boot-progress"></div>
+    </div>
+    <div class="flex justify-between text-[10px] text-matrixDim font-mono">
+      <span id="boot-status">Initializing...</span>
+      <span id="boot-percent">0%</span>
+    </div>
+  </div>
 </div>
 
-<!-- ==================== IMPROVED MODAL FOR FILE VIEWING ==================== -->
-<div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
-  <div class="bg-gray-900 border-2 border-cyan-500 rounded-lg shadow-2xl max-w-5xl w-full max-h-[88vh] flex flex-col overflow-hidden modal-animate" style="box-shadow: 0 0 60px rgba(34, 211, 238, 0.4), inset 0 0 60px rgba(34, 211, 238, 0.1);">
+<!-- ===== FILE VIEWER MODAL ===== -->
+<div id="file-modal" class="hidden fixed inset-0 bg-black/95 z-[45] flex items-center justify-center p-2 md:p-4 backdrop-blur-sm">
+  <div class="modal-animate bg-hackerPanel border border-matrix/40 rounded-lg max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden neon-border">
     <!-- Modal Header -->
-    <div class="bg-black px-4 py-3 border-b-2 border-cyan-500 flex items-center justify-between shrink-0" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.1);">
-      <div class="flex items-center gap-3 overflow-hidden">
-        <div id="modal-icon-container" class="w-10 h-10 rounded bg-cyan-900 bg-opacity-30 border border-cyan-500 flex items-center justify-center shrink-0 transition-all hover:scale-110">
-          <span id="modal-icon" class="text-3xl">📄</span>
+    <div class="bg-black/80 px-3 md:px-4 py-2.5 border-b border-matrix/30 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3 overflow-hidden min-w-0">
+        <div id="modal-icon-container" class="w-9 h-9 rounded bg-matrix/10 border border-matrix/30 flex items-center justify-center shrink-0 hover:bg-matrix/20 transition-all">
+          <span id="modal-icon" class="text-xl"></span>
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <div id="modal-title" class="text-cyan-400 font-bold text-sm truncate glitch-text" style="text-shadow: 0 0 8px #22d3ee;" data-text="FILE_VIEWER">FILE_VIEWER</div>
-            <span id="modal-ext-badge" class="px-2.5 py-px text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-700 rounded-full">.md</span>
+            <span id="modal-title" class="text-matrix font-bold text-sm truncate glitch" data-text="FILE" style="text-shadow: 0 0 6px #00ff41;">FILE</span>
+            <span id="modal-ext-badge" class="px-2 py-px text-[9px] font-mono bg-matrix/10 text-matrixDim border border-matrix/30 rounded-full uppercase">.md</span>
           </div>
-          <div class="flex items-center gap-2 text-xs mt-1">
-            <span class="text-cyan-600">➜</span>
-            <span id="modal-path" class="text-cyan-300 font-mono truncate">/reverse</span>
-            <span class="text-cyan-700">|</span>
-            <span id="modal-size" class="text-cyan-600 font-mono">0 KB</span>
+          <div class="flex items-center gap-2 text-[10px] mt-0.5 text-matrix/50">
+            <span class="text-neonCyan">&#10140;</span>
+            <span id="modal-path" class="font-mono truncate">/reverse</span>
+            <span class="text-matrix/20">|</span>
+            <span id="modal-size" class="font-mono">0 B</span>
           </div>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button onclick="toggleRawView()" 
-                class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400 flex items-center gap-1.5 font-medium"
-                style="text-shadow: 0 0 6px #22d3ee;"
-                aria-label="Toggle between rendered and raw view">
-          <span id="view-mode-icon">🔍</span>
-          <span id="raw-btn-text">Raw</span>
+      <div class="flex items-center gap-1.5 modal-header-actions">
+        <button onclick="toggleRawView()" class="text-matrix/70 hover:text-matrix hover:bg-matrix/10 rounded px-3 py-1 transition-all text-[11px] border border-matrix/20 hover:border-matrix/50 flex items-center gap-1.5" aria-label="Toggle raw view">
+          <span id="view-mode-icon">&#128269;</span>
+          <span id="raw-btn-text" class="hidden sm:inline">Raw</span>
         </button>
-
-        <button onclick="copyModalContent()" 
-                class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400 flex items-center gap-1.5 font-medium"
-                style="text-shadow: 0 0 6px #22d3ee;"
-                aria-label="Copy raw content to clipboard">
-          <span>📋</span>
-          <span>Copy</span>
+        <button onclick="copyModalContent()" class="text-matrix/70 hover:text-matrix hover:bg-matrix/10 rounded px-3 py-1 transition-all text-[11px] border border-matrix/20 hover:border-matrix/50 flex items-center gap-1.5" aria-label="Copy content">
+          <span>&#128203;</span>
+          <span class="hidden sm:inline">Copy</span>
         </button>
-
-        <button onclick="downloadCurrentFile()" 
-                class="text-emerald-400 hover:text-emerald-200 hover:bg-emerald-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all text-xs border border-emerald-800 hover:border-emerald-400 flex items-center gap-1.5 font-medium"
-                style="text-shadow: 0 0 6px #10b981;"
-                aria-label="Download file">
-          <span>⬇️</span>
-          <span>Download</span>
+        <button onclick="downloadCurrentFile()" class="text-neonCyan/70 hover:text-neonCyan hover:bg-neonCyan/10 rounded px-3 py-1 transition-all text-[11px] border border-neonCyan/20 hover:border-neonCyan/50 flex items-center gap-1.5" aria-label="Download file">
+          <span>&#11015;</span>
+          <span class="hidden sm:inline">Download</span>
         </button>
-
-        <button onclick="closeFileModal()" 
-                class="text-red-400 hover:text-red-200 hover:bg-red-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all ml-1 border border-red-800 hover:border-red-400 flex items-center justify-center w-8 h-8"
-                style="text-shadow: 0 0 6px #ff0000;"
-                aria-label="Close modal">
-          ✕
+        <button onclick="closeFileModal()" class="text-neonRed/70 hover:text-neonRed hover:bg-neonRed/10 rounded w-8 h-8 flex items-center justify-center border border-neonRed/20 hover:border-neonRed/50 transition-all ml-1" aria-label="Close">
+          &#10005;
         </button>
       </div>
     </div>
-    
-    <!-- Modal Content Wrapper -->
-    <div id="modal-content-wrapper" class="flex-1 relative bg-black min-h-0 overflow-hidden">
-      <!-- Rendered Markdown (custom renderer) -->
-      <div id="modal-content" class="absolute inset-0 overflow-y-auto p-6 modal-scroll prose prose-invert max-w-none">
-      </div>
 
-      <!-- Raw View with line numbers -->
+    <!-- Modal Body -->
+    <div id="modal-content-wrapper" class="flex-1 relative bg-black min-h-0 overflow-hidden">
+      <div id="modal-content" class="absolute inset-0 overflow-y-auto p-5 md:p-8 modal-scroll prose-hacker"></div>
       <div id="modal-raw" class="hidden absolute inset-0 bg-black flex flex-col overflow-hidden">
         <div class="flex flex-1 min-h-0">
-          <div id="raw-line-numbers" 
-               class="w-14 bg-[#0a0a0a] text-cyan-700 font-mono text-sm text-right pr-4 py-6 overflow-y-auto select-none border-r border-cyan-800 leading-[22px] flex-shrink-0">
-          </div>
-          <pre id="modal-raw-pre" 
-               class="flex-1 p-6 text-green-400 font-mono text-sm whitespace-pre overflow-y-auto leading-[22px] modal-scroll"
-               style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);">
-          </pre>
+          <div id="raw-line-numbers" class="w-12 bg-hackerPanel text-matrix/30 font-mono text-xs text-right pr-3 py-5 overflow-y-auto select-none border-r border-matrix/15 leading-[20px] shrink-0"></div>
+          <pre id="modal-raw-pre" class="flex-1 p-5 text-matrix font-mono text-xs whitespace-pre overflow-y-auto leading-[20px] modal-scroll"></pre>
         </div>
       </div>
     </div>
-    
+
     <!-- Modal Footer -->
-    <div class="bg-black border-t-2 border-cyan-500 px-4 py-2 flex items-center justify-between shrink-0 text-xs" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);">
-      <div class="flex items-center gap-2 text-cyan-700">
-        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-        <span id="modal-status" class="font-medium">READY • RENDERED</span>
+    <div class="bg-black/80 border-t border-matrix/20 px-4 py-1.5 flex items-center justify-between shrink-0 text-[10px]">
+      <div class="flex items-center gap-2 text-matrix/40">
+        <span class="w-1.5 h-1.5 rounded-full bg-matrix animate-status-blink"></span>
+        <span id="modal-status" class="font-mono">READY</span>
       </div>
-      
-      <div id="file-stats" class="flex items-center gap-5 text-cyan-700 font-mono">
-      </div>
-      
-      <div class="text-cyan-700 font-mono">
-        [ ESC ] close • [ Ctrl+R ] toggle raw
+      <div id="file-stats" class="flex items-center gap-4 text-matrix/40 font-mono"></div>
+      <div class="text-matrix/30 font-mono hidden md:block">
+        [ESC] close &bull; [Ctrl+R] raw
       </div>
     </div>
   </div>
 </div>
 
-<!-- TERMINAL CONTAINER -->
-<div class="w-full max-w-full h-[90vh] flex flex-col bg-black border-2 border-red-600 rounded-lg shadow-2xl relative overflow-hidden" onclick="document.getElementById('cmd').focus()" style="box-shadow: 0 0 40px rgba(255, 0, 0, 0.3);">
-  <!-- Scanlines -->
-  <div class="scanlines absolute inset-0 z-20 pointer-events-none opacity-40"></div>
+<!-- ===== MAIN TERMINAL ===== -->
+<div class="relative z-10 flex items-center justify-center min-h-screen p-2 md:p-4" onclick="document.getElementById('cmd').focus()">
+  <div class="w-full h-[95vh] flex flex-col bg-black rounded-lg border border-matrix/30 neon-border relative overflow-hidden animate-fade-in terminal-container">
 
-  <!-- HEADER -->
-  <div class="flex items-center justify-between px-4 py-2 bg-black border-b-2 border-red-600 z-30 shrink-0" style="box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.05);">
-    <div class="flex space-x-2">
-      <div class="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors"></div>
-      <div class="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 transition-colors"></div>
-      <div class="w-3 h-3 rounded-full bg-green-400 hover:bg-green-300 transition-colors"></div>
+    <!-- ===== HEADER BAR ===== -->
+    <div class="flex items-center justify-between px-3 md:px-4 py-2 bg-hackerPanel border-b border-matrix/30 z-30 shrink-0">
+      <!-- Traffic Lights -->
+      <div class="flex items-center gap-2">
+        <div class="flex space-x-1.5">
+          <div class="w-3 h-3 rounded-full bg-neonRed/80 hover:bg-neonRed transition-colors cursor-pointer" data-tooltip="Close"></div>
+          <div class="w-3 h-3 rounded-full bg-neonYellow/80 hover:bg-neonYellow transition-colors cursor-pointer" data-tooltip="Minimize"></div>
+          <div class="w-3 h-3 rounded-full bg-matrix/80 hover:bg-matrix transition-colors cursor-pointer" data-tooltip="Maximize"></div>
+        </div>
+        <div class="w-px h-4 bg-matrix/15 mx-1"></div>
+        <div class="text-[10px] text-matrix/40 font-mono hidden sm:block">
+          <span class="glitch" data-text="REVERSE_SHELL" style="text-shadow: 0 0 6px #00ff41;">REVERSE_SHELL</span>
+        </div>
+      </div>
+
+      <!-- Center Title -->
+      <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+        <span class="text-matrix text-[10px] md:text-xs font-bold tracking-widest animate-glow-pulse">Ap0dexMe0</span>
+      </div>
+
+      <!-- Status -->
+      <div class="flex items-center gap-2">
+        <span class="text-[9px] text-matrix/40 font-mono hidden md:block" id="header-clock"></span>
+        <div class="flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-matrix animate-status-blink"></span>
+          <span class="text-[10px] text-matrix/60 font-mono font-bold">CONNECTED</span>
+        </div>
+      </div>
     </div>
-    <div class="text-xs text-red-600 font-bold tracking-widest" style="text-shadow: 0 0 10px #ff0000;">[ REVERSE_SHELL ]</div>
-    <div class="flex items-center space-x-2">
-      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse" style="box-shadow: 0 0 8px #ff0000;"></span>
-      <span class="text-[10px] text-red-600 font-bold" style="text-shadow: 0 0 8px #ff0000;">ACTIVE</span>
+
+    <!-- ===== TAB BAR ===== -->
+    <div class="flex items-center bg-hackerPanel/80 border-b border-matrix/20 px-2 shrink-0 text-[11px]">
+      <div class="flex items-center gap-1 px-3 py-1.5 bg-black/60 border-b-2 border-matrix text-matrix font-bold rounded-t-sm">
+        <span class="text-neonCyan">&#9654;</span> terminal
+      </div>
+      <div class="px-3 py-1.5 text-matrix/30 hover:text-matrix/60 cursor-pointer transition-colors">files</div>
+      <div class="px-3 py-1.5 text-matrix/30 hover:text-matrix/60 cursor-pointer transition-colors">network</div>
+      <div class="flex-1"></div>
+      <button onclick="commands.clear()" class="px-2 py-1 text-matrix/30 hover:text-matrix transition-colors text-[10px]" data-tooltip="Clear terminal">&#128465;</button>
     </div>
-  </div>
 
-  <!-- OUTPUT AREA -->
-  <div id="output" class="flex-1 overflow-y-auto overflow-x-auto p-6 space-y-2 z-10 font-mono text-sm leading-relaxed outline-none whitespace-pre text-red-600" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);">
-  </div>
+    <!-- ===== OUTPUT AREA ===== -->
+    <div id="output" class="flex-1 overflow-y-auto overflow-x-auto p-4 md:p-6 space-y-1.5 z-10 font-mono text-[13px] leading-relaxed outline-none text-matrix" style="text-shadow: 0 0 3px rgba(0,255,65,0.2);"></div>
 
-  <!-- INPUT AREA -->
-  <div class="flex items-center px-3 py-1 bg-black border-t-2 border-red-600 z-30 shrink-0" style="box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.05);">
-    <span id="prompt" class="text-red-600 text-sm font-semibold select-none mr-2 whitespace-nowrap" style="text-shadow: 0 0 10px #ff0000;">
-      $</span>
-    <input id="cmd" 
-      class="flex-1 bg-transparent outline-none text-red-600 caret-transparent font-mono text-sm placeholder-red-900" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);"
-      placeholder="enter command..."
-      autocomplete="off"
-      spellcheck="false"
-      onkeydown="handleKey(event)">
-    <div class="w-2 h-4 bg-red-600 cursor-blink ml-1 pointer-events-none" style="box-shadow: 0 0 10px #ff0000;"></div>
+    <!-- ===== STATUS BAR ===== -->
+    <div class="flex items-center justify-between px-3 py-1 bg-hackerPanel border-t border-matrix/20 z-30 shrink-0 text-[10px] font-mono text-matrix/40">
+      <div class="flex items-center gap-3">
+        <span id="status-left-mode">NORMAL</span>
+        <span class="text-matrix/15">|</span>
+        <span id="status-left-cmd-count">0 cmds</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="status-center-path">/reverse</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="status-right-time"></span>
+        <span class="text-matrix/15">|</span>
+        <span>UTF-8</span>
+        <span class="text-matrix/15">|</span>
+        <span>BASH</span>
+      </div>
+    </div>
+
+    <!-- ===== INPUT AREA ===== -->
+    <div class="flex items-center px-3 py-1.5 bg-black border-t border-matrix/30 z-30 shrink-0">
+      <span id="prompt" class="text-sm font-semibold select-none mr-1 whitespace-nowrap"></span>
+      <input id="cmd" class="flex-1 bg-transparent outline-none text-matrix caret-transparent font-mono text-[13px] placeholder-matrix/15" placeholder="type 'help' to begin..." autocomplete="off" spellcheck="false" onkeydown="handleKey(event)">
+      <div class="w-[2px] h-[14px] bg-matrix cursor-blink ml-0.5 pointer-events-none" style="box-shadow: 0 0 6px #00ff41;"></div>
+    </div>
   </div>
 </div>
 
 <script>
-/* =========================
+/* =========================================
+   MATRIX RAIN CANVAS
+========================================= */
+(function initMatrix() {
+  const canvas = document.getElementById('matrix-bg');
+  const ctx = canvas.getContext('2d');
+  let cols, drops;
+  const chars = 'Ap0dexMe01アイウエオカキクケコ@#$%^&*<>{}[]|/\\~`';
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / 14);
+    drops = Array(cols).fill(1);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = '12px monospace';
+    for (let i = 0; i < cols; i++) {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(char, i * 14, drops[i] * 14);
+      if (drops[i] * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  setInterval(draw, 50);
+})();
+
+/* =========================================
+   CLOCK
+========================================= */
+function updateClocks() {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour12: false });
+  const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const el1 = document.getElementById('header-clock');
+  const el2 = document.getElementById('status-right-time');
+  if (el1) el1.textContent = date + ' ' + time;
+  if (el2) el2.textContent = time;
+}
+setInterval(updateClocks, 1000);
+updateClocks();
+
+/* =========================================
    CONFIGURATION
-========================= */
+========================================= */
 const CONFIG = {
   USER: "reverse101",
-  HOST: "localhost",
+  HOST: "ap0dexme0",
+  SHELL: "/bin/bash",
+  KERNEL: "6.8.0-generic",
+  OS: "Ap0dexMe0 OS 1.0",
+  TERM: "xterm-256color",
+  ARCH: "x86_64",
+  UPTIME: 0,
 };
 
-/* =========================
-   CUSTOM MARKED RENDERER
-========================= */
+CONFIG.UPTIME = Math.floor(Date.now() / 1000);
+
+/* =========================================
+   MARKED RENDERER
+========================================= */
 const renderer = new marked.Renderer();
-
 renderer.heading = function(text, level) {
-  const colors = { 1: '#ff00ff', 2: '#00ffff', 3: '#00ff41', 4: '#ffff00', 5: '#ff9900', 6: '#ff6600' };
-  return `<h${level} style="color:${colors[level] || '#ff00ff'}; text-shadow: 0 0 12px ${colors[level] || '#ff00ff'};">
-            ${text}
-          </h${level}>`;
+  const colors = { 1: '#ff00ff', 2: '#00ffff', 3: '#00ff41', 4: '#ffe600', 5: '#ff6600', 6: '#ff0040' };
+  return `<h${level} style="color:${colors[level]||'#ff00ff'};text-shadow:0 0 10px ${colors[level]||'#ff00ff'};">${text}</h${level}>`;
 };
-
 renderer.code = function(code, infostring) {
-  const lang = (infostring || '').split(' ')[0] || 'text';
+  const lang = (infostring||'').split(' ')[0]||'text';
   return `<pre data-lang="${lang.toUpperCase()}"><code class="language-${lang}">${code}</code></pre>`;
 };
-
-renderer.codespan = function(text) {
-  return `<code class="inline-code">${text}</code>`;
-};
-
+renderer.codespan = function(text) { return `<code>${text}</code>`; };
 renderer.link = function(href, title, text) {
-  return `<a href="${href}" target="_blank" rel="noopener noreferrer" 
-             title="${title || ''}" 
-             style="color:#ff6600; border-bottom:1px dotted #ff6600; text-shadow:0 0 6px #ff6600;">
-            ${text}
-          </a>`;
+  return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${title||''}">${text}</a>`;
 };
-
 renderer.image = function(href, title, text) {
-  return `<img src="${href}" alt="${text}" title="${title || ''}" 
-               style="max-width:100%; border:2px solid #00ffff; border-radius:4px; 
-                      box-shadow:0 0 25px rgba(0,255,255,0.6); transition:all 0.3s;"
-               onload="this.style.opacity=1" />`;
+  return `<img src="${href}" alt="${text}" title="${title||''}" loading="lazy" />`;
 };
-
 renderer.blockquote = function(quote) {
-  return `<blockquote style="border-left:4px solid #ff00ff; padding-left:1.2em; margin:1em 0; 
-                            color:#ff9900; background:rgba(255,0,255,0.08); border-radius:0 6px 6px 0;">
-            ${quote}
-          </blockquote>`;
+  return `<blockquote>${quote}</blockquote>`;
 };
-
 marked.use({ renderer });
+marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false });
 
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-  pedantic: false,
-  smartypants: true,
-  headerIds: false,
-  mangle: false
-});
-
-/* =========================
+/* =========================================
    VIRTUAL FILE SYSTEM
-========================= */
+========================================= */
 async function loadFileSystem() {
   const fs = {};
   try {
-    const manifestRes = await fetch('manifest.json');
-    if (!manifestRes.ok) throw new Error(`Manifest fetch failed: ${manifestRes.status}`);
-    const manifest = await manifestRes.json();
-    
-    if (manifest.directories) {
-      manifest.directories.forEach(dir => { if (!fs[dir]) fs[dir] = {}; });
-    }
-    
+    const res = await fetch('manifest.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const manifest = await res.json();
+    if (manifest.directories) manifest.directories.forEach(d => { if (!fs[d]) fs[d] = {}; });
     const structure = manifest.structure || {};
     for (const [dir, files] of Object.entries(structure)) {
       if (!fs[dir]) fs[dir] = {};
       if (Array.isArray(files)) {
         for (const filename of files) {
           if (!filename) continue;
-          const url = `reverse/${dir}/${filename}`;
           try {
-            const res = await fetch(url);
-            fs[dir][filename] = res.ok ? await res.text() : `[ERROR] File not found: ${url}`;
-          } catch (e) {
-            fs[dir][filename] = `[ERROR] Failed to load: ${url}`;
-          }
+            const r = await fetch(`reverse/${dir}/${filename}`);
+            fs[dir][filename] = r.ok ? await r.text() : `[ERROR] Not found: ${filename}`;
+          } catch(e) { fs[dir][filename] = `[ERROR] Load failed: ${filename}`; }
         }
       }
     }
-  } catch (e) {
-    console.error('Failed to load manifest:', e);
-    print(`<span class="text-red-500">ERROR: Could not load file system. Check console.</span>`, "error");
+  } catch(e) {
+    console.error('Manifest load error:', e);
   }
   return { reverse: fs };
 }
 
-/* =========================
-   STATE + PATH HELPERS
-========================= */
-let shellState = {
-  path: [],
-  history: [],
-  historyIndex: -1,
-  completion: { input: '', matches: [], index: 0 }
-};
-
+/* =========================================
+   STATE
+========================================= */
+let shellState = { path: [], history: [], historyIndex: -1, cmdCount: 0, completion: { input: '', matches: [], index: 0 } };
 let fileSystem = {};
 let currentFileContent = "";
 
-function resolvePathToTarget(pathStr) {
+function getCurrentDirObj() {
+  let c = fileSystem["reverse"];
+  if (!c) return null;
+  for (const seg of shellState.path) {
+    if (c[seg] && typeof c[seg] === 'object') c = c[seg];
+    else return null;
+  }
+  return c;
+}
+
+function resolvePath(pathStr) {
   if (!pathStr) return null;
   let current;
   const parts = pathStr.split('/').filter(p => p !== '');
@@ -440,345 +507,427 @@ function resolvePathToTarget(pathStr) {
     current = getCurrentDirObj();
   }
   if (!current) return null;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const part = parts[i];
+  for (const part of parts) {
     if (current[part] && typeof current[part] === 'object') current = current[part];
-    else return null;
-  }
-  const targetName = parts[parts.length - 1];
-  return current.hasOwnProperty(targetName) ? current[targetName] : null;
-}
-
-function getCurrentDirObj() {
-  let current = fileSystem["reverse"];
-  if (!current) return null;
-  for (const segment of shellState.path) {
-    if (current[segment] && typeof current[segment] === 'object') current = current[segment];
     else return null;
   }
   return current;
 }
 
-/* =========================
-   CORE FUNCTIONS
-========================= */
-function print(text, type = "normal") {
-  const output = document.getElementById("output");
-  const div = document.createElement("div");
-  const typeClasses = {
-    normal: "text-red-600",
-    success: "text-green-400 font-semibold",
-    error: "text-magenta-500 font-bold",
-    system: "text-yellow-500 italic text-sm",
-    info: "text-cyan-400",
-    command: "text-green-400 font-semibold",
-    dir: "text-cyan-400 font-bold",
-    file: "text-yellow-400",
-    raw: "text-red-600"
+function resolvePathToTarget(pathStr) {
+  if (!pathStr) return null;
+  let current;
+  const parts = pathStr.split('/').filter(p => p !== '');
+  if (pathStr.startsWith('/')) current = fileSystem;
+  else current = getCurrentDirObj();
+  if (!current) return null;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (current[parts[i]] && typeof current[parts[i]] === 'object') current = current[parts[i]];
+    else return null;
+  }
+  const target = parts[parts.length - 1];
+  return current.hasOwnProperty(target) ? current[target] : null;
+}
+
+function getFullPath() {
+  const p = shellState.path.join('/');
+  return p ? `/reverse/${p}` : '/reverse';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+/* =========================================
+   OUTPUT
+========================================= */
+function print(text, type = 'normal', animate = false) {
+  const output = document.getElementById('output');
+  const div = document.createElement('div');
+  const classMap = {
+    normal: 'out-normal', success: 'out-success', error: 'out-error',
+    system: 'out-system', info: 'out-info', command: 'out-command',
+    dir: 'out-dir', file: 'out-file', raw: 'out-normal', dim: 'out-dim', highlight: 'out-highlight',
   };
-  div.className = typeClasses[type] || typeClasses.normal;
+  div.className = classMap[type] || 'out-normal';
+  if (animate) {
+    div.style.opacity = '0';
+    div.style.transform = 'translateY(4px)';
+    div.style.transition = 'all 0.2s ease-out';
+  }
   div.innerHTML = text;
   output.appendChild(div);
+  if (animate) requestAnimationFrame(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; });
   output.scrollTop = output.scrollHeight;
 }
 
+function printLine() { print(''); }
+
 function updatePrompt() {
-  const fullPath = shellState.path.join("/");
-  const displayPath = fullPath === "" ? "/reverse" : `/reverse/${fullPath}`;
-  const promptHTML = `<span class="text-cyan-400" style="text-shadow: 0 0 8px #00ffff;">${CONFIG.USER}</span><span class="text-green-600">@</span><span class="text-magenta-500" style="text-shadow: 0 0 8px #ff00ff;">${CONFIG.HOST}</span><span class="text-cyan-600"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;"> ❯ </span>`;
-  document.getElementById("prompt").innerHTML = promptHTML;
+  const path = getFullPath();
+  document.getElementById('prompt').innerHTML =
+    `<span class="prompt-user">${CONFIG.USER}</span><span class="prompt-at">@</span><span class="prompt-host">${CONFIG.HOST}</span><span class="text-matrix/30">:</span><span class="prompt-path">${path}</span><span class="prompt-arrow">&#10095; </span>`;
+  document.getElementById('status-center-path').textContent = path;
 }
 
-/* =========================
+function updateStatus() {
+  document.getElementById('status-left-cmd-count').textContent = shellState.cmdCount + ' cmds';
+}
+
+/* =========================================
    COMMANDS
-========================= */
+========================================= */
 const commands = {
+
   help: () => {
-    const helpText = `
-<span class="text-green-400 font-bold">AVAILABLE COMMANDS:</span>
-  <span class="text-cyan-400">ls [dir]</span>          List directory contents
-  <span class="text-cyan-400">cd [dir]</span>          Change directory
-  <span class="text-cyan-400">pwd</span>               Print working directory
-  <span class="text-cyan-400">cat [file]</span>        View raw file content
-  <span class="text-cyan-400">view [file]</span>       View file (Markdown supported)
-  <span class="text-cyan-400">echo [text]</span>       Print text
-  <span class="text-cyan-400">date</span>              Show current date/time
-  <span class="text-cyan-400">uname [-a]</span>        System information
-  <span class="text-cyan-400">neofetch</span>          System info with logo
-  <span class="text-cyan-400">clear</span>             Clear terminal
-  <span class="text-cyan-400">whoami</span>            Print current user
-  <span class="text-cyan-400">tree [dir]</span>        Show directory tree
-  <span class="text-cyan-400">find [pattern]</span>    Find files by name
-  <span class="text-cyan-400">history [-c]</span>      Show/clear command history
-  <span class="text-yellow-400">Ctrl+C</span>            Interrupt/kill current input
-`;
-    print(helpText);
+    print(`
+<span class="out-highlight">  ╔══════════════════════════════════════════════════════╗</span>
+<span class="out-highlight">  ║</span>  <span class="out-info font-bold">AVAILABLE COMMANDS</span>                                  <span class="out-highlight">║</span>
+<span class="out-highlight">  ╠══════════════════════════════════════════════════════╣</span>
+<span class="out-highlight">  ║</span>  <span class="text-matrix">Navigation</span>                                            <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">ls [dir]</span>        List directory contents              <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">cd [dir]</span>        Change directory                     <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">pwd</span>             Print working directory              <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">tree [dir]</span>      Show directory tree                  <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">find [pat]</span>      Find files by pattern                <span class="out-highlight">║</span>
+<span class="out-highlight">  ╠══════════════════════════════════════════════════════╣</span>
+<span class="out-highlight">  ║</span>  <span class="text-matrix">File Operations</span>                                       <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">cat [file]</span>      View raw file content               <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">view [file]</span>     View file (Markdown rendered)        <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">head [file]</span>     Show first N lines (default 20)      <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">tail [file]</span>     Show last N lines (default 20)       <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">wc [file]</span>       Word/line/char count                 <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">grep [pat] [file]</span> Search in file                    <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">file [name]</span>      Detect file type                     <span class="out-highlight">║</span>
+<span class="out-highlight">  ╠══════════════════════════════════════════════════════╣</span>
+<span class="out-highlight">  ║</span>  <span class="text-matrix">System</span>                                                <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">whoami</span>          Current user                         <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">uname [-a]</span>      System information                  <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">neofetch</span>        System info with ASCII art           <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">date</span>            Current date/time                    <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">uptime</span>          System uptime                        <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">ps</span>              Process list                         <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">ifconfig</span>        Network interfaces                   <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">ping [host]</span>     Ping a host                          <span class="out-highlight">║</span>
+<span class="out-highlight">  ╠══════════════════════════════════════════════════════╣</span>
+<span class="out-highlight">  ║</span>  <span class="text-matrix">Utilities</span>                                             <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">echo [text]</span>     Print text                           <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">history [-c]</span>    Command history                      <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">clear</span>           Clear terminal                      <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">banner</span>          Show welcome banner                  <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">calc [expr]</span>     Simple calculator                   <span class="out-highlight">║</span>
+<span class="out-highlight">  ║</span>    <span class="out-info">base64 [encode|decode] [text]</span> Base64                     <span class="out-highlight">║</span>
+<span class="out-highlight">  ╚══════════════════════════════════════════════════════╝</span>`, 'raw', true);
   },
 
-  clear: () => { document.getElementById('output').innerHTML = ""; },
-
-  whoami: () => { print(CONFIG.USER, "success"); },
-
-  pwd: () => {
-    const p = shellState.path.join("/");
-    print(p ? `/reverse/${p}` : "/reverse", "info");
+  clear: () => {
+    const output = document.getElementById('output');
+    output.style.opacity = '0';
+    output.style.transition = 'opacity 0.15s';
+    setTimeout(() => { output.innerHTML = ''; output.style.opacity = '1'; }, 150);
   },
 
-  echo: (...args) => { print(args.join(" "), "normal"); },
+  whoami: () => print(`<span class="prompt-user">${CONFIG.USER}</span>`, 'success'),
+  pwd: () => print(getFullPath(), 'info'),
 
-  date: () => { print(new Date().toString(), "info"); },
+  echo: (...args) => {
+    let text = args.join(' ');
+    // Expand $USER, $HOST, $PWD
+    text = text.replace(/\$USER/g, CONFIG.USER).replace(/\$HOST/g, CONFIG.HOST).replace(/\$PWD/g, getFullPath());
+    print(text);
+  },
+
+  date: () => print(new Date().toString(), 'info'),
+
+  uptime: () => {
+    const secs = Math.floor((Date.now() / 1000) - CONFIG.UPTIME);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    print(`up ${h}h ${m}m ${s}s, 1 user, load average: 0.${Math.floor(Math.random()*30)+10}, 0.${Math.floor(Math.random()*20)+5}, 0.${Math.floor(Math.random()*15)+2}`, 'info');
+  },
 
   uname: (...args) => {
-    if (args.includes("-a")) {
-      print("Linux thatnoteasy 6.1.0-generic x86_64 GNU/Linux", "info");
-    } else {
-      print("Linux", "info");
-    }
+    if (args.includes('-a')) {
+      print(`Linux ${CONFIG.HOST} ${CONFIG.KERNEL} #1 SMP PREEMPT_DYNAMIC ${CONFIG.ARCH} GNU/Linux`, 'info');
+    } else { print('Linux', 'info'); }
   },
 
+  calc: (...args) => {
+    const expr = args.join(' ');
+    if (!expr) { print('usage: calc [expression]  e.g. calc 2+2, calc "Math.sqrt(16)"', 'info'); return; }
+    try {
+      // Only allow safe math
+      const safe = expr.replace(/[^0-9+\-*/().%\s]/g, '');
+      if (safe !== expr.trim()) { print('calc: only numeric expressions allowed', 'error'); return; }
+      const result = Function('"use strict"; return (' + safe + ')')();
+      print(`<span class="text-matrix/50">${expr}</span> = <span class="out-info font-bold">${result}</span>`, 'raw');
+    } catch(e) { print(`calc: invalid expression: ${expr}`, 'error'); }
+  },
+
+  base64: (action, ...args) => {
+    const text = args.join(' ');
+    if (!action || !text) { print('usage: base64 [encode|decode] [text]', 'info'); return; }
+    try {
+      if (action === 'encode') print(btoa(text), 'info');
+      else if (action === 'decode') print(atob(text), 'info');
+      else print('base64: use "encode" or "decode"', 'error');
+    } catch(e) { print('base64: invalid input', 'error'); }
+  },
+
+  banner: () => printWelcome(),
+
   neofetch: () => {
-    const ascii = `
-<span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;">
-        .-''''-.
-      .'  _  '.  
-     /   (o)o  \\
-    |   '._.'   |
-     '.        .'
-       '-....-'
-</span>
-<span class="text-green-400" style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);">
-  thatnoteasy@localhost
-  ---------------
-  OS: thatnoteasy.github.io
-  Host: Web Terminal
-  Kernel: JavaScript
-  Shell: bash (custom)
-  Terminal: Browser
-  CPU: Web Assembly
-  Memory: Infinite
+    const uptimeSecs = Math.floor((Date.now() / 1000) - CONFIG.UPTIME);
+    const uh = Math.floor(uptimeSecs / 3600); const um = Math.floor((uptimeSecs % 3600) / 60);
+    const art = `<span class="text-matrix" style="text-shadow:0 0 6px #00ff41;">
+     ██████╗ ██╗     ███╗   ███╗
+    ██╔════╝ ██║     ████╗ ████║
+    ██║  ███╗██║     ██╔████╔██║
+    ██║   ██║██║     ██║╚██╔╝██║
+    ╚██████╔╝███████╗██║ ╚═╝ ██║
+     ╚═════╝ ╚══════╝╚═╝     ╚═╝</span>
+<span class="text-matrix/60 ml-2">
+  <span class="out-info font-bold">${CONFIG.USER}@${CONFIG.HOST}</span>
+  ─────────────────────
+  <span class="text-matrix/40">OS</span>        <span class="text-matrix/70">${CONFIG.OS}</span>
+  <span class="text-matrix/40">Host</span>      <span class="text-matrix/70">GitHub Pages</span>
+  <span class="text-matrix/40">Kernel</span>    <span class="text-matrix/70">${CONFIG.KERNEL}</span>
+  <span class="text-matrix/40">Shell</span>     <span class="text-matrix/70">${CONFIG.SHELL}</span>
+  <span class="text-matrix/40">Terminal</span>  <span class="text-matrix/70">${CONFIG.TERM}</span>
+  <span class="text-matrix/40">CPU</span>       <span class="text-matrix/70">WebAssembly vCPU @ 3.2GHz</span>
+  <span class="text-matrix/40">Memory</span>    <span class="text-matrix/70">∞ MB / ∞ MB</span>
+  <span class="text-matrix/40">Uptime</span>    <span class="text-matrix/70">${uh}h ${um}m</span>
+
+  <span style="color:#ff0040;">██</span><span style="color:#ff6600;">██</span><span style="color:#ffe600;">██</span><span style="color:#00ff41;">██</span><span style="color:#00ffff;">██</span><span style="color:#ff00ff;">██</span><span style="color:#888;">██</span><span style="color:#ccc;">██</span>
 </span>`;
-    print(ascii);
+    print(art);
+  },
+
+  ps: () => {
+    print(`<span class="text-matrix/40">  PID TTY          TIME CMD</span>
+<span class="text-matrix/70">    1 ?        00:00:00 init</span>
+<span class="text-matrix/70">   42 ?        00:00:00 nginx</span>
+<span class="text-matrix/70">  128 pts/0    00:00:00 bash</span>
+<span class="text-matrix/70">  256 pts/0    00:00:00 node</span>
+<span class="out-info">  ${Math.floor(Math.random()*900)+100} pts/0    00:00:00 terminal</span>`, 'raw');
+  },
+
+  ifconfig: () => {
+    print(`<span class="out-info font-bold">eth0:</span> <span class="text-matrix/50">flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span>
+        <span class="text-matrix/40">inet</span> <span class="text-matrix/70">${Math.floor(Math.random()*200)+10}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*254)+1}</span>  <span class="text-matrix/40">netmask 255.255.255.0</span>
+        <span class="text-matrix/40">inet6</span> <span class="text-matrix/70">fe80::1</span>  <span class="text-matrix/40">prefixlen 64</span>
+        <span class="text-matrix/40">ether</span> <span class="text-matrix/70">de:ad:be:ef:ca:fe</span>  <span class="text-matrix/40">txqueuelen 1000</span>
+
+<span class="out-info font-bold">lo:</span> <span class="text-matrix/50">flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536</span>
+        <span class="text-matrix/40">inet</span> <span class="text-matrix/70">127.0.0.1</span>  <span class="text-matrix/40">netmask 255.0.0.0</span>`, 'raw');
+  },
+
+  ping: async (host) => {
+    if (!host) { print('usage: ping [hostname]', 'info'); return; }
+    print(`PING ${host} (${Math.floor(Math.random()*200)+10}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*254)+1}) 56(84) bytes of data.`, 'info');
+    for (let i = 0; i < 4; i++) {
+      await new Promise(r => setTimeout(r, 600));
+      const ms = (Math.random() * 50 + 5).toFixed(1);
+      print(`64 bytes from ${host}: icmp_seq=${i+1} ttl=64 time=<span class="out-info">${ms}</span> ms`, 'normal', true);
+    }
+    print(`\n--- ${host} ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss`, 'system');
   },
 
   ls: (dir) => {
     let targetDir;
     if (dir) {
       targetDir = resolvePath(dir);
-      if (!targetDir) {
-        print(`ls: cannot access '${dir}': No such directory`, "error");
-        return;
-      }
-    } else {
-      targetDir = getCurrentDirObj();
-    }
-    if (!targetDir) return print("Error: Directory corrupted", "error");
-
+      if (!targetDir) { print(`ls: cannot access '${dir}': No such directory`, 'error'); return; }
+    } else { targetDir = getCurrentDirObj(); }
+    if (!targetDir) return print('Error: Directory corrupted', 'error');
     const items = Object.keys(targetDir);
-    if (items.length === 0) {
-      print("(empty directory)", "system");
-      return;
-    }
+    if (items.length === 0) { print('<span class="out-dim">(empty directory)</span>', 'raw'); return; }
 
-    let out = '<div class="flex flex-wrap gap-x-4 gap-y-1">';
+    let out = '<div class="flex flex-wrap gap-x-3 gap-y-1">';
     items.forEach(name => {
       const isDir = typeof targetDir[name] === 'object';
-      const icon = isDir ? "📁" : "📄";
-      const colorClass = isDir ? "text-cyan-400 font-bold" : "text-yellow-400";
-      out += `<span class="${colorClass}" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon} ${name}</span>`;
+      const content = targetDir[name];
+      const size = isDir ? '--' : formatBytes(typeof content === 'string' ? content.length : 0);
+      out += `<span class="${isDir ? 'out-dir' : 'out-file'}" style="${isDir ? 'text-shadow:0 0 6px #00ffff;' : 'text-shadow:0 0 6px #ffe600;'}">${isDir ? '&#128193;' : '&#128196;'} ${name}${isDir ? '/' : ''}</span>`;
     });
     out += '</div>';
     print(out);
   },
 
   cd: (dir) => {
-    if (!dir || dir === "~" || dir === "/") {
-      shellState.path = [];
-    } else if (dir === "..") {
-      if (shellState.path.length > 0) shellState.path.pop();
-    } else if (dir.startsWith('/')) {
-      const parts = dir.split('/').filter(p => p !== '');
+    if (!dir || dir === '~' || dir === '/') { shellState.path = []; }
+    else if (dir === '..') { if (shellState.path.length > 0) shellState.path.pop(); }
+    else if (dir.startsWith('/')) {
+      const parts = dir.split('/').filter(p => p);
       let current = fileSystem;
       const newPath = [];
       for (const part of parts) {
-        if (current[part] && typeof current[part] === 'object') {
-          current = current[part];
-          newPath.push(part);
-        } else {
-          print(`bash: cd: ${dir}: No such file or directory`, "error");
-          return;
-        }
+        if (current[part] && typeof current[part] === 'object') { current = current[part]; newPath.push(part); }
+        else { print(`bash: cd: ${dir}: No such file or directory`, 'error'); return; }
       }
       shellState.path = newPath;
     } else {
       const currentDir = getCurrentDirObj();
       const cleanDir = dir.replace(/\/$/, '');
-      if (currentDir[cleanDir] && typeof currentDir[cleanDir] === 'object') {
-        shellState.path.push(cleanDir);
-      } else {
-        print(`bash: cd: ${dir}: No such file or directory`, "error");
-        return;
-      }
+      if (currentDir && currentDir[cleanDir] && typeof currentDir[cleanDir] === 'object') shellState.path.push(cleanDir);
+      else { print(`bash: cd: ${dir}: No such file or directory`, 'error'); return; }
     }
     updatePrompt();
   },
 
-  cat: async (file) => {
-    if (!file) {
-      print("usage: cat [filename]", "info");
-      return;
-    }
+  cat: (file) => {
+    if (!file) { print('usage: cat [filename]', 'info'); return; }
     const target = resolvePathToTarget(file);
-    if (target === null) {
-      print(`cat: ${file}: No such file or directory`, "error");
-    } else if (typeof target === 'object') {
-      print(`cat: ${file}: Is a directory`, "error");
-    } else {
-      const safeContent = target.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      print(`<pre class="text-yellow-400 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(255, 255, 0, 0.3);">${safeContent}</pre>`, "raw");
-    }
+    if (target === null) { print(`cat: ${file}: No such file or directory`, 'error'); return; }
+    if (typeof target === 'object') { print(`cat: ${file}: Is a directory`, 'error'); return; }
+    const safe = target.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    print(`<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">${safe}</pre>`, 'raw');
   },
 
-  view: async (file) => {
-    if (!file) {
-      print("usage: view [filename]", "info");
-      return;
-    }
+  head: (file, n) => {
+    if (!file) { print('usage: head [-n N] [file]', 'info'); return; }
+    const lines = parseInt(n) || 20;
     const target = resolvePathToTarget(file);
-    if (target === null) {
-      print(`view: ${file}: No such file or directory`, "error");
-      return;
-    }
-    if (typeof target === 'object') {
-      print(`view: ${file}: Is a directory`, "error");
-      return;
-    }
+    if (target === null) { print(`head: ${file}: No such file`, 'error'); return; }
+    if (typeof target === 'object') { print(`head: ${file}: Is a directory`, 'error'); return; }
+    const safe = target.split('\n').slice(0, lines).join('\n').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    print(`<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">${safe}</pre>`, 'raw');
+  },
+
+  tail: (file, n) => {
+    if (!file) { print('usage: tail [-n N] [file]', 'info'); return; }
+    const lines = parseInt(n) || 20;
+    const target = resolvePathToTarget(file);
+    if (target === null) { print(`tail: ${file}: No such file`, 'error'); return; }
+    if (typeof target === 'object') { print(`tail: ${file}: Is a directory`, 'error'); return; }
+    const all = target.split('\n');
+    const safe = all.slice(-lines).join('\n').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    print(`<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">${safe}</pre>`, 'raw');
+  },
+
+  wc: (file) => {
+    if (!file) { print('usage: wc [file]', 'info'); return; }
+    const target = resolvePathToTarget(file);
+    if (target === null) { print(`wc: ${file}: No such file`, 'error'); return; }
+    if (typeof target === 'object') { print(`wc: ${file}: Is a directory`, 'error'); return; }
+    const l = target.split('\n').length;
+    const w = target.trim().split(/\s+/).length;
+    const c = target.length;
+    print(`  <span class="out-info">${l}</span>  <span class="out-info">${w}</span> <span class="out-info">${c}</span> <span class="out-file">${file}</span>`, 'raw');
+  },
+
+  grep: (pattern, file) => {
+    if (!pattern || !file) { print('usage: grep [pattern] [file]', 'info'); return; }
+    const target = resolvePathToTarget(file);
+    if (target === null) { print(`grep: ${file}: No such file`, 'error'); return; }
+    if (typeof target === 'object') { print(`grep: ${file}: Is a directory`, 'error'); return; }
+    const lines = target.split('\n').filter(l => l.toLowerCase().includes(pattern.toLowerCase()));
+    if (lines.length === 0) { print(`(no matches for '${pattern}')`, 'dim'); return; }
+    const safe = lines.join('\n').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const highlighted = safe.replace(new RegExp(`(${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<span class="bg-neonRed/30 text-neonRed font-bold">$1</span>');
+    print(`<pre class="whitespace-pre-wrap text-xs leading-relaxed">${highlighted}</pre>`, 'raw');
+  },
+
+  file: (name) => {
+    if (!name) { print('usage: file [name]', 'info'); return; }
+    const target = resolvePathToTarget(name);
+    if (target === null) { print(`file: ${name}: No such file`, 'error'); return; }
+    if (typeof target === 'object') { print(`${name}: directory`, 'info'); return; }
+    const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+    const types = { md: 'Markdown text', txt: 'ASCII text', json: 'JSON data', js: 'JavaScript source', py: 'Python script', sh: 'Bourne-Again shell script', html: 'HTML document', css: 'CSS stylesheet', xml: 'XML document', yaml: 'YAML data', yml: 'YAML data', c: 'C source', cpp: 'C++ source', rs: 'Rust source', go: 'Go source', java: 'Java source', rb: 'Ruby script', php: 'PHP source', sql: 'SQL script', log: 'Log file' };
+    print(`${name}: ${types[ext] || 'data'}`, 'info');
+  },
+
+  view: (file) => {
+    if (!file) { print('usage: view [filename]', 'info'); return; }
+    const target = resolvePathToTarget(file);
+    if (target === null) { print(`view: ${file}: No such file`, 'error'); return; }
+    if (typeof target === 'object') { print(`view: ${file}: Is a directory`, 'error'); return; }
 
     const content = target;
     currentFileContent = content;
-
     const displayName = file.split('/').pop();
     const ext = displayName.includes('.') ? displayName.split('.').pop().toLowerCase() : 'txt';
-    const icon = (ext === 'md' || ext === 'markdown') ? '📝' : '📄';
-
-    const fileSize = (content.length / 1024).toFixed(2);
+    const icons = { md: '&#128221;', txt: '&#128196;', json: '&#128203;', js: '&#9889;', py: '&#128013;', sh: '&#128424;', html: '&#127760;', css: '&#127912;', log: '&#128203;', default: '&#128196;' };
 
     document.getElementById('modal-title').textContent = displayName;
     document.getElementById('modal-title').setAttribute('data-text', displayName);
-    document.getElementById('modal-icon').textContent = icon;
+    document.getElementById('modal-icon').innerHTML = icons[ext] || icons.default;
     document.getElementById('modal-ext-badge').textContent = `.${ext}`;
-    document.getElementById('modal-path').textContent = shellState.path.length > 0 
-      ? `/reverse/${shellState.path.join("/")}/${file}` 
-      : `/reverse/${file}`;
-    document.getElementById('modal-size').textContent = `${fileSize} KB`;
+    document.getElementById('modal-path').textContent = getFullPath() + '/' + file;
+    document.getElementById('modal-size').textContent = formatBytes(content.length);
 
-    // CUSTOM RENDERER
-    const html = marked.parse(content);
-    document.getElementById('modal-content').innerHTML = html;
-
-    // Raw view + line numbers
+    document.getElementById('modal-content').innerHTML = marked.parse(content);
     document.getElementById('modal-raw-pre').textContent = content;
-    const linesCount = content.split('\n').length;
-    document.getElementById('raw-line-numbers').innerHTML = Array.from(
-      { length: linesCount }, (_, i) => `<span class="block">${i + 1}</span>`
-    ).join('');
+    const lineCount = content.split('\n').length;
+    document.getElementById('raw-line-numbers').innerHTML = Array.from({ length: lineCount }, (_, i) => `<span class="block">${i + 1}</span>`).join('');
 
-    // Stats
     const words = content.trim().split(/\s+/).length;
-    document.getElementById('file-stats').innerHTML = `
-      <span>Lines: <span class="text-cyan-400">${linesCount}</span></span>
-      <span class="text-cyan-700">•</span>
-      <span>Words: <span class="text-cyan-400">${words}</span></span>
-    `;
+    document.getElementById('file-stats').innerHTML = `<span>L:<span class="text-matrix/60">${lineCount}</span></span><span>W:<span class="text-matrix/60">${words}</span></span><span>${formatBytes(content.length)}</span>`;
 
     document.getElementById('modal-content').classList.remove('hidden');
     document.getElementById('modal-raw').classList.add('hidden');
-    document.getElementById('modal-status').textContent = 'READY • RENDERED';
+    document.getElementById('modal-status').textContent = 'RENDERED';
 
-    setTimeout(() => {
-      document.querySelectorAll('#modal-content pre code').forEach((block) => {
-        hljs.highlightElement(block);
-      });
-    }, 10);
-
+    setTimeout(() => { document.querySelectorAll('#modal-content pre code').forEach(b => hljs.highlightElement(b)); }, 10);
     document.getElementById('file-modal').classList.remove('hidden');
-    print(`[View] Opening <span class="text-yellow-400">${displayName}</span>...`, "info");
+    print(`Opening <span class="out-file">${displayName}</span>...`, 'info');
   },
 
-  tree: (dir = ".") => {
-    const currentDir = dir === "." ? getCurrentDirObj() : fileSystem;
+  tree: (dir = '.') => {
+    const currentDir = dir === '.' ? getCurrentDirObj() : fileSystem;
     const lines = [];
-    const buildTree = (obj, prefix = "", isLast = true) => {
+    const buildTree = (obj, prefix = '', isLast = true) => {
       const keys = Object.keys(obj).sort();
       keys.forEach((key, idx) => {
-        const isLastItem = idx === keys.length - 1;
+        const last = idx === keys.length - 1;
         const isDir = typeof obj[key] === 'object';
-        const connector = isLastItem ? "└── " : "├── ";
-        const line = prefix + connector + key;
-        const className = isDir ? 'text-cyan-400 font-semibold' : 'text-yellow-400';
-        const style = isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;';
-        lines.push(`<span class="${className}" style="${style}">${line}</span>`);
-        if (isDir) {
-          const newPrefix = prefix + (isLastItem ? "    " : "│   ");
-          buildTree(obj[key], newPrefix, isLastItem);
-        }
+        const connector = last ? '&#9492;&#9472;&#9472; ' : '&#9500;&#9472;&#9472; ';
+        const cls = isDir ? 'out-dir' : 'out-file';
+        lines.push(`<span class="${cls}" style="${isDir ? 'text-shadow:0 0 4px #00ffff;' : ''}">${prefix}${connector}${key}${isDir ? '/' : ''}</span>`);
+        if (isDir) buildTree(obj[key], prefix + (last ? '&nbsp;&nbsp;&nbsp;&nbsp; ' : '&#9474;&nbsp;&nbsp;&nbsp; '), last);
       });
     };
     buildTree(currentDir);
-    if (lines.length === 0) {
-      print("(empty)", "system");
-    } else {
-      print(lines.join('<br>'), "raw");
-    }
+    print(lines.length === 0 ? '<span class="out-dim">(empty)</span>' : lines.join('<br>'), 'raw');
   },
 
   find: (pattern) => {
-    if (!pattern) {
-      print("usage: find [pattern]", "info");
-      return;
-    }
+    if (!pattern) { print('usage: find [pattern]', 'info'); return; }
     const results = [];
-    const search = (obj, path = "") => {
+    const search = (obj, path = '') => {
       for (const key in obj) {
-        const currentPath = path ? path + "/" + key : key;
-        if (key.includes(pattern)) {
-          const isDir = typeof obj[key] === 'object';
-          results.push({ name: currentPath, isDir });
-        }
-        if (typeof obj[key] === 'object') search(obj[key], currentPath);
+        const cp = path ? path + '/' + key : key;
+        if (key.toLowerCase().includes(pattern.toLowerCase())) results.push({ name: cp, isDir: typeof obj[key] === 'object' });
+        if (typeof obj[key] === 'object') search(obj[key], cp);
       }
     };
     search(fileSystem);
-    if (results.length === 0) {
-      print(`find: No files matching '${pattern}'`, "error");
-    } else {
-      results.forEach(r => {
-        const color = r.isDir ? "text-cyan-400 font-semibold" : "text-yellow-400";
-        print(`<span class="${color}" style="${r.isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${r.name}${r.isDir ? '/' : ''}</span>`);
-      });
-    }
+    if (results.length === 0) { print(`find: no matches for '${pattern}'`, 'error'); }
+    else results.forEach(r => print(`<span class="${r.isDir ? 'out-dir' : 'out-file'}">${r.name}${r.isDir ? '/' : ''}</span>`, 'normal', true));
   },
 
   history: (...args) => {
-    if (args.includes("-c")) {
-      shellState.history = [];
-      shellState.historyIndex = -1;
-      print("History cleared", "success");
-    } else if (shellState.history.length === 0) {
-      print("No history", "system");
-    } else {
-      shellState.history.forEach((cmd, i) => {
-        print(`  ${i + 1}  ${cmd}`, "normal");
-      });
-    }
-  }
+    if (args.includes('-c')) { shellState.history = []; shellState.historyIndex = -1; print('History cleared', 'success'); return; }
+    if (shellState.history.length === 0) { print('<span class="out-dim">(empty history)</span>', 'raw'); return; }
+    shellState.history.forEach((cmd, i) => print(`  <span class="out-dim">${String(i + 1).padStart(4, ' ')}</span>  ${cmd}`, 'raw'));
+  },
+
+  // Aliases
+  ll: () => commands.ls(),
+  la: () => commands.ls(),
+  ..: () => commands.cd('..'),
 };
 
-/* =========================
+/* =========================================
    MODAL FUNCTIONS
-========================= */
+========================================= */
 function closeFileModal() {
   document.getElementById('file-modal').classList.add('hidden');
-  currentFileContent = "";
+  currentFileContent = '';
   document.getElementById('modal-content').classList.remove('hidden');
   document.getElementById('modal-raw').classList.add('hidden');
 }
@@ -786,268 +935,249 @@ function closeFileModal() {
 function toggleRawView() {
   const rendered = document.getElementById('modal-content');
   const raw = document.getElementById('modal-raw');
-  const isCurrentlyRaw = !raw.classList.contains('hidden');
-
-  if (isCurrentlyRaw) {
-    raw.classList.add('hidden');
-    rendered.classList.remove('hidden');
-    document.getElementById('modal-status').textContent = 'READY • RENDERED';
+  const isRaw = !raw.classList.contains('hidden');
+  if (isRaw) {
+    raw.classList.add('hidden'); rendered.classList.remove('hidden');
+    document.getElementById('modal-status').textContent = 'RENDERED';
     document.getElementById('raw-btn-text').textContent = 'Raw';
-    document.getElementById('view-mode-icon').textContent = '🔍';
   } else {
-    rendered.classList.add('hidden');
-    raw.classList.remove('hidden');
-    document.getElementById('modal-status').textContent = 'READY • RAW';
+    rendered.classList.add('hidden'); raw.classList.remove('hidden');
+    document.getElementById('modal-status').textContent = 'RAW';
     document.getElementById('raw-btn-text').textContent = 'Rendered';
-    document.getElementById('view-mode-icon').textContent = '📜';
   }
 }
 
 function copyModalContent() {
   if (!currentFileContent) return;
-  navigator.clipboard.writeText(currentFileContent).then(() => {
-    print("✓ Raw content copied to clipboard!", "success");
-  }).catch(() => {
-    print("❌ Failed to copy", "error");
-  });
+  navigator.clipboard.writeText(currentFileContent).then(() => print('Copied to clipboard', 'success')).catch(() => print('Copy failed', 'error'));
 }
 
 function downloadCurrentFile() {
   if (!currentFileContent) return;
-  const title = document.getElementById('modal-title').textContent || 'writeup';
-  const ext = document.getElementById('modal-ext-badge').textContent.replace('.', '') || 'md';
-  const filename = `${title}.${ext}`;
-
-  const blob = new Blob([currentFileContent], { type: 'text/markdown' });
+  const title = document.getElementById('modal-title').textContent || 'file';
+  const ext = (document.getElementById('modal-ext-badge').textContent || '.txt').replace('.', '');
+  const blob = new Blob([currentFileContent], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
+  a.href = url; a.download = `${title}.${ext}`; a.click();
   URL.revokeObjectURL(url);
-
-  print(`⬇️ Downloaded <span class="text-emerald-400">${filename}</span>`, "success");
+  print(`Downloaded <span class="out-info">${title}.${ext}</span>`, 'success');
 }
 
-/* =========================
+/* =========================================
    KEYBOARD HANDLER
-========================= */
+========================================= */
 function handleKey(e) {
-  const inputField = document.getElementById("cmd");
+  const input = document.getElementById('cmd');
 
-  if (e.key === "Tab") {
+  // Tab completion
+  if (e.key === 'Tab') {
     e.preventDefault();
-    const input = inputField.value;
-    const cursorPos = inputField.selectionStart;
-    const beforeCursor = input.slice(0, cursorPos);
-    const afterCursor = input.slice(cursorPos);
-    const words = beforeCursor.split(/\s+/);
+    const val = input.value;
+    const cursorPos = input.selectionStart;
+    const before = val.slice(0, cursorPos);
+    const words = before.split(/\s+/);
     const lastWord = words[words.length - 1] || '';
-    
-    const isCmdPosition = words.length === 1 && beforeCursor.trim() === lastWord;
+    const isCmdPos = words.length <= 1 && before.trim() === lastWord;
     const cmd = words[0]?.toLowerCase();
-    const isPathArg = words.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(cmd);
-    
+    const isPathArg = words.length === 2 && ['cat','view','cd','tree','find','ls','head','tail','wc','grep','file'].includes(cmd);
+
     let matches = [];
-    let completionType = 'cmd';
-    
-    if (isCmdPosition) {
-      const cmds = Object.keys(commands);
-      matches = cmds.filter(c => c.toLowerCase().startsWith(lastWord.toLowerCase()));
-      completionType = 'cmd';
+    if (isCmdPos) {
+      matches = Object.keys(commands).filter(c => c.startsWith(lastWord.toLowerCase()));
     } else if (isPathArg) {
-      let currentDir = getCurrentDirObj();
-      let searchPath = lastWord;
-      const pathParts = searchPath.split("/");
-      const partialName = pathParts.pop();
-      
-      if (pathParts.length > 0 && pathParts[0] !== "") {
-        let tempDir = currentDir;
-        for (const p of pathParts) {
-          const dirKey = Object.keys(tempDir).find(k => k.toLowerCase() === p.toLowerCase() && typeof tempDir[k] === 'object');
-          if (dirKey) {
-            tempDir = tempDir[dirKey];
-          } else {
-            tempDir = null;
-            break;
-          }
-        }
-        if (tempDir) currentDir = tempDir;
-      } else if (pathParts.length > 0 && pathParts[0] === "") {
-        let tempDir = fileSystem;
-        for (let i = 1; i < pathParts.length; i++) {
-          const p = pathParts[i];
-          const dirKey = Object.keys(tempDir).find(k => k.toLowerCase() === p.toLowerCase() && typeof tempDir[k] === 'object');
-          if (dirKey) {
-            tempDir = tempDir[dirKey];
-          } else {
-            tempDir = null;
-            break;
-          }
-        }
-        if (tempDir) currentDir = tempDir;
+      let dir = getCurrentDirObj();
+      const parts = lastWord.split('/');
+      const partial = parts.pop();
+      if (parts.length > 0 && parts[0]) {
+        let temp = dir;
+        for (const p of parts) { if (temp && temp[p] && typeof temp[p] === 'object') temp = temp[p]; else { temp = null; break; } }
+        if (temp) dir = temp;
       }
-      
-      if (currentDir) {
-        const entries = Object.keys(currentDir);
-        matches = entries
-          .filter(name => name.toLowerCase().startsWith(partialName.toLowerCase()))
-          .map(name => {
-            const isDir = typeof currentDir[name] === 'object';
-            return { name, display: name + (isDir ? '/' : '') };
-          });
-        const prefixPath = pathParts.length > 0 ? pathParts.join("/") + "/" : "";
-        matches = matches.map(m => ({ ...m, full: prefixPath + m.display }));
+      if (dir) {
+        const prefix = parts.length > 0 ? parts.join('/') + '/' : '';
+        matches = Object.keys(dir).filter(n => n.toLowerCase().startsWith(partial.toLowerCase())).map(n => {
+          const isDir = typeof dir[n] === 'object';
+          return { display: n + (isDir ? '/' : ''), full: prefix + n + (isDir ? '/' : '') };
+        });
       }
-      completionType = 'path';
     }
-    
-    const currentInputContext = beforeCursor + '|' + afterCursor;
+
     const { completion } = shellState;
-    
-    if (completion.input === currentInputContext && completion.matches.length > 0) {
+    const ctx = before + '|' + val.slice(cursorPos);
+    if (completion.input === ctx && completion.matches.length > 0) {
       completion.index = (completion.index + 1) % completion.matches.length;
     } else {
-      completion.input = currentInputContext;
-      completion.matches = matches;
-      completion.index = 0;
+      completion.input = ctx; completion.matches = matches; completion.index = 0;
     }
-    
+
     if (completion.matches.length > 0) {
-      const selected = completion.matches[completion.index];
-      let replacement = completionType === 'cmd' ? selected : selected.full;
-      const newBefore = beforeCursor.slice(0, beforeCursor.length - lastWord.length) + replacement;
-      inputField.value = newBefore + afterCursor;
-      inputField.setSelectionRange(newBefore.length, newBefore.length);
+      const sel = isCmdPos ? completion.matches[completion.index] : completion.matches[completion.index].full;
+      const newBefore = before.slice(0, before.length - lastWord.length) + sel;
+      input.value = newBefore + val.slice(cursorPos);
+      input.setSelectionRange(newBefore.length, newBefore.length);
     }
-    
-    if (completion.matches.length > 1 && completion.index === 0 && completion.input === currentInputContext) {
+
+    if (completion.matches.length > 1 && completion.index === 0) {
       const suggestions = completion.matches.map(m => {
-        const display = completionType === 'cmd' ? m : m.display;
-        const isDir = display.endsWith('/');
-        return `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'}" style="text-shadow: 0 0 6px ${isDir ? 'rgba(0, 255, 255, 0.5)' : 'rgba(255, 255, 0, 0.5)'};">${display}</span>`;
-      }).join("<span class='text-magenta-700 mx-2'>|</span>");
-      print(suggestions, "raw");
+        const display = isCmdPos ? m : m.display;
+        return `<span class="${display.endsWith('/') ? 'out-dir' : 'out-file'}">${display}</span>`;
+      }).join('<span class="out-dim mx-1">|</span>');
+      print(suggestions, 'raw');
     }
     return;
   }
 
-  if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
+  // Ctrl+C
+  if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    print("^C", "error");
-    inputField.value = "";
+    print('^C', 'error');
+    input.value = '';
     return;
   }
 
-  if (e.key === "ArrowUp") {
+  // Ctrl+L = clear
+  if (e.key === 'l' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    if (shellState.historyIndex > 0) {
-      shellState.historyIndex--;
-      inputField.value = shellState.history[shellState.historyIndex];
-    }
-  } else if (e.key === "ArrowDown") {
-    e.preventDefault();
-    if (shellState.historyIndex < shellState.history.length - 1) {
-      shellState.historyIndex++;
-      inputField.value = shellState.history[shellState.historyIndex];
-    } else {
-      shellState.historyIndex = shellState.history.length;
-      inputField.value = "";
-    }
-  } else if (e.key === "Enter") {
-    const input = inputField.value.trim();
-    if (!input) return;
+    commands.clear();
+    return;
+  }
 
-    const currentPath = shellState.path.join("/") || "reverse";
-    print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:/${currentPath}$</span> <span class="text-cyan-400">${input}</span>`, "raw");
-    
-    shellState.history.push(input);
+  // Arrow Up/Down history
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (shellState.historyIndex > 0) { shellState.historyIndex--; input.value = shellState.history[shellState.historyIndex]; }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (shellState.historyIndex < shellState.history.length - 1) { shellState.historyIndex++; input.value = shellState.history[shellState.historyIndex]; }
+    else { shellState.historyIndex = shellState.history.length; input.value = ''; }
+  }
+
+  // Enter
+  if (e.key === 'Enter') {
+    const val = input.value.trim();
+    if (!val) return;
+
+    print(`<span class="out-command"><span class="prompt-user">${CONFIG.USER}</span><span class="prompt-at">@</span><span class="prompt-host">${CONFIG.HOST}</span><span class="text-matrix/30">:</span><span class="prompt-path">${getFullPath()}</span><span class="prompt-arrow">&#10095;</span></span> <span class="text-matrix">${val.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`, 'raw');
+
+    shellState.history.push(val);
     shellState.historyIndex = shellState.history.length;
+    shellState.cmdCount++;
 
-    const args = input.split(/\s+/);
+    const args = val.split(/\s+/);
     const cmd = args.shift().toLowerCase();
+    // Alias resolution
+    const resolvedCmd = cmd === 'll' || cmd === 'la' ? 'ls' : cmd === '..' ? 'cd' : cmd;
+    const resolvedArgs = cmd === '..' ? ['..'] : args;
 
-    if (commands[cmd]) {
-      commands[cmd](...args);
+    if (commands[resolvedCmd]) {
+      commands[resolvedCmd](...resolvedArgs);
     } else {
-      print(`bash: ${cmd}: command not found`, "error");
+      print(`bash: ${cmd}: command not found`, 'error');
     }
 
-    inputField.value = "";
+    input.value = '';
+    updateStatus();
   }
 }
 
-/* =========================
-   INIT & BOOT
-========================= */
-window.addEventListener('load', async () => {
-  await playBootSequence();
-  fileSystem = await loadFileSystem();
-  initTerminal();
+// Global shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeFileModal();
+  if (e.ctrlKey && e.key === 'r' && !document.getElementById('file-modal').classList.contains('hidden')) { e.preventDefault(); toggleRawView(); }
 });
 
-function playBootSequence() {
+/* =========================================
+   BOOT SEQUENCE
+========================================= */
+async function playBootSequence() {
   return new Promise(resolve => {
-    const bootLog = document.getElementById("boot-log");
-    const lines = [
-      `[ ${new Date().toLocaleTimeString()}] Loading Linux kernel 6.1.0...`,
-      "[ OK ] Started Dispatch Password Requests to Console Key Watch.",
-      "[ OK ] Reached target Graphical Interface.",
-      "[ OK ] Started Network Manager.",
-      `[ OK ] Logged in as ${CONFIG.USER}`
+    const log = document.getElementById('boot-log');
+    const statusEl = document.getElementById('boot-status');
+    const percentEl = document.getElementById('boot-percent');
+    const progress = document.getElementById('boot-progress');
+
+    const msgs = [
+      { text: `[ ${new Date().toLocaleTimeString()} ] BIOS POST... OK`, pct: 5, status: 'BIOS check' },
+      { text: '[ OK ] Loading kernel ' + CONFIG.KERNEL + '...', pct: 12, status: 'Loading kernel' },
+      { text: '[ OK ] Mounting root filesystem...', pct: 20, status: 'Mounting filesystem' },
+      { text: '[ OK ] Starting udev daemon...', pct: 28, status: 'udev' },
+      { text: '[ OK ] Bringing up network interfaces...', pct: 38, status: 'Network' },
+      { text: '[ OK ] Starting firewall (iptables)...', pct: 45, status: 'Firewall' },
+      { text: '[ OK ] Loading encryption modules...', pct: 55, status: 'Crypto modules' },
+      { text: '[ OK ] Initializing random number generator...', pct: 62, status: 'RNG' },
+      { text: '[ OK ] Starting SSH daemon...', pct: 70, status: 'SSH' },
+      { text: '[ OK ] Starting web terminal service...', pct: 80, status: 'Terminal service' },
+      { text: `[ OK ] Authentication: ${CONFIG.USER} granted access`, pct: 90, status: 'Authenticating' },
+      { text: '[ OK ] System ready.', pct: 100, status: 'Complete' },
     ];
-    
+
     let i = 0;
     const interval = setInterval(() => {
-      if (i < lines.length) {
-        bootLog.innerText += lines[i] + "\n";
+      if (i < msgs.length) {
+        const m = msgs[i];
+        const line = document.createElement('div');
+        line.className = 'animate-matrix-fade';
+        line.textContent = m.text;
+        log.appendChild(line);
+        statusEl.textContent = m.status;
+        percentEl.textContent = m.pct + '%';
+        progress.style.width = m.pct + '%';
+        log.scrollTop = log.scrollHeight;
         i++;
       } else {
         clearInterval(interval);
         setTimeout(() => {
           const screen = document.getElementById('boot-screen');
+          screen.style.transition = 'opacity 0.8s ease-out';
           screen.style.opacity = '0';
-          setTimeout(() => {
-            screen.style.display = 'none';
-            resolve();
-          }, 1000);
-        }, 500);
+          setTimeout(() => { screen.style.display = 'none'; resolve(); }, 800);
+        }, 400);
       }
-    }, 400);
+    }, 200);
   });
+}
+
+/* =========================================
+   INIT
+========================================= */
+function printWelcome() {
+  const banner = `
+<span class="text-matrix" style="text-shadow: 0 0 8px #00ff41;">
+  &#9616;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9616;
+  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██╗</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">██╗</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██████╗</span>&nbsp;<span style="color:#00ff41;">███████╗</span>&nbsp;<span style="color:#ff6600;">███████╗</span>&nbsp;&nbsp;&nbsp;&#9616;
+  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">██║</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██╔══██╗</span><span style="color:#00ff41;">██╔════╝</span>&nbsp;<span style="color:#ff6600;">██╔════╝</span>&nbsp;&nbsp;&nbsp;&#9616;
+  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">█████╗██║</span>&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██████╔╝</span><span style="color:#00ff41;">███████╗</span>&nbsp;<span style="color:#ff6600;">███████╗</span>&nbsp;&nbsp;&nbsp;&#9616;
+  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">╚════╝██║</span>&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██╔═══╝ </span><span style="color:#00ff41;">╚════██║</span>&nbsp;<span style="color:#ff6600;">╚════██║</span>&nbsp;&nbsp;&nbsp;&#9616;
+  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">██║</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">██║</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">██║</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ff41;">███████║</span><span style="color:#ff6600;">███████║</span>&nbsp;&nbsp;&nbsp;&#9616;
+  &#9616;&nbsp;&nbsp;&nbsp;<span style="color:#ff00ff;text-shadow:0 0 8px #ff00ff;">╚═╝</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ffff;text-shadow:0 0 8px #00ffff;">╚═╝</span>&nbsp;&nbsp;<span style="color:#ffe600;text-shadow:0 0 8px #ffe600;">╚═╝</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#00ff41;">╚══════╝</span><span style="color:#ff6600;">╚══════╝</span>&nbsp;&nbsp;&nbsp;&#9616;
+  &#9616;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9616;
+</span>
+<span class="out-highlight font-bold mt-2">  Reverse Engineering Writeups Terminal</span>
+<span class="text-matrix/50 text-xs mt-1">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span>
+<span class="out-dim text-xs mt-1">  ────────────────────────────────────────────</span>
+<span class="text-matrix/60 text-xs mt-2">  Type <span class="out-info">'help'</span> for commands &bull; <span class="out-info">'neofetch'</span> for system info</span>
+<span class="out-dim text-xs">  <span class="text-neonRed/60">&#9679;</span> Tab completion enabled &bull; Ctrl+C to cancel &bull; Ctrl+L to clear</span>`;
+  print(banner, 'raw');
 }
 
 function initTerminal() {
   printWelcome();
   document.getElementById('cmd').focus();
   updatePrompt();
+  updateStatus();
 }
 
-function printWelcome() {
-  const tuxArt = `
-<span class=\"text-cyan-400\" style=\"text-shadow: 0 0 8px #00ffff;\">
-        .--.
-       |o_o |
-       |:_/ |
-      //   \\\\ \\
-     (|     | )
-    /'\\_   _/\`
-    \\\\___)=(___/
-</span>
-<span class="text-magenta-500 font-bold" style="text-shadow: 0 0 8px #ff00ff;">Reverse Engineering Writeups</span>
-<span class="text-blue-400">Platforms: Linux, Windows, Android</span><br>
-<span class="text-yellow-400 mt-2">Type <span class="text-cyan-400" style="text-shadow: 0 0 6px #00ffff;\">'help'</span> for a list of commands.</span><br>
-`;
-  print(tuxArt, "system");
-}
+window.addEventListener('load', async () => {
+  await playBootSequence();
+  fileSystem = await loadFileSystem();
+  initTerminal();
+});
 
-/* Global keyboard shortcuts */
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeFileModal();
-  if (event.ctrlKey && event.key === 'r') {
-    event.preventDefault();
-    if (!document.getElementById('file-modal').classList.contains('hidden')) toggleRawView();
-  }
+// Keep focus on input
+document.addEventListener('click', () => {
+  const modal = document.getElementById('file-modal');
+  if (modal.classList.contains('hidden')) document.getElementById('cmd').focus();
 });
 </script>
 
