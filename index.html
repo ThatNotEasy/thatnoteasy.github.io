@@ -253,7 +253,7 @@ async function loadFileSystem() {
     STATE
  ========================= */
 let shellState = {
-  path: ["reverse"],
+  path: [],
   history: [], 
   historyIndex: -1, 
 };
@@ -266,7 +266,9 @@ let fileSystem = {};
 
 // Helper to get the object reference of the current directory
 function getCurrentDirObj() {
-  let current = fileSystem;
+  // Root is always fileSystem.reverse
+  let current = fileSystem["reverse"];
+  if (!current) return null;
   for (let i = 0; i < shellState.path.length; i++) {
     const segment = shellState.path[i];
     if (current[segment] && typeof current[segment] === 'object') {
@@ -373,8 +375,8 @@ function print(text, type = "normal") {
 }
 
 function updatePrompt() {
-  const fullPath = shellState.path.join("/") || "/";
-  const displayPath = fullPath === "" ? "~" : `/reverse/${fullPath}`;
+  const fullPath = shellState.path.join("/");
+  const displayPath = fullPath === "" ? "/reverse" : `/reverse/${fullPath}`;
   
   const promptHTML = `<span class="text-cyan-400" style="text-shadow: 0 0 8px #00ffff;">${CONFIG.USER}</span><span class="text-green-600">@</span><span class="text-magenta-500" style="text-shadow: 0 0 8px #ff00ff;">${CONFIG.HOST}</span><span class="text-cyan-600"> in </span><span class="text-yellow-400" style="text-shadow: 0 0 8px #ffff00;">${displayPath}</span><span class="text-green-400" style="text-shadow: 0 0 8px #00ff41;"> ❯ </span>`;
   
@@ -418,7 +420,7 @@ const commands = {
 
   pwd: () => {
     const p = shellState.path.join("/");
-    print(p || "/", "info");
+    print(p ? `/reverse/${p}` : "/reverse", "info");
   },
 
   echo: (...args) => {
@@ -776,8 +778,8 @@ function handleKey(e) {
     if (!input) return;
 
     // Echo command
-    const currentPath = shellState.path.join("/") || "/";
-    print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:${currentPath}$</span> <span class="text-cyan-400">${input}</span>`, "raw");
+    const currentPath = shellState.path.join("/") || "reverse";
+    print(`<span class="text-green-400 font-bold" style="text-shadow: 0 0 8px #00ff41;">${CONFIG.USER}@${CONFIG.HOST}:/${currentPath}$</span> <span class="text-cyan-400">${input}</span>`, "raw");
     
     shellState.history.push(input);
     shellState.historyIndex = shellState.history.length;
