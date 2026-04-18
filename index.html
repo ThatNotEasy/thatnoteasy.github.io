@@ -274,121 +274,6 @@ let shellState = {
   }
 };
 
-// Inside handleKey, replace the Tab block with:
-if (e.key === "Tab") {
-  e.preventDefault();
-  const inputField = document.getElementById("cmd");
-  const input = inputField.value;
-  const cursorPos = inputField.selectionStart;
-  
-  // Determine the word being completed
-  const beforeCursor = input.slice(0, cursorPos);
-  const afterCursor = input.slice(cursorPos);
-  const words = beforeCursor.split(/\s+/);
-  const lastWord = words[words.length - 1] || '';
-  
-  const isCmdPosition = words.length === 1 && beforeCursor.trim() === lastWord;
-  const cmd = words[0]?.toLowerCase();
-  const isPathArg = words.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(cmd);
-  
-  let matches = [];
-  let completionType = 'cmd'; // or 'path'
-  
-  if (isCmdPosition) {
-    // Command completion
-    const cmds = Object.keys(commands);
-    matches = cmds.filter(c => c.toLowerCase().startsWith(lastWord.toLowerCase()));
-    completionType = 'cmd';
-  } else if (isPathArg) {
-    // Path completion (case‑insensitive)
-    let currentDir = getCurrentDirObj();
-    let searchPath = lastWord;
-    const pathParts = searchPath.split("/");
-    const partialName = pathParts.pop();
-    
-    // Navigate through specified path if provided
-    if (pathParts.length > 0 && pathParts[0] !== "") {
-      let tempDir = fileSystem;
-      for (const p of pathParts) {
-        // Find directory case‑insensitively
-        const dirKey = Object.keys(tempDir).find(k => k.toLowerCase() === p.toLowerCase() && typeof tempDir[k] === 'object');
-        if (dirKey) {
-          tempDir = tempDir[dirKey];
-        } else {
-          tempDir = null;
-          break;
-        }
-      }
-      if (tempDir) currentDir = tempDir;
-    }
-    
-    if (currentDir) {
-      // Find all entries matching case‑insensitively
-      const entries = Object.keys(currentDir);
-      matches = entries
-        .filter(name => name.toLowerCase().startsWith(partialName.toLowerCase()))
-        .map(name => {
-          const isDir = typeof currentDir[name] === 'object';
-          return { name, display: name + (isDir ? '/' : '') };
-        });
-      
-      // Reconstruct full path for replacement
-      const prefixPath = pathParts.length > 0 ? pathParts.join("/") + "/" : "";
-      matches = matches.map(m => ({
-        ...m,
-        full: prefixPath + m.display
-      }));
-    }
-    completionType = 'path';
-  }
-  
-  // Handle cycling
-  const currentInputContext = beforeCursor + '|' + afterCursor; // simple context key
-  const { completion } = shellState;
-  
-  if (completion.input === currentInputContext && completion.matches.length > 0) {
-    // Same context: cycle to next match
-    completion.index = (completion.index + 1) % completion.matches.length;
-  } else {
-    // New context: store matches and start at first
-    completion.input = currentInputContext;
-    completion.matches = matches;
-    completion.index = 0;
-  }
-  
-  if (completion.matches.length > 0) {
-    const selected = completion.matches[completion.index];
-    let replacement;
-    if (completionType === 'cmd') {
-      replacement = selected;
-    } else {
-      replacement = selected.full;
-    }
-    
-    // Replace the last word with the completed one
-    const newBefore = beforeCursor.slice(0, beforeCursor.length - lastWord.length) + replacement;
-    inputField.value = newBefore + afterCursor;
-    // Set cursor position after the inserted completion
-    inputField.setSelectionRange(newBefore.length, newBefore.length);
-  } else if (completion.matches.length === 0 && completion.input !== currentInputContext) {
-    // No matches, reset completion state
-    completion.input = '';
-    completion.matches = [];
-  }
-  
-  // If multiple matches exist but we aren't cycling (first Tab), show suggestions
-  if (completion.matches.length > 1 && completion.index === 0 && completion.input === currentInputContext) {
-    const suggestions = completion.matches.map(m => {
-      const display = completionType === 'cmd' ? m : m.display;
-      const isDir = display.endsWith('/');
-      return `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'}" style="text-shadow: 0 0 6px ${isDir ? 'rgba(0, 255, 255, 0.5)' : 'rgba(255, 255, 0, 0.5)'};">${display}</span>`;
-    }).join("<span class='text-magenta-700 mx-2'>|</span>");
-    print(suggestions, "raw");
-  }
-  
-  return;
-}
-
 let fileSystem = {};
 
 /* =========================
@@ -574,27 +459,7 @@ const commands = {
       return;
     }
 
-ls: (dir) => {
-  let targetDir;
-  if (dir) {
-    targetDir = resolvePath(dir);
-    if (!targetDir) {
-      print(`ls: cannot access '${dir}': No such directory`, "error");
-      return;
-    }
-  } else {
-    targetDir = getCurrentDirObj();
-  }
-  
-  if (!targetDir) return print("Error: Directory corrupted", "error");
-
-  const items = Object.keys(targetDir);
-  if (items.length === 0) {
-    print("(empty directory)", "system");
-    return;
-  }
-
-  let out = '<div class="flex flex-wrap gap-x-4 gap-y-1">';
+    let out = '<div class="flex flex-wrap gap-x-4 gap-y-1">';
     items.forEach(name => {
       const isDir = typeof targetDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
@@ -819,23 +684,30 @@ function handleKey(e) {
   if (e.key === "Tab") {
     e.preventDefault();
     const input = inputField.value;
-    const parts = input.split(/\s+/);
+    const cursorPos = inputField.selectionStart;
     
-    const cmd = parts[0]?.toLowerCase();
-    const last = parts[parts.length - 1];
-    const isCmdPosition = parts.length === 1;
-    const isPathArg = parts.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(cmd);
+    // Determine the word being completed
+    const beforeCursor = input.slice(0, cursorPos);
+    const afterCursor = input.slice(cursorPos);
+    const words = beforeCursor.split(/\s+/);
+    const lastWord = words[words.length - 1] || '';
+    
+    const isCmdPosition = words.length === 1 && beforeCursor.trim() === lastWord;
+    const cmd = words[0]?.toLowerCase();
+    const isPathArg = words.length === 2 && ["cat", "view", "cd", "tree", "find", "ls"].includes(cmd);
     
     let matches = [];
+    let completionType = 'cmd'; // or 'path'
     
     if (isCmdPosition) {
-      // Auto-complete commands
+      // Command completion
       const cmds = Object.keys(commands);
-      matches = cmds.filter(c => c.startsWith(last));
+      matches = cmds.filter(c => c.toLowerCase().startsWith(lastWord.toLowerCase()));
+      completionType = 'cmd';
     } else if (isPathArg) {
-      // Auto-complete paths using current working directory
+      // Path completion (case‑insensitive)
       let currentDir = getCurrentDirObj();
-      let searchPath = last;
+      let searchPath = lastWord;
       const pathParts = searchPath.split("/");
       const partialName = pathParts.pop();
       
@@ -843,8 +715,10 @@ function handleKey(e) {
       if (pathParts.length > 0 && pathParts[0] !== "") {
         let tempDir = fileSystem;
         for (const p of pathParts) {
-          if (tempDir[p] && typeof tempDir[p] === 'object') {
-            tempDir = tempDir[p];
+          // Find directory case‑insensitively
+          const dirKey = Object.keys(tempDir).find(k => k.toLowerCase() === p.toLowerCase() && typeof tempDir[k] === 'object');
+          if (dirKey) {
+            tempDir = tempDir[dirKey];
           } else {
             tempDir = null;
             break;
@@ -854,30 +728,69 @@ function handleKey(e) {
       }
       
       if (currentDir) {
-        matches = Object.keys(currentDir)
-          .filter(n => n.startsWith(partialName))
-          .map(m => {
-            const isDir = typeof currentDir[m] === 'object';
-            return m + (isDir ? '/' : '');
+        // Find all entries matching case‑insensitively
+        const entries = Object.keys(currentDir);
+        matches = entries
+          .filter(name => name.toLowerCase().startsWith(partialName.toLowerCase()))
+          .map(name => {
+            const isDir = typeof currentDir[name] === 'object';
+            return { name, display: name + (isDir ? '/' : '') };
           });
         
-        if (pathParts.length > 0 && pathParts[0] !== "") {
-          matches = matches.map(m => pathParts.join("/") + "/" + m);
-        }
+        // Reconstruct full path for replacement
+        const prefixPath = pathParts.length > 0 ? pathParts.join("/") + "/" : "";
+        matches = matches.map(m => ({
+          ...m,
+          full: prefixPath + m.display
+        }));
       }
+      completionType = 'path';
     }
     
-    if (matches.length === 1) {
-      parts[parts.length - 1] = matches[0];
-      inputField.value = parts.join(" ");
-    } else if (matches.length > 1) {
-      // Show suggestions with better formatting
-      const suggestions = matches.map(m => {
-        const isDir = m.endsWith('/');
-        return `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'}" style="text-shadow: 0 0 6px ${isDir ? 'rgba(0, 255, 255, 0.5)' : 'rgba(255, 255, 0, 0.5)'};">${m}</span>`;
+    // Handle cycling
+    const currentInputContext = beforeCursor + '|' + afterCursor; // simple context key
+    const { completion } = shellState;
+    
+    if (completion.input === currentInputContext && completion.matches.length > 0) {
+      // Same context: cycle to next match
+      completion.index = (completion.index + 1) % completion.matches.length;
+    } else {
+      // New context: store matches and start at first
+      completion.input = currentInputContext;
+      completion.matches = matches;
+      completion.index = 0;
+    }
+    
+    if (completion.matches.length > 0) {
+      const selected = completion.matches[completion.index];
+      let replacement;
+      if (completionType === 'cmd') {
+        replacement = selected;
+      } else {
+        replacement = selected.full;
+      }
+      
+      // Replace the last word with the completed one
+      const newBefore = beforeCursor.slice(0, beforeCursor.length - lastWord.length) + replacement;
+      inputField.value = newBefore + afterCursor;
+      // Set cursor position after the inserted completion
+      inputField.setSelectionRange(newBefore.length, newBefore.length);
+    } else if (completion.matches.length === 0 && completion.input !== currentInputContext) {
+      // No matches, reset completion state
+      completion.input = '';
+      completion.matches = [];
+    }
+    
+    // If multiple matches exist but we aren't cycling (first Tab), show suggestions
+    if (completion.matches.length > 1 && completion.index === 0 && completion.input === currentInputContext) {
+      const suggestions = completion.matches.map(m => {
+        const display = completionType === 'cmd' ? m : m.display;
+        const isDir = display.endsWith('/');
+        return `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'}" style="text-shadow: 0 0 6px ${isDir ? 'rgba(0, 255, 255, 0.5)' : 'rgba(255, 255, 0, 0.5)'};">${display}</span>`;
       }).join("<span class='text-magenta-700 mx-2'>|</span>");
       print(suggestions, "raw");
     }
+    
     return;
   }
 
