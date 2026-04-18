@@ -334,7 +334,7 @@ Verification via hook intercepts confirmed a perfect match.
 
 **QR Code Payload:** `16777216:B4BDFEC9E478EDE1`
 
-![Valid QR Code Artifact](assetsartifact.png)
+![Valid QR Code Artifact](/assets/img/artifact.png)
 
 *Valid artifact QR code (PNG, 660×660, 1-bit grayscale)*
 
@@ -383,4 +383,3 @@ Verification via hook intercepts confirmed a perfect match.
 ---
 
 > *"Almost Impossible" - because the crypto was real, but the key space was not.*
-```
