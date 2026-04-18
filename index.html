@@ -212,46 +212,54 @@ body { font-family: 'Fira Code', monospace; }
    CONFIGURATION
 ========================= */
 const CONFIG = {
-  USER: "reverse101",  // Change this to your name
-  HOST: "localhost",  // Change this to your hostname
+  USER: "reverse101",
+  HOST: "localhost",
 };
 
 /* =========================
-    VIRTUAL FILE SYSTEM (VFS)
-    Loaded from reverse/ directory via manifest.json
- ========================= */
-
+   VIRTUAL FILE SYSTEM (VFS)
+========================= */
 async function loadFileSystem() {
   const fs = {};
   let files = [];
 
-  const manifestRes = await fetch('manifest.json');
-  const manifest = await manifestRes.json();
-  
-  // Initialize all directories
-  manifest.directories.forEach(dir => {
-    fs[dir] = {};
-  });
-  
-  // Load all files from manifest
-  files = manifest.structure || [];
-
-  // Fetch all files
-  for (const f of files) {
-    if (!f.name || f.name.trim() === '') continue;
+  try {
+    const manifestRes = await fetch('manifest.json');
+    if (!manifestRes.ok) throw new Error(`Manifest fetch failed: ${manifestRes.status}`);
+    const manifest = await manifestRes.json();
     
-    const res = await fetch(`reverse/${f.dir}/${f.name}`);
-    if (res.ok) {
-      fs[f.dir][f.name] = await res.text();
+    // Initialize directories
+    manifest.directories.forEach(dir => { fs[dir] = {}; });
+    
+    files = manifest.structure || [];
+
+    // Fetch all files
+    for (const f of files) {
+      if (!f.name || f.name.trim() === '') continue;
+      
+      const url = `reverse/${f.dir}/${f.name}`;
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          fs[f.dir][f.name] = await res.text();
+        } else {
+          console.warn(`Failed to load ${url}: ${res.status}`);
+        }
+      } catch (e) {
+        console.error(`Error loading ${url}:`, e);
+      }
     }
+  } catch (e) {
+    console.error('Failed to load manifest:', e);
+    print(`<span class="text-red-500">ERROR: Could not load file system. Check console.</span>`, "error");
   }
 
   return { reverse: fs };
 }
 
 /* =========================
-    STATE
- ========================= */
+   STATE
+========================= */
 let shellState = {
   path: [],
   history: [], 
@@ -261,93 +269,55 @@ let shellState = {
 let fileSystem = {};
 
 /* =========================
-   CORE LOGIC
+   PATH HELPERS
 ========================= */
+function resolvePath(pathStr) {
+  // Handle absolute paths starting with "/"
+  if (pathStr.startsWith('/')) {
+    const parts = pathStr.split('/').filter(p => p !== '');
+    let current = fileSystem;
+    for (const part of parts) {
+      if (current[part] && typeof current[part] === 'object') {
+        current = current[part];
+      } else {
+        return null;
+      }
+    }
+    return current;
+  }
+  
+  // Relative path from current working directory
+  const currentDir = getCurrentDirObj();
+  if (!currentDir) return null;
+  
+  const parts = pathStr.split('/').filter(p => p !== '');
+  let target = currentDir;
+  for (const part of parts) {
+    if (target[part] && typeof target[part] === 'object') {
+      target = target[part];
+    } else {
+      return null;
+    }
+  }
+  return target;
+}
 
-// Helper to get the object reference of the current directory
 function getCurrentDirObj() {
-  // Root is always fileSystem.reverse
   let current = fileSystem["reverse"];
   if (!current) return null;
-  for (let i = 0; i < shellState.path.length; i++) {
-    const segment = shellState.path[i];
+  for (const segment of shellState.path) {
     if (current[segment] && typeof current[segment] === 'object') {
       current = current[segment];
     } else {
-      return null; // Invalid path
+      return null;
     }
   }
   return current;
 }
 
 /* =========================
-   INIT & BOOT
-========================= */
-window.addEventListener('load', async () => {
-  await playBootSequence();
-  fileSystem = await loadFileSystem();
-  initTerminal();
-});
-
-function playBootSequence() {
-  return new Promise(resolve => {
-    const bootLog = document.getElementById("boot-log");
-    const lines = [
-      `[ ${new Date().toLocaleTimeString()}] Loading Linux kernel 6.1.0...`,
-      "[ OK ] Started Dispatch Password Requests to Console Key Watch.",
-      "[ OK ] Reached target Graphical Interface.",
-      "[ OK ] Started Network Manager.",
-      `[ OK ] Logged in as ${CONFIG.USER}`
-    ];
-    
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < lines.length) {
-        bootLog.innerText += lines[i] + "\n";
-        i++;
-      } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          const screen = document.getElementById('boot-screen');
-          screen.style.opacity = '0';
-          setTimeout(() => {
-            screen.style.display = 'none';
-            resolve();
-          }, 1000);
-        }, 500);
-      }
-    }, 400);
-  });
-}
-
-function initTerminal() {
-  printWelcome();
-  document.getElementById('cmd').focus();
-  updatePrompt();
-}
-
-function printWelcome() {
-  const tuxArt = `
-<span class=\"text-cyan-400\" style=\"text-shadow: 0 0 8px #00ffff;\">
-        .--.
-       |o_o |
-       |:_/ |
-      //   \\\\ \\
-     (|     | )
-    /'\\\\_   _/\`
-    \\\\___)=(___/
-</span>
-<span class="text-magenta-500 font-bold" style="text-shadow: 0 0 8px #ff00ff;">Reverse Engineering Writeups</span>
-<span class="text-blue-400">Platforms: Linux, Windows, Android</span><br>
-<span class="text-yellow-400 mt-2">Type <span class="text-cyan-400" style="text-shadow: 0 0 6px #00ffff;\">'help'</span> for a list of commands.</span><br>
-`;
-  print(tuxArt, "system");
-}
-
-/* =========================
    CORE FUNCTIONS
 ========================= */
-
 function print(text, type = "normal") {
   const output = document.getElementById("output");
   const div = document.createElement("div");
@@ -385,7 +355,6 @@ function updatePrompt() {
 /* =========================
    COMMANDS
 ========================= */
-
 const commands = {
   help: () => {
     const helpText = `
@@ -463,27 +432,20 @@ const commands = {
   },
 
   ls: (dir) => {
-    let currentDir;
-    
+    let targetDir;
     if (dir) {
-      // Handle path like "reverse/linux" or just "reverse"
-      const parts = dir.split("/");
-      currentDir = fileSystem;
-      for (const p of parts) {
-        if (currentDir[p] && typeof currentDir[p] === 'object') {
-          currentDir = currentDir[p];
-        } else {
-          print(`ls: cannot access '${dir}': No such directory`, "error");
-          return;
-        }
+      targetDir = resolvePath(dir);
+      if (!targetDir) {
+        print(`ls: cannot access '${dir}': No such directory`, "error");
+        return;
       }
     } else {
-      currentDir = getCurrentDirObj();
+      targetDir = getCurrentDirObj();
     }
     
-    if (!currentDir) return print("Error: Directory corrupted", "error");
+    if (!targetDir) return print("Error: Directory corrupted", "error");
 
-    const items = Object.keys(currentDir);
+    const items = Object.keys(targetDir);
     if (items.length === 0) {
       print("(empty directory)", "system");
       return;
@@ -491,7 +453,7 @@ const commands = {
 
     let out = "";
     items.forEach(name => {
-      const isDir = typeof currentDir[name] === 'object';
+      const isDir = typeof targetDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
       const colorClass = isDir ? "text-cyan-400 font-bold" : "text-yellow-400";
       out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon}  ${name}</span>`;
@@ -500,14 +462,31 @@ const commands = {
   },
 
   cd: (dir) => {
-    if (!dir || dir === "/" || dir === "~") {
+    if (!dir || dir === "~") {
+      shellState.path = [];
+    } else if (dir === "/") {
       shellState.path = [];
     } else if (dir === "..") {
       if (shellState.path.length > 0) shellState.path.pop();
+    } else if (dir.startsWith('/')) {
+      // Absolute path: resolve and set path array
+      const parts = dir.split('/').filter(p => p !== '');
+      let current = fileSystem;
+      const newPath = [];
+      for (const part of parts) {
+        if (current[part] && typeof current[part] === 'object') {
+          current = current[part];
+          newPath.push(part);
+        } else {
+          print(`bash: cd: ${dir}: No such file or directory`, "error");
+          return;
+        }
+      }
+      shellState.path = newPath;
     } else {
-      // Remove trailing slash if present
-      const cleanDir = dir.replace(/\/$/, '');
+      // Relative path
       const currentDir = getCurrentDirObj();
+      const cleanDir = dir.replace(/\/$/, '');
       if (currentDir[cleanDir] && typeof currentDir[cleanDir] === 'object') {
         shellState.path.push(cleanDir);
       } else {
@@ -794,6 +773,70 @@ function handleKey(e) {
 
     inputField.value = "";
   }
+}
+
+/* =========================
+   INIT & BOOT
+========================= */
+window.addEventListener('load', async () => {
+  await playBootSequence();
+  fileSystem = await loadFileSystem();
+  initTerminal();
+});
+
+function playBootSequence() {
+  return new Promise(resolve => {
+    const bootLog = document.getElementById("boot-log");
+    const lines = [
+      `[ ${new Date().toLocaleTimeString()}] Loading Linux kernel 6.1.0...`,
+      "[ OK ] Started Dispatch Password Requests to Console Key Watch.",
+      "[ OK ] Reached target Graphical Interface.",
+      "[ OK ] Started Network Manager.",
+      `[ OK ] Logged in as ${CONFIG.USER}`
+    ];
+    
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < lines.length) {
+        bootLog.innerText += lines[i] + "\n";
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          const screen = document.getElementById('boot-screen');
+          screen.style.opacity = '0';
+          setTimeout(() => {
+            screen.style.display = 'none';
+            resolve();
+          }, 1000);
+        }, 500);
+      }
+    }, 400);
+  });
+}
+
+function initTerminal() {
+  printWelcome();
+  document.getElementById('cmd').focus();
+  updatePrompt();
+}
+
+function printWelcome() {
+  const tuxArt = `
+<span class=\"text-cyan-400\" style=\"text-shadow: 0 0 8px #00ffff;\">
+        .--.
+       |o_o |
+       |:_/ |
+      //   \\\\ \\
+     (|     | )
+    /'\\_   _/\`
+    \\\\___)=(___/
+</span>
+<span class="text-magenta-500 font-bold" style="text-shadow: 0 0 8px #ff00ff;">Reverse Engineering Writeups</span>
+<span class="text-blue-400">Platforms: Linux, Windows, Android</span><br>
+<span class="text-yellow-400 mt-2">Type <span class="text-cyan-400" style="text-shadow: 0 0 6px #00ffff;\">'help'</span> for a list of commands.</span><br>
+`;
+  print(tuxArt, "system");
 }
 </script>
 
