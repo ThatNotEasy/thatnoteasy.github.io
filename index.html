@@ -188,7 +188,7 @@ body { font-family: 'Fira Code', monospace; }
 
   <!-- OUTPUT AREA -->
   <div id="output" 
-    class="flex-1 overflow-y-auto overflow-x-auto p-6 space-y-2 z-10 font-mono text-sm leading-relaxed outline-none whitespace-pre text-red-600" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);">
+    class="flex-1 overflow-y-auto overflow-x-auto p-6 space-y-2 z-10 font-mono text-sm leading-relaxed outline-none text-red-600" style="text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);">
     <!-- Dynamic Content -->
   </div>
 
@@ -404,7 +404,7 @@ const commands = {
   <span class="text-cyan-400">tree [dir]</span>        Show directory tree
   <span class="text-cyan-400">find [pattern]</span>    Find files by name
   <span class="text-cyan-400">history [-c]</span>      Show/clear command history
-  <span class="text-yellow-400">Ctrl+C</span>          Interrupt/kill current input
+  <span class="text-yellow-400">Ctrl+C</span>           Interrupt/kill current input
 `;
     print(helpText);
   },
@@ -489,13 +489,14 @@ const commands = {
       return;
     }
 
-    let out = "";
+    let out = '<div class="flex flex-wrap gap-x-4 gap-y-1">';
     items.forEach(name => {
       const isDir = typeof currentDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
       const colorClass = isDir ? "text-cyan-400 font-bold" : "text-yellow-400";
-      out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon}  ${name}</span>`;
+      out += `<span class="${colorClass}" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon}  ${name}</span>`;
     });
+    out += '</div>';
     print(out);
   },
 
@@ -588,7 +589,7 @@ const commands = {
         const isLastItem = idx === keys.length - 1;
         const isDir = typeof obj[key] === 'object';
         const connector = isLastItem ? "└── " : "├── ";
-        output += `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'} font-semibold inline-block mr-4" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${prefix}${connector}${key}</span>`;
+        output += `<div class="whitespace-nowrap"><span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'} font-semibold" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${prefix}${connector}${key}</span></div>`;
         if (isDir) {
           const newPrefix = prefix + (isLastItem ? "    " : "│   ");
           output += buildTree(obj[key], newPrefix, isLastItem);
