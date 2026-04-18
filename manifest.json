@@ -3,7 +3,7 @@
     { "dir": "windows", "name": "CrackMe-By-ZenithSouu.md" },
     { "dir": "windows", "name": "Find-The-Key.md" },
     { "dir": "windows", "name": "Crack-Me-Pls.md" },
-    { "dir": "android", "name": "" }
+    { "dir": "android", "name": "" },
     { "dir": "linux", "name": "" }
   ],
   "directories": ["linux", "windows", "android"]
