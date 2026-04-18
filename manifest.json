@@ -1,10 +1,14 @@
 {
-  "structure": [
-    { "dir": "windows", "name": "CrackMe-By-ZenithSouu.md" },
-    { "dir": "windows", "name": "Find-The-Key.md" },
-    { "dir": "windows", "name": "Crack-Me-Pls.md" },
-    { "dir": "android", "name": "" },
-    { "dir": "linux", "name": "" }
-  ],
+  "structure": {
+    "windows": [
+      "CrackMe-By-ZenithSouu.md",
+      "Find-The-Key.md",
+      "Crack-Me-Pls.md"
+    ],
+    "linux": [
+      "Almost-Impossible.md"
+    ],
+    "android": []
+  },
   "directories": ["linux", "windows", "android"]
 }

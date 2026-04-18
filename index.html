@@ -217,39 +217,50 @@ const CONFIG = {
 };
 
 /* =========================
-   VIRTUAL FILE SYSTEM (VFS)
+   VIRTUAL FILE SYSTEM (VFS) - OPTION 2 UPDATE
 ========================= */
 async function loadFileSystem() {
   const fs = {};
-  let files = [];
-
+  
   try {
     const manifestRes = await fetch('manifest.json');
     if (!manifestRes.ok) throw new Error(`Manifest fetch failed: ${manifestRes.status}`);
     const manifest = await manifestRes.json();
     
-    // Initialize directories
-    manifest.directories.forEach(dir => { fs[dir] = {}; });
+    // Initialize directories from directories array (ensures empty dirs like "android" exist)
+    if (manifest.directories) {
+      manifest.directories.forEach(dir => { 
+        if (!fs[dir]) fs[dir] = {}; 
+      });
+    }
     
-    files = manifest.structure || [];
-
-    // Fetch all files
-    for (const f of files) {
-      if (!f.name || f.name.trim() === '') continue;
+    // Populate from structure object (Option 2 format: { "dir": ["file1.md", "file2.md"], ... })
+    const structure = manifest.structure || {};
+    
+    for (const [dir, files] of Object.entries(structure)) {
+      // Ensure directory exists
+      if (!fs[dir]) fs[dir] = {};
       
-      const url = `reverse/${f.dir}/${f.name}`;
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          fs[f.dir][f.name] = await res.text();
-        } else {
-          // Placeholder content for missing files
-          fs[f.dir][f.name] = `[ERROR] File not found: ${url} (HTTP ${res.status})`;
-          console.warn(`Missing file: ${url}`);
+      // files is an array of filenames
+      if (Array.isArray(files)) {
+        for (const filename of files) {
+          if (!filename || filename.trim() === '') continue;
+          
+          const url = `reverse/${dir}/${filename}`;
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              fs[dir][filename] = await res.text();
+            } else {
+              // Placeholder content for missing files
+              fs[dir][filename] = `[ERROR] File not found: ${url} (HTTP ${res.status})`;
+              console.warn(`Missing file: ${url}`);
+            }
+          } catch (e) {
+            fs[dir][filename] = `[ERROR] Failed to load: ${url}\n${e.message}`;
+            console.error(`Error loading ${url}:`, e);
+          }
         }
-      } catch (e) {
-        fs[f.dir][f.name] = `[ERROR] Failed to load: ${url}\n${e.message}`;
-        console.error(`Error loading ${url}:`, e);
       }
     }
   } catch (e) {
