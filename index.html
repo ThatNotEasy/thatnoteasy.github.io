@@ -919,7 +919,6 @@ const commands = {
   // Aliases
   ll: () => commands.ls(),
   la: () => commands.ls(),
-  ..: () => commands.cd('..'),
 };
 
 /* =========================================
@@ -1066,12 +1065,9 @@ function handleKey(e) {
 
     const args = val.split(/\s+/);
     const cmd = args.shift().toLowerCase();
-    // Alias resolution
-    const resolvedCmd = cmd === 'll' || cmd === 'la' ? 'ls' : cmd === '..' ? 'cd' : cmd;
-    const resolvedArgs = cmd === '..' ? ['..'] : args;
 
-    if (commands[resolvedCmd]) {
-      commands[resolvedCmd](...resolvedArgs);
+    if (commands[cmd]) {
+      commands[cmd](...args);
     } else {
       print(`bash: ${cmd}: command not found`, 'error');
     }
