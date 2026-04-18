@@ -20,10 +20,16 @@
 body { font-family: 'Fira Code', monospace; }
 
 /* Scrollbar Styling */
-::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #000000; }
 ::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 4px; box-shadow: 0 0 10px #ff0000; }
 ::-webkit-scrollbar-thumb:hover { background: #ff4444; box-shadow: 0 0 15px #ff4444; }
+
+/* Modal Scrollbar */
+.modal-content::-webkit-scrollbar { width: 10px; }
+.modal-content::-webkit-scrollbar-track { background: #0a0a0a; }
+.modal-content::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+.modal-content::-webkit-scrollbar-thumb:hover { background: #00cccc; box-shadow: 0 0 15px rgba(0, 255, 255, 0.8); }
 
 /* CRT Scanline Effect */
 .scanlines {
@@ -36,9 +42,51 @@ body { font-family: 'Fira Code', monospace; }
 .cursor-blink { animation: blink 1s step-end infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
+/* Modal Animations */
+@keyframes modalOpen {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.modal-animate { animation: modalOpen 0.2s ease-out; }
+
+/* Glitch Effect for Header */
+.glitch-text {
+  position: relative;
+}
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.glitch-text::before {
+  left: 2px;
+  text-shadow: -1px 0 #ff00ff;
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim-1 3s infinite linear alternate-reverse;
+}
+.glitch-text::after {
+  left: -2px;
+  text-shadow: -1px 0 #00ffff;
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim-2 2.5s infinite linear alternate-reverse;
+}
+@keyframes glitch-anim-1 {
+  0% { clip: rect(20px, 9999px, 15px, 0); }
+  100% { clip: rect(95px, 9999px, 100px, 0); }
+}
+@keyframes glitch-anim-2 {
+  0% { clip: rect(120px, 9999px, 125px, 0); }
+  100% { clip: rect(5px, 9999px, 10px, 0); }
+}
+
 /* Prose styles for markdown */
 .prose {
   color: #00ff41;
+  max-width: none;
 }
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
   color: #ff00ff;
@@ -46,80 +94,125 @@ body { font-family: 'Fira Code', monospace; }
   margin-top: 0.5em;
   margin-bottom: 0.25em;
   text-shadow: 0 0 10px #ff00ff;
+  border-bottom: 1px solid rgba(255, 0, 255, 0.3);
+  padding-bottom: 0.2em;
 }
-.prose h1 { font-size: 1.25em; }
-.prose h2 { font-size: 1.1em; }
-.prose h3 { font-size: 1em; }
+.prose h1 { font-size: 1.5em; }
+.prose h2 { font-size: 1.25em; }
+.prose h3 { font-size: 1.1em; }
 .prose p {
   margin-bottom: 0.4em;
-  line-height: 1.4;
+  line-height: 1.5;
   color: #00ff41;
-  font-size: 0.9em;
+  font-size: 0.95em;
 }
 .prose code:not(pre code) {
-  background-color: #000000;
+  background-color: rgba(0, 255, 255, 0.1);
   color: #00ffff;
-  padding: 0.15em 0.3em;
+  padding: 0.15em 0.4em;
   border-radius: 0.2em;
-  font-size: 0.85em;
-  border: 1px solid #00ffff;
+  font-size: 0.9em;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
 }
 .prose pre {
-  background-color: #000000;
-  border: 2px solid #0088ff;
-  border-radius: 0.3em;
-  padding: 0.6em;
+  background-color: #0d0d0d;
+  border: 1px solid #0088ff;
+  border-radius: 0.4em;
+  padding: 1em;
   overflow-x: auto;
-  margin: 0.4em 0;
-  box-shadow: inset 0 0 20px rgba(0, 136, 255, 0.1);
-  font-size: 0.85em;
+  margin: 0.8em 0;
+  box-shadow: inset 0 0 20px rgba(0, 136, 255, 0.1), 0 0 10px rgba(0, 136, 255, 0.2);
+  position: relative;
+}
+.prose pre::before {
+  content: "CODE";
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #0088ff;
+  color: #000;
+  font-size: 0.7em;
+  padding: 0.2em 0.6em;
+  border-bottom-left-radius: 0.4em;
+  font-weight: bold;
 }
 .prose pre code {
   background-color: transparent;
   color: #00ff41;
   padding: 0;
+  border: none;
+  font-size: 0.9em;
+  line-height: 1.5;
 }
 .prose ul, .prose ol {
-  margin-left: 1.2em;
-  margin-bottom: 0.4em;
-  font-size: 0.9em;
+  margin-left: 1.5em;
+  margin-bottom: 0.6em;
+  font-size: 0.95em;
 }
 .prose li {
-  margin-bottom: 0.1em;
+  margin-bottom: 0.2em;
   color: #00ff41;
+}
+.prose li::marker {
+  color: #ff00ff;
 }
 .prose a {
   color: #ff6600;
-  text-decoration: underline;
-  text-shadow: 0 0 8px #ff6600;
+  text-decoration: none;
+  border-bottom: 1px dotted #ff6600;
+  text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
+  transition: all 0.2s;
 }
 .prose a:hover {
   color: #ff9933;
-  text-shadow: 0 0 15px #ff9933;
+  text-shadow: 0 0 15px rgba(255, 153, 51, 0.8);
+  border-bottom-style: solid;
 }
 .prose blockquote {
   border-left: 3px solid #00ffff;
-  padding-left: 0.8em;
+  padding-left: 1em;
   margin-left: 0;
   color: #ff9900;
   font-style: italic;
-  font-size: 0.9em;
-  margin: 0.3em 0;
+  font-size: 0.95em;
+  margin: 0.5em 0;
+  background: rgba(0, 255, 255, 0.05);
+  padding: 0.5em 1em;
+  border-radius: 0 0.3em 0.3em 0;
 }
 .prose table {
-  font-size: 0.85em;
-  margin: 0.3em 0;
+  font-size: 0.9em;
+  margin: 0.5em 0;
+  border-collapse: collapse;
+  width: 100%;
 }
 .prose th {
-  background-color: #1a1a1a;
+  background-color: rgba(0, 255, 255, 0.2);
   color: #00ffff;
-  padding: 0.4em;
+  padding: 0.6em;
   border: 1px solid #00ffff;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
 }
 .prose td {
   color: #00ff41;
-  padding: 0.3em 0.4em;
+  padding: 0.5em 0.6em;
   border: 1px solid #0088ff;
+}
+.prose tr:nth-child(even) {
+  background-color: rgba(0, 136, 255, 0.05);
+}
+.prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ff00ff, transparent);
+  margin: 1em 0;
+}
+.prose img {
+  max-width: 100%;
+  border: 2px solid #00ffff;
+  border-radius: 0.3em;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
 }
 </style>
 </head>
@@ -133,35 +226,56 @@ body { font-family: 'Fira Code', monospace; }
 </div>
 
 <!-- MODAL FOR FILE VIEWING -->
-<div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-40 flex items-center justify-center p-2">
-  <div class="bg-black border-2 border-cyan-500 rounded-lg shadow-2xl max-w-6xl w-full max-h-[60vh] flex flex-col overflow-hidden" style="box-shadow: 0 0 25px rgba(34, 211, 238, 0.4);">
+<div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
+  <div class="bg-gray-900 border-2 border-cyan-500 rounded-lg shadow-2xl max-w-5xl w-full max-h-[85vh] flex flex-col overflow-hidden modal-animate" style="box-shadow: 0 0 50px rgba(34, 211, 238, 0.3), inset 0 0 50px rgba(34, 211, 238, 0.05);">
     <!-- Modal Header -->
-    <div class="bg-black px-4 py-2 border-b-2 border-cyan-500 flex items-center justify-between" style="box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.08);">
-      <div class="flex items-center gap-2">
-        <span class="text-lg">📋</span>
-        <div>
-          <div id="modal-title" class="text-cyan-400 font-bold text-sm" style="text-shadow: 0 0 8px #22d3ee;">FILE_VIEWER</div>
-          <div id="modal-subtitle" class="text-cyan-700 text-xs mt-0.5">[ ESC to close ]</div>
+    <div class="bg-black px-4 py-3 border-b-2 border-cyan-500 flex items-center justify-between shrink-0" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.1);">
+      <div class="flex items-center gap-3 overflow-hidden">
+        <div class="w-10 h-10 rounded bg-cyan-900 bg-opacity-30 border border-cyan-500 flex items-center justify-center shrink-0">
+          <span class="text-2xl">📄</span>
+        </div>
+        <div class="min-w-0">
+          <div id="modal-title" class="text-cyan-400 font-bold text-sm truncate glitch-text" style="text-shadow: 0 0 8px #22d3ee;" data-text="FILE_VIEWER">FILE_VIEWER</div>
+          <div class="flex items-center gap-2 text-xs mt-1">
+            <span class="text-cyan-600">➜</span>
+            <span id="modal-path" class="text-cyan-300 font-mono truncate">/reverse</span>
+            <span class="text-cyan-700">|</span>
+            <span id="modal-size" class="text-cyan-600 font-mono">0 KB</span>
+          </div>
         </div>
       </div>
-      <button onclick="closeFileModal()" class="text-cyan-400 hover:text-cyan-300 hover:bg-gray-900 rounded-lg p-1 transition-all" style="text-shadow: 0 0 6px #22d3ee;">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleRawView()" class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-3 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400" style="text-shadow: 0 0 6px #22d3ee;">
+          <span class="mr-1">🔍</span> Raw
+        </button>
+        <button onclick="copyModalContent()" class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-3 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400" style="text-shadow: 0 0 6px #22d3ee;">
+          <span class="mr-1">📋</span> Copy
+        </button>
+        <button onclick="closeFileModal()" class="text-red-400 hover:text-red-200 hover:bg-red-900 hover:bg-opacity-30 rounded px-3 py-1.5 transition-all ml-2 border border-red-800 hover:border-red-400" style="text-shadow: 0 0 6px #ff0000;">
+          <span class="text-lg leading-none">✕</span>
+        </button>
+      </div>
     </div>
     
     <!-- Modal Content -->
-    <div id="modal-content" class="flex-1 overflow-y-auto overflow-x-auto p-4 prose prose-sm prose-invert max-w-none bg-black">
-      <!-- Rendered markdown will go here -->
+    <div id="modal-content-wrapper" class="flex-1 overflow-hidden relative bg-black">
+      <div id="modal-content" class="h-full overflow-y-auto overflow-x-auto p-6 modal-content prose prose-invert max-w-none">
+        <!-- Rendered markdown will go here -->
+      </div>
+      <div id="modal-raw" class="hidden h-full overflow-y-auto overflow-x-auto p-6 modal-content">
+        <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap" style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);"></pre>
+      </div>
     </div>
     
     <!-- Modal Footer -->
-    <div class="bg-black border-t-2 border-cyan-500 px-4 py-2 flex items-center justify-end gap-2" style="box-shadow: inset 0 0 15px rgba(34, 211, 238, 0.05);">
-      <button onclick="copyModalContent()" class="flex items-center gap-1 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-black rounded font-semibold transition-all text-xs" style="box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);">
-        <span>📋</span> Copy
-      </button>
-      <button onclick="closeFileModal()" class="flex items-center gap-1 px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-black rounded font-semibold transition-all text-xs" style="box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);">
-        <span>✕</span> Close
-      </button>
+    <div class="bg-black border-t-2 border-cyan-500 px-4 py-2 flex items-center justify-between shrink-0" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);">
+      <div class="flex items-center gap-2 text-xs text-cyan-700">
+        <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+        <span>Ready</span>
+      </div>
+      <div class="text-cyan-700 text-xs font-mono">
+        [ ESC to close ] • [ Ctrl+R for Raw ]
+      </div>
     </div>
   </div>
 </div>
@@ -286,10 +400,49 @@ let shellState = {
 };
 
 let fileSystem = {};
+let currentFileContent = ""; // Store current file content for raw view toggle
 
 /* =========================
    PATH HELPERS
 ========================= */
+
+// Resolve a path string to get the target object (file or directory)
+// Handles both relative and absolute paths, and paths with subdirectories
+function resolvePathToTarget(pathStr) {
+  if (!pathStr) return null;
+  
+  let current;
+  const parts = pathStr.split('/').filter(p => p !== '');
+  
+  if (pathStr.startsWith('/')) {
+    // Absolute: start from root
+    current = fileSystem;
+  } else {
+    // Relative: start from current directory
+    current = getCurrentDirObj();
+  }
+  
+  if (!current) return null;
+  
+  // Navigate through all parts except the last one (the target)
+  for (let i = 0; i < parts.length - 1; i++) {
+    const part = parts[i];
+    if (current[part] && typeof current[part] === 'object') {
+      current = current[part];
+    } else {
+      return null; // Path doesn't exist
+    }
+  }
+  
+  // Get the final part (file or directory name)
+  const targetName = parts[parts.length - 1];
+  if (!targetName) return null;
+  
+  // Return the target if it exists
+  return current.hasOwnProperty(targetName) ? current[targetName] : null;
+}
+
+// Get directory object from path string (for cd command compatibility)
 function resolvePath(pathStr) {
   // Handle absolute paths starting with "/"
   if (pathStr.startsWith('/')) {
@@ -522,20 +675,19 @@ const commands = {
       print("usage: cat [filename]", "info");
       return;
     }
-    const currentDir = getCurrentDirObj();
     
-    if (currentDir[file]) {
-      // Check if it's a file (string)
-      if (typeof currentDir[file] === 'string') {
-        // Escape HTML for display
-        const safeContent = currentDir[file]
-          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        print(`<pre class="text-yellow-400 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(255, 255, 0, 0.3);">${safeContent}</pre>`, "raw");
-      } else {
-        print(`cat: ${file}: Is a directory`, "error");
-      }
+    // Use the path resolver to handle subdirectories and current directory
+    const target = resolvePathToTarget(file);
+    
+    if (target === null) {
+      print(`cat: ${file}: No such file or directory`, "error");
+    } else if (typeof target === 'object') {
+      print(`cat: ${file}: Is a directory`, "error");
     } else {
-      print(`cat: ${file}: No such file`, "error");
+      // It's a file (string)
+      const safeContent = target
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      print(`<pre class="text-yellow-400 whitespace-pre-wrap font-mono text-xs" style="text-shadow: 0 0 5px rgba(255, 255, 0, 0.3);">${safeContent}</pre>`, "raw");
     }
   },
 
@@ -544,37 +696,48 @@ const commands = {
       print("usage: view [filename]", "info");
       return;
     }
-    const currentDir = getCurrentDirObj();
     
-    if (currentDir[file]) {
-      if (typeof currentDir[file] === 'string') {
-        const content = currentDir[file];
-        // Parse Markdown
-        const html = marked.parse(content);
-        
-        // Show in modal
-        const fileSize = (content.length / 1024).toFixed(2);
-        const currentPath = shellState.path.join("/") || "/";
-        document.getElementById('modal-title').textContent = file;
-        document.getElementById('modal-subtitle').textContent = `${currentPath} • ${fileSize} KB`;
-        const modalContent = document.getElementById('modal-content');
-        modalContent.innerHTML = html;
-        
-        // Highlight code blocks
-        setTimeout(() => {
-          modalContent.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-          });
-        }, 0);
-        
-        // Show modal
-        document.getElementById('file-modal').classList.remove('hidden');
-        print(`[View] Opening ${file}...`, "info");
-      } else {
-        print(`view: ${file}: Is a directory`, "error");
-      }
+    // Use the path resolver to handle subdirectories and current directory
+    const target = resolvePathToTarget(file);
+    
+    if (target === null) {
+      print(`view: ${file}: No such file or directory`, "error");
+    } else if (typeof target === 'object') {
+      print(`view: ${file}: Is a directory`, "error");
     } else {
-      print(`view: ${file}: No such file`, "error");
+      // It's a file (string)
+      const content = target;
+      currentFileContent = content; // Store for raw toggle
+      const html = marked.parse(content);
+      
+      // Show in modal
+      const fileSize = (content.length / 1024).toFixed(2);
+      const displayName = file.split('/').pop();
+      const fullPath = shellState.path.length > 0 ? `/reverse/${shellState.path.join("/")}/${file}` : `/reverse/${file}`;
+      
+      document.getElementById('modal-title').textContent = displayName;
+      document.getElementById('modal-title').setAttribute('data-text', displayName);
+      document.getElementById('modal-path').textContent = fullPath;
+      document.getElementById('modal-size').textContent = `${fileSize} KB`;
+      
+      const modalContent = document.getElementById('modal-content');
+      modalContent.innerHTML = html;
+      
+      // Reset raw view
+      document.getElementById('modal-content').classList.remove('hidden');
+      document.getElementById('modal-raw').classList.add('hidden');
+      document.getElementById('modal-raw').querySelector('pre').textContent = content;
+      
+      // Highlight code blocks
+      setTimeout(() => {
+        modalContent.querySelectorAll('pre code').forEach((block) => {
+          hljs.highlightElement(block);
+        });
+      }, 0);
+      
+      // Show modal
+      document.getElementById('file-modal').classList.remove('hidden');
+      print(`[View] Opening ${file}...`, "info");
     }
   },
 
@@ -660,13 +823,34 @@ const commands = {
  ========================= */
 function closeFileModal() {
   document.getElementById('file-modal').classList.add('hidden');
+  currentFileContent = ""; // Clear stored content
+}
+
+function toggleRawView() {
+  const rendered = document.getElementById('modal-content');
+  const raw = document.getElementById('modal-raw');
+  
+  if (raw.classList.contains('hidden')) {
+    rendered.classList.add('hidden');
+    raw.classList.remove('hidden');
+  } else {
+    raw.classList.add('hidden');
+    rendered.classList.remove('hidden');
+  }
 }
 
 function copyModalContent() {
-  const content = document.getElementById('modal-content');
-  const text = content.innerText;
-  navigator.clipboard.writeText(text).then(() => {
+  const content = currentFileContent;
+  navigator.clipboard.writeText(content).then(() => {
     print("✓ Content copied to clipboard!", "success");
+    
+    // Visual feedback on button
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="mr-1">✓</span> Copied';
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+    }, 2000);
   });
 }
 
@@ -678,10 +862,16 @@ document.addEventListener('click', (event) => {
   }
 });
 
-// Close modal with Escape key
+// Close modal with Escape key and Raw toggle with Ctrl+R
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     closeFileModal();
+  }
+  if (event.ctrlKey && event.key === 'r') {
+    event.preventDefault();
+    if (!document.getElementById('file-modal').classList.contains('hidden')) {
+      toggleRawView();
+    }
   }
 });
 
