@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ap0dexMe0</title>
-<meta name="description" content="Reverse Engineering Writeups">
+<title> · Ap0dexMe0 ·</title>
+<meta name="description" content="Reverse Engineering Writeups — CyberDeck">
 <meta name="theme-color" content="#0a0a1a">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -31,10 +31,7 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
 @keyframes pulseGlow{0%,100%{opacity:0.6}50%{opacity:1}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
 @keyframes bootBar{from{width:0}to{width:100%}}
-@keyframes borderRotate{0%{--angle:0deg}100%{--angle:360deg}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes typewriter{from{width:0}to{width:100%}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .animate-fade-up{animation:fadeUp 0.5s ease-out both}
 .animate-fade-in{animation:fadeIn 0.3s ease-out both}
 .animate-pulse-glow{animation:pulseGlow 2s ease-in-out infinite}
@@ -93,15 +90,13 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
 </head>
 <body class="bg-cyber-900">
 
-<!-- PARTICLE NETWORK BACKGROUND -->
 <canvas id="particle-bg"></canvas>
 
-<!-- BOOT SCREEN -->
 <div id="boot-screen" class="fixed inset-0 bg-cyber-900 z-[60] flex flex-col items-center justify-center p-6">
   <div class="w-full max-w-md animate-fade-up">
     <div class="text-center mb-10">
       <div class="text-4xl md:text-5xl font-bold gradient-text tracking-tight mb-3 animate-float">Ap0dexMe0</div>
-      <div class="text-purple-400/50 text-[10px] tracking-[0.4em] uppercase">CyberDeck Terminal v4.0</div>
+      <div class="text-purple-400/50 text-[10px] tracking-[0.4em] uppercase">From Skiddies To Skiddies</div>
     </div>
     <div id="boot-log" class="text-[11px] text-purple-300/40 space-y-1 mb-6 font-mono"></div>
     <div class="w-full h-1 bg-cyber-700 rounded-full overflow-hidden mb-2">
@@ -114,31 +109,19 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
   </div>
 </div>
 
-<!-- FILE VIEWER MODAL -->
 <div id="file-modal" class="hidden fixed inset-0 bg-cyber-900/90 z-[45] flex items-center justify-center p-2 md:p-4 backdrop-blur-md">
   <div class="animate-fade-up glass-strong rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden glow-purple">
     <div class="px-4 py-3 border-b border-purple-500/20 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
-          <span id="modal-icon" class="text-lg"></span>
-        </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-2">
-            <span id="modal-title" class="text-purple-300 font-bold text-sm truncate"></span>
-            <span id="modal-ext-badge" class="px-2 py-px text-[9px] font-mono bg-purple-500/10 text-purple-400/60 border border-purple-500/20 rounded-full uppercase">.md</span>
-          </div>
-          <div class="flex items-center gap-2 text-[10px] mt-0.5 text-slate-500">
-            <span id="modal-path" class="font-mono truncate">/reverse</span>
-            <span class="text-slate-700">|</span>
-            <span id="modal-size" class="font-mono">0 B</span>
-          </div>
-        </div>
+        <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0"><span id="modal-icon" class="text-lg"></span></div>
+        <div class="min-w-0"><div class="flex items-center gap-2"><span id="modal-title" class="text-purple-300 font-bold text-sm truncate"></span><span id="modal-ext-badge" class="px-2 py-px text-[9px] font-mono bg-purple-500/10 text-purple-400/60 border border-purple-500/20 rounded-full uppercase">.md</span></div>
+        <div class="flex items-center gap-2 text-[10px] mt-0.5 text-slate-500"><span id="modal-path" class="font-mono truncate">/reverse</span><span class="text-slate-700">|</span><span id="modal-size" class="font-mono">0 B</span></div></div>
       </div>
       <div class="flex items-center gap-1.5 modal-actions">
-        <button onclick="toggleRawView()" class="text-purple-400/60 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg px-3 py-1.5 transition-all text-[11px] border border-purple-500/10 hover:border-purple-500/30 flex items-center gap-1.5" aria-label="Toggle raw"><span id="view-mode-icon">&#128269;</span><span id="raw-btn-text" class="hidden sm:inline">Raw</span></button>
-        <button onclick="copyModalContent()" class="text-purple-400/60 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg px-3 py-1.5 transition-all text-[11px] border border-purple-500/10 hover:border-purple-500/30 flex items-center gap-1.5" aria-label="Copy">&#128203;<span class="hidden sm:inline">Copy</span></button>
-        <button onclick="downloadCurrentFile()" class="text-cyan-400/60 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg px-3 py-1.5 transition-all text-[11px] border border-cyan-500/10 hover:border-cyan-500/30 flex items-center gap-1.5" aria-label="Download">&#11015;<span class="hidden sm:inline">Download</span></button>
-        <button onclick="closeFileModal()" class="text-red-400/60 hover:text-red-300 hover:bg-red-500/10 rounded-lg w-8 h-8 flex items-center justify-center border border-red-500/10 hover:border-red-500/30 transition-all ml-1" aria-label="Close">&#10005;</button>
+        <button onclick="toggleRawView()" class="text-purple-400/60 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg px-3 py-1.5 transition-all text-[11px] border border-purple-500/10 hover:border-purple-500/30 flex items-center gap-1.5"><span id="view-mode-icon">&#128269;</span><span id="raw-btn-text" class="hidden sm:inline">Raw</span></button>
+        <button onclick="copyModalContent()" class="text-purple-400/60 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg px-3 py-1.5 transition-all text-[11px] border border-purple-500/10 hover:border-purple-500/30 flex items-center gap-1.5">&#128203;<span class="hidden sm:inline">Copy</span></button>
+        <button onclick="downloadCurrentFile()" class="text-cyan-400/60 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg px-3 py-1.5 transition-all text-[11px] border border-cyan-500/10 hover:border-cyan-500/30 flex items-center gap-1.5">&#11015;<span class="hidden sm:inline">Download</span></button>
+        <button onclick="closeFileModal()" class="text-red-400/60 hover:text-red-300 hover:bg-red-500/10 rounded-lg w-8 h-8 flex items-center justify-center border border-red-500/10 hover:border-red-500/30 transition-all ml-1">&#10005;</button>
       </div>
     </div>
     <div id="modal-content-wrapper" class="flex-1 relative bg-cyber-900/50 min-h-0 overflow-hidden">
@@ -158,7 +141,6 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
   </div>
 </div>
 
-<!-- ASCII BANNER (plain text, no HTML/JS parsing) -->
 <script type="text/plain" id="ascii-banner">  ___        _____     _          ___  ___      _____ 
  / _ \      |  _  |   | |         |  \/  |     |  _  |
 / /_\ \_ __ | |/' | __| | _____  _| .  . | ___ | |/' |
@@ -167,8 +149,6 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
 \_| |_/ .__/ \___/ \__,_|\___/_/\_\_|  |_/ \___| \___/
       | |                                             
       |_|</script>
-
-<!-- NEOFETCH ART -->
 <script type="text/plain" id="neofetch-art">     ██████╗ ██╗     ███╗   ███╗
     ██╔════╝ ██║     ████╗ ████║
     ██║  ███╗██║     ██╔████╔██║
@@ -176,89 +156,30 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
     ╚██████╔╝███████╗██║ ╚═╝ ██║
      ╚═════╝ ╚══════╝╚═╝     ╚═╝</script>
 
-<!-- MAIN LAYOUT -->
 <div class="relative z-10 flex items-center justify-center min-h-screen p-2 md:p-4" onclick="document.getElementById('cmd').focus()">
   <div class="w-full h-[96vh] flex flex-col glass rounded-2xl overflow-hidden glow-purple animate-fade-up">
-
-    <!-- TOP BAR -->
     <div class="flex items-center justify-between px-4 py-2.5 border-b border-purple-500/15 shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="flex space-x-2">
-          <div class="w-3 h-3 rounded-full bg-red-500/70 hover:bg-red-500 transition-colors cursor-pointer"></div>
-          <div class="w-3 h-3 rounded-full bg-yellow-500/70 hover:bg-yellow-500 transition-colors cursor-pointer"></div>
-          <div class="w-3 h-3 rounded-full bg-green-500/70 hover:bg-green-500 transition-colors cursor-pointer"></div>
-        </div>
-        <div class="w-px h-4 bg-purple-500/15 hide-mobile"></div>
-        <span class="text-[10px] text-purple-400/40 font-mono tracking-wider hide-mobile">CYBERDECK // SHELL</span>
-      </div>
+      <div class="flex items-center gap-3"><div class="flex space-x-2"><div class="w-3 h-3 rounded-full bg-red-500/70 hover:bg-red-500 transition-colors cursor-pointer"></div><div class="w-3 h-3 rounded-full bg-yellow-500/70 hover:bg-yellow-500 transition-colors cursor-pointer"></div><div class="w-3 h-3 rounded-full bg-green-500/70 hover:bg-green-500 transition-colors cursor-pointer"></div></div><div class="w-px h-4 bg-purple-500/15 hide-mobile"></div><span class="text-[10px] text-purple-400/40 font-mono tracking-wider hide-mobile">CYBERDECK // SHELL</span></div>
       <div class="gradient-text text-xs font-bold tracking-wider">Ap0dexMe0</div>
-      <div class="flex items-center gap-3">
-        <span class="text-[9px] text-slate-500 font-mono hide-mobile" id="header-clock"></span>
-        <div class="flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow"></span>
-          <span class="text-[10px] text-emerald-400/70 font-mono font-semibold">ONLINE</span>
-        </div>
-      </div>
+      <div class="flex items-center gap-3"><span class="text-[9px] text-slate-500 font-mono hide-mobile" id="header-clock"></span><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow"></span><span class="text-[10px] text-emerald-400/70 font-mono font-semibold">ONLINE</span></div></div>
     </div>
-
-    <!-- SIDEBAR + TERMINAL -->
     <div class="flex flex-1 min-h-0">
-
-      <!-- SIDEBAR -->
       <div class="hidden md:flex flex-col w-52 border-r border-purple-500/10 shrink-0 bg-cyber-900/40">
-        <div class="px-3 py-3 border-b border-purple-500/10">
-          <div class="text-[10px] text-purple-400/40 uppercase tracking-widest font-semibold mb-2">Explorer</div>
-          <div id="sidebar-tree" class="text-[11px] text-slate-400 space-y-0.5 max-h-48 overflow-y-auto"></div>
-        </div>
-        <div class="px-3 py-3 border-b border-purple-500/10">
-          <div class="text-[10px] text-purple-400/40 uppercase tracking-widest font-semibold mb-2">Info</div>
-          <div class="text-[10px] space-y-1">
-            <div class="flex justify-between"><span class="text-slate-500">User</span><span class="text-purple-300" id="sb-user">reverse101</span></div>
-            <div class="flex justify-between"><span class="text-slate-500">Host</span><span class="text-cyan-300" id="sb-host">ap0dexme0</span></div>
-            <div class="flex justify-between"><span class="text-slate-500">Shell</span><span class="text-slate-300">/bin/bash</span></div>
-            <div class="flex justify-between"><span class="text-slate-500">Cmds</span><span class="text-slate-300" id="sb-cmds">0</span></div>
-          </div>
-        </div>
-        <div class="flex-1"></div>
-        <div class="px-3 py-3 border-t border-purple-500/10">
-          <div class="text-[10px] text-slate-600">Reverse Engineering</div>
-          <div class="text-[10px] text-slate-600">Writeups</div>
-        </div>
+        <div class="px-3 py-3 border-b border-purple-500/10"><div class="text-[10px] text-purple-400/40 uppercase tracking-widest font-semibold mb-2">Explorer</div><div id="sidebar-tree" class="text-[11px] text-slate-400 space-y-0.5 max-h-48 overflow-y-auto"></div></div>
+        <div class="px-3 py-3 border-b border-purple-500/10"><div class="text-[10px] text-purple-400/40 uppercase tracking-widest font-semibold mb-2">Info</div><div class="text-[10px] space-y-1"><div class="flex justify-between"><span class="text-slate-500">User</span><span class="text-purple-300" id="sb-user">reverse101</span></div><div class="flex justify-between"><span class="text-slate-500">Host</span><span class="text-cyan-300" id="sb-host">ap0dexme0</span></div><div class="flex justify-between"><span class="text-slate-500">Shell</span><span class="text-slate-300">/bin/bash</span></div><div class="flex justify-between"><span class="text-slate-500">Cmds</span><span class="text-slate-300" id="sb-cmds">0</span></div></div></div>
+        <div class="flex-1"></div><div class="px-3 py-3 border-t border-purple-500/10"><div class="text-[10px] text-slate-600">Reverse Engineering</div><div class="text-[10px] text-slate-600">Writeups</div></div>
       </div>
-
-      <!-- TERMINAL AREA -->
       <div class="flex-1 flex flex-col min-w-0">
-
-        <!-- TAB BAR -->
         <div class="flex items-center px-2 border-b border-purple-500/10 shrink-0 text-[11px] bg-cyber-900/30">
-          <div class="flex items-center gap-1.5 px-3 py-2 text-purple-300 font-semibold border-b-2 border-purple-500 rounded-t-lg bg-cyber-900/50">
-            <span class="text-cyan-400">&#9654;</span> terminal
-          </div>
-          <button class="px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">files</button>
-          <button class="px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">network</button>
-          <div class="flex-1"></div>
-          <button onclick="commands.clear()" class="px-2 py-1 text-slate-500 hover:text-purple-300 transition-colors text-xs rounded hover:bg-purple-500/10" title="Clear">&#128465;</button>
+          <div class="flex items-center gap-1.5 px-3 py-2 text-purple-300 font-semibold border-b-2 border-purple-500 rounded-t-lg bg-cyber-900/50"><span class="text-cyan-400">&#9654;</span> terminal</div>
+          <div class="flex-1"></div><button onclick="commands.clear()" class="px-2 py-1 text-slate-500 hover:text-purple-300 transition-colors text-xs rounded hover:bg-purple-500/10" title="Clear">&#128465;</button>
         </div>
-
-        <!-- OUTPUT -->
         <div id="output" class="flex-1 overflow-y-auto overflow-x-auto p-4 md:p-5 space-y-1 z-10 font-mono text-[13px] leading-relaxed outline-none text-slate-300"></div>
-
-        <!-- STATUS BAR -->
         <div class="flex items-center justify-between px-4 py-1 bg-cyber-900/40 border-t border-purple-500/10 shrink-0 text-[10px] font-mono text-slate-500">
-          <div class="flex items-center gap-3">
-            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>NORMAL</span>
-            <span class="text-slate-700">|</span>
-            <span id="status-cmds">0 cmds</span>
-          </div>
+          <div class="flex items-center gap-3"><span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>NORMAL</span><span class="text-slate-700">|</span><span id="status-cmds">0 cmds</span></div>
           <span id="status-path" class="text-purple-400/60">/reverse</span>
-          <div class="flex items-center gap-3">
-            <span id="status-time"></span>
-            <span class="text-slate-700">|</span>
-            <span>UTF-8</span>
-          </div>
+          <div class="flex items-center gap-3"><span id="status-time"></span><span class="text-slate-700">|</span><span>UTF-8</span></div>
         </div>
-
-        <!-- INPUT -->
         <div class="flex items-center px-4 py-2 bg-cyber-900/60 border-t border-purple-500/15 shrink-0">
           <span id="prompt" class="text-sm font-semibold select-none mr-1.5 whitespace-nowrap"></span>
           <input id="cmd" class="flex-1 bg-transparent outline-none text-slate-200 caret-transparent font-mono text-[13px] placeholder-slate-600" placeholder="type 'help' to begin..." autocomplete="off" spellcheck="false" onkeydown="handleKey(event)">
@@ -270,37 +191,29 @@ body{font-family:'JetBrains Mono',monospace;background:#0a0a1a;overflow:hidden;c
 </div>
 
 <script>
-/* ===== PARTICLE NETWORK ===== */
-(function(){
-  var c=document.getElementById('particle-bg'),ctx=c.getContext('2d'),pts=[];
-  function resize(){c.width=innerWidth;c.height=innerHeight;pts=[];for(var i=0;i<60;i++)pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,r:Math.random()*1.5+0.5})}
-  resize();addEventListener('resize',resize);
-  function draw(){ctx.clearRect(0,0,c.width,c.height);for(var i=0;i<pts.length;i++){var p=pts[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(168,85,247,0.25)';ctx.fill();for(var j=i+1;j<pts.length;j++){var q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);if(d<140){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba(168,85,247,'+(0.08*(1-d/140))+')';ctx.stroke()}}}}
-  setInterval(draw,40);
-})();
+/* === HELPERS: SECURE ESCAPING === */
+function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m; }); }
+function escapeAttr(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
-/* ===== CLOCK ===== */
-function updateClocks(){var n=new Date(),t=n.toLocaleTimeString('en-US',{hour12:false}),d=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}),e1=document.getElementById('header-clock'),e2=document.getElementById('status-time');if(e1)e1.textContent=d+' '+t;if(e2)e2.textContent=t}
+/* === PARTICLE === */
+(function(){var c=document.getElementById('particle-bg'),ctx=c.getContext('2d'),pts=[];function resize(){c.width=innerWidth;c.height=innerHeight;pts=[];for(var i=0;i<60;i++)pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,r:Math.random()*1.5+0.5});}resize();addEventListener('resize',resize);function draw(){ctx.clearRect(0,0,c.width,c.height);for(var i=0;i<pts.length;i++){var p=pts[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(168,85,247,0.25)';ctx.fill();for(var j=i+1;j<pts.length;j++){var q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);if(d<140){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba(168,85,247,'+(0.08*(1-d/140))+')';ctx.stroke()}}}}setInterval(draw,40);})();
+
+function updateClocks(){var n=new Date(),t=n.toLocaleTimeString('en-US',{hour12:false}),d=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});var e1=document.getElementById('header-clock'),e2=document.getElementById('status-time');if(e1)e1.textContent=d+' '+t;if(e2)e2.textContent=t;}
 setInterval(updateClocks,1000);updateClocks();
 
-/* ===== CONFIG ===== */
 var CONFIG={USER:"reverse101",HOST:"ap0dexme0",SHELL:"/bin/bash",KERNEL:"6.8.0-generic",OS:"Ap0dexMe0 OS 1.0",TERM:"xterm-256color",ARCH:"x86_64",UPTIME:Math.floor(Date.now()/1000)};
 
-/* ===== MARKED ===== */
+/* === MARKED RENDERER === */
 var renderer=new marked.Renderer();
 renderer.heading=function(t,l){var cl={1:'#c084fc',2:'#22d3ee',3:'#a855f7',4:'#ec4899',5:'#f59e0b',6:'#ef4444'};return '<h'+l+' style="color:'+(cl[l]||'#c084fc')+'">'+t+'</h'+l+'>';};
 renderer.code=function(c,info){var lang=(info||'').split(' ')[0]||'text';return '<pre data-lang="'+lang.toUpperCase()+'"><code class="language-'+lang+'">'+c+'</code></pre>';};
 renderer.codespan=function(t){return '<code>'+t+'</code>';};
 renderer.link=function(href,title,text){return '<a href="'+href+'" target="_blank" rel="noopener noreferrer">'+text+'</a>';};
-renderer.image=function(href,title,text){return '<img src="'+href+'" alt="'+text+'" loading="lazy" />';};
-renderer.blockquote=function(q){return '<blockquote>'+q+'</blockquote>';};
-marked.use({renderer:renderer});
-marked.setOptions({gfm:true,breaks:true,headerIds:false,mangle:false});
+marked.use({renderer:renderer});marked.setOptions({gfm:true,breaks:true,headerIds:false});
 
-/* ===== FILE SYSTEM ===== */
+/* === FILESYSTEM === */
 async function loadFileSystem(){var fs={};try{var r=await fetch('manifest.json');if(!r.ok)throw new Error('HTTP '+r.status);var m=await r.json();if(m.directories)m.directories.forEach(function(d){if(!fs[d])fs[d]={};});var st=m.structure||{};for(var dir in st){if(!fs[dir])fs[dir]={};var files=st[dir];if(Array.isArray(files)){for(var i=0;i<files.length;i++){var fn=files[i];if(!fn)continue;try{var r2=await fetch('reverse/'+dir+'/'+fn);fs[dir][fn]=r2.ok?await r2.text():'[ERROR] Not found';}catch(e){fs[dir][fn]='[ERROR] Load failed';}}}}}catch(e){console.error('Manifest error:',e);}return {reverse:fs};}
 
-/* ===== STATE ===== */
 var shellState={path:[],history:[],historyIndex:-1,cmdCount:0,completion:{input:'',matches:[],index:0}};
 var fileSystem={};
 var currentFileContent="";
@@ -311,115 +224,55 @@ function resolvePathToTarget(p){if(!p)return null;var cur,parts=p.split('/').fil
 function getFullPath(){var p=shellState.path.join('/');return p?'/reverse/'+p:'/reverse';}
 function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(1)+' MB';}
 
-/* ===== SIDEBAR ===== */
-function updateSidebar(){var el=document.getElementById('sidebar-tree');if(!el||!fileSystem.reverse)return;var html='';var build=function(obj,depth,path){var keys=Object.keys(obj).sort();for(var i=0;i<keys.length;i++){var k=keys[i],isDir=typeof obj[k]==='object';var indent=depth*12;var fullPath=path?path+'/'+k:k;var icon=isDir?'&#128193;':'&#128196;';var color=isDir?'text-cyan-400/70':'text-yellow-400/70';html+='<div class="cursor-pointer hover:text-purple-300 transition-colors truncate '+color+'" style="padding-left:'+indent+'px" title="'+fullPath+'" onclick="sidebarClick(\''+fullPath+'\','+isDir+')">'+icon+' '+k+'</div>';if(isDir)build(obj[k],depth+1,fullPath);}};build(fileSystem.reverse,0,'');el.innerHTML=html||'<div class="text-slate-600">No files loaded</div>';}
-function sidebarClick(path,isDir){if(isDir){shellState.path=path.split('/');updatePrompt();}else{commands.view(path);}}
+function updateSidebar(){var el=document.getElementById('sidebar-tree');if(!el||!fileSystem.reverse)return;var html='';var build=function(obj,depth,path){var keys=Object.keys(obj).sort();for(var i=0;i<keys.length;i++){var k=keys[i],isDir=typeof obj[k]==='object';var indent=depth*12;var fullPath=path?path+'/'+k:k;var icon=isDir?'&#128193;':'&#128196;';var color=isDir?'text-cyan-400/70':'text-yellow-400/70';var safeFull=escapeAttr(fullPath);html+='<div class="cursor-pointer hover:text-purple-300 transition-colors truncate '+color+'" style="padding-left:'+indent+'px" title="'+safeFull+'" onclick="sidebarClick(\''+safeFull+'\','+isDir+')">'+icon+' '+escapeHtml(k)+(isDir?'/':'')+'</div>';if(isDir)build(obj[k],depth+1,fullPath);}};build(fileSystem.reverse,0,'');el.innerHTML=html||'<div class="text-slate-600">No files loaded</div>';}
+function sidebarClick(path,isDir){ if(isDir){ shellState.path=path.split('/'); updatePrompt(); updateSidebar(); } else { commands.view('/reverse/'+path); } }
 
-/* ===== OUTPUT ===== */
 function print(text,type,animate){var o=document.getElementById('output'),d=document.createElement('div');var cm={normal:'',success:'out-success',error:'out-error',system:'out-system',info:'out-info',command:'out-command',dir:'out-dir',file:'out-file',raw:'',dim:'out-dim',highlight:'out-highlight',accent:'out-accent'};d.className=cm[type]||'';if(animate){d.style.opacity='0';d.style.transform='translateY(4px)';d.style.transition='all 0.2s ease-out';}d.innerHTML=text;o.appendChild(d);if(animate)requestAnimationFrame(function(){d.style.opacity='1';d.style.transform='translateY(0)';});o.scrollTop=o.scrollHeight;}
-
 function updatePrompt(){var p=getFullPath();document.getElementById('prompt').innerHTML='<span class="p-user">'+CONFIG.USER+'</span><span class="p-at">@</span><span class="p-host">'+CONFIG.HOST+'</span><span class="text-slate-600">:</span><span class="p-path">'+p+'</span><span class="p-arrow">&#10095; </span>';document.getElementById('status-path').textContent=p;}
 function updateStatus(){document.getElementById('status-cmds').textContent=shellState.cmdCount+' cmds';document.getElementById('sb-cmds').textContent=shellState.cmdCount;}
 
-/* ===== COMMANDS ===== */
+/* === COMMANDS (FIXED) === */
 var commands={
-  help:function(){
-    print('<div style="line-height:1.8;"><span class="gradient-text font-bold text-sm">  AVAILABLE COMMANDS</span><br><br><span class="text-slate-500 font-semibold">Navigation</span><br>  <span class="text-cyan-300">ls [dir]</span>      <span class="text-slate-600">List directory</span><br>  <span class="text-cyan-300">cd [dir]</span>      <span class="text-slate-600">Change directory</span><br>  <span class="text-cyan-300">pwd</span>           <span class="text-slate-600">Working directory</span><br>  <span class="text-cyan-300">tree [dir]</span>    <span class="text-slate-600">Directory tree</span><br>  <span class="text-cyan-300">find [pat]</span>    <span class="text-slate-600">Find files</span><br><br><span class="text-slate-500 font-semibold">Files</span><br>  <span class="text-cyan-300">cat [file]</span>    <span class="text-slate-600">Raw content</span><br>  <span class="text-cyan-300">view [file]</span>   <span class="text-slate-600">Markdown viewer</span><br>  <span class="text-cyan-300">head [file]</span>   <span class="text-slate-600">First N lines</span><br>  <span class="text-cyan-300">tail [file]</span>   <span class="text-slate-600">Last N lines</span><br>  <span class="text-cyan-300">wc [file]</span>     <span class="text-slate-600">Word/line count</span><br>  <span class="text-cyan-300">grep [p] [f]</span>  <span class="text-slate-600">Search in file</span><br>  <span class="text-cyan-300">file [name]</span>   <span class="text-slate-600">Detect type</span><br><br><span class="text-slate-500 font-semibold">System</span><br>  <span class="text-cyan-300">whoami</span>        <span class="text-slate-600">Current user</span><br>  <span class="text-cyan-300">uname [-a]</span>    <span class="text-slate-600">System info</span><br>  <span class="text-cyan-300">neofetch</span>      <span class="text-slate-600">System + art</span><br>  <span class="text-cyan-300">date</span>          <span class="text-slate-600">Date/time</span><br>  <span class="text-cyan-300">uptime</span>        <span class="text-slate-600">Uptime</span><br>  <span class="text-cyan-300">ps</span>            <span class="text-slate-600">Processes</span><br>  <span class="text-cyan-300">ifconfig</span>      <span class="text-slate-600">Network</span><br>  <span class="text-cyan-300">ping [host]</span>   <span class="text-slate-600">Ping</span><br><br><span class="text-slate-500 font-semibold">Utilities</span><br>  <span class="text-cyan-300">echo [text]</span>   <span class="text-slate-600">Print text</span><br>  <span class="text-cyan-300">history [-c]</span>  <span class="text-slate-600">History</span><br>  <span class="text-cyan-300">clear</span>         <span class="text-slate-600">Clear</span><br>  <span class="text-cyan-300">banner</span>        <span class="text-slate-600">Welcome banner</span><br>  <span class="text-cyan-300">calc [expr]</span>   <span class="text-slate-600">Calculator</span><br>  <span class="text-cyan-300">base64</span>        <span class="text-slate-600">Encode/decode</span><br></div>','raw',true);
-  },
-  clear:function(){var o=document.getElementById('output');o.style.opacity='0';o.style.transition='opacity 0.15s';setTimeout(function(){o.innerHTML='';o.style.opacity='1';},150);},
+  help:function(){print('<div style="line-height:1.8;"><span class="gradient-text font-bold text-sm">  AVAILABLE COMMANDS</span><br><br><span class="text-slate-500 font-semibold">Navigation</span><br>  <span class="text-cyan-300">ls [dir]</span>      <span class="text-slate-600">List directory</span><br>  <span class="text-cyan-300">cd [dir]</span>      <span class="text-slate-600">Change directory</span><br>  <span class="text-cyan-300">pwd</span>           <span class="text-slate-600">Working directory</span><br>  <span class="text-cyan-300">tree [dir]</span>    <span class="text-slate-600">Directory tree</span><br>  <span class="text-cyan-300">find [pat]</span>    <span class="text-slate-600">Find files</span><br><br><span class="text-slate-500 font-semibold">Files</span><br>  <span class="text-cyan-300">cat [file]</span>    <span class="text-slate-600">Raw content</span><br>  <span class="text-cyan-300">view [file]</span>   <span class="text-slate-600">Markdown viewer</span><br>  <span class="text-cyan-300">head [file]</span>   <span class="text-slate-600">First N lines</span><br>  <span class="text-cyan-300">tail [file]</span>   <span class="text-slate-600">Last N lines</span><br>  <span class="text-cyan-300">wc [file]</span>     <span class="text-slate-600">Word/line count</span><br>  <span class="text-cyan-300">grep [p] [f]</span>  <span class="text-slate-600">Search in file</span><br>  <span class="text-cyan-300">file [name]</span>   <span class="text-slate-600">Detect type</span><br><br><span class="text-slate-500 font-semibold">System</span><br>  <span class="text-cyan-300">whoami</span>        <span class="text-slate-600">Current user</span><br>  <span class="text-cyan-300">uname [-a]</span>    <span class="text-slate-600">System info</span><br>  <span class="text-cyan-300">neofetch</span>      <span class="text-slate-600">System + art</span><br>  <span class="text-cyan-300">date</span>          <span class="text-slate-600">Date/time</span><br>  <span class="text-cyan-300">uptime</span>        <span class="text-slate-600">Uptime</span><br>  <span class="text-cyan-300">ps</span>            <span class="text-slate-600">Processes</span><br>  <span class="text-cyan-300">ifconfig</span>      <span class="text-slate-600">Network</span><br>  <span class="text-cyan-300">ping [host]</span>   <span class="text-slate-600">Ping</span><br><br><span class="text-slate-500 font-semibold">Utilities</span><br>  <span class="text-cyan-300">echo [text]</span>   <span class="text-slate-600">Print text</span><br>  <span class="text-cyan-300">history [-c]</span>  <span class="text-slate-600">History</span><br>  <span class="text-cyan-300">clear</span>         <span class="text-slate-600">Clear</span><br>  <span class="text-cyan-300">banner</span>        <span class="text-slate-600">Welcome banner</span><br>  <span class="text-cyan-300">calc [expr]</span>   <span class="text-slate-600">Calculator</span><br>  <span class="text-cyan-300">base64</span>        <span class="text-slate-600">Encode/decode</span><br></div>','raw',true);},
+  clear:function(){var o=document.getElementById('output');o.style.opacity='0';setTimeout(function(){o.innerHTML='';o.style.opacity='1';},150);},
   whoami:function(){print('<span class="p-user">'+CONFIG.USER+'</span>','success');},
   pwd:function(){print(getFullPath(),'info');},
-  echo:function(){var a=Array.prototype.slice.call(arguments);var t=a.join(' ');t=t.replace(/\$USER/g,CONFIG.USER).replace(/\$HOST/g,CONFIG.HOST).replace(/\$PWD/g,getFullPath());print(t);},
+  echo:function(){var t=Array.from(arguments).join(' ');t=t.replace(/\$USER/g,CONFIG.USER).replace(/\$HOST/g,CONFIG.HOST).replace(/\$PWD/g,getFullPath());print(escapeHtml(t));},
   date:function(){print(new Date().toString(),'info');},
-  uptime:function(){var s=Math.floor(Date.now()/1000-CONFIG.UPTIME),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;print('up '+h+'h '+m+'m '+ss+'s, load: 0.'+(Math.floor(Math.random()*30)+10)+', 0.'+(Math.floor(Math.random()*20)+5)+', 0.'+(Math.floor(Math.random()*15)+2),'info');},
-  uname:function(){var a=Array.prototype.slice.call(arguments);if(a.includes('-a'))print('Linux '+CONFIG.HOST+' '+CONFIG.KERNEL+' #1 SMP PREEMPT_DYNAMIC '+CONFIG.ARCH+' GNU/Linux','info');else print('Linux','info');},
-  calc:function(){var a=Array.prototype.slice.call(arguments),expr=a.join(' ');if(!expr){print('usage: calc [expr]','info');return;}try{var safe=expr.replace(/[^0-9+\-*/().%\s]/g,'');if(safe!==expr.trim()){print('calc: numbers only','error');return;}var r=Function('"use strict";return('+safe+')')();print('<span class="text-slate-500">'+expr+'</span> = <span class="text-cyan-300 font-bold">'+r+'</span>','raw');}catch(e){print('calc: invalid','error');}},
-  base64:function(action){var a=Array.prototype.slice.call(arguments,1),t=a.join(' ');if(!action||!t){print('usage: base64 [encode|decode] [text]','info');return;}try{if(action==='encode')print(btoa(t),'info');else if(action==='decode')print(atob(t),'info');else print('base64: use encode or decode','error');}catch(e){print('base64: invalid','error');}},
-  banner:function(){printWelcome();},
-
-  neofetch:function(){
-    var us=Math.floor(Date.now()/1000-CONFIG.UPTIME),uh=Math.floor(us/3600),um=Math.floor((us%3600)/60);
-    var el=document.getElementById('neofetch-art'),at=el?el.textContent:'Neo',sa=at.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    var sep='\u2500'.repeat(21);
-    var info='<span class="text-cyan-300 font-bold">'+CONFIG.USER+'@'+CONFIG.HOST+'</span><br><span class="text-slate-600">'+sep+'</span><br><span class="text-slate-500">OS</span>        <span class="text-slate-300">'+CONFIG.OS+'</span><br><span class="text-slate-500">Host</span>      <span class="text-slate-300">GitHub Pages</span><br><span class="text-slate-500">Kernel</span>    <span class="text-slate-300">'+CONFIG.KERNEL+'</span><br><span class="text-slate-500">Shell</span>     <span class="text-slate-300">'+CONFIG.SHELL+'</span><br><span class="text-slate-500">Terminal</span>  <span class="text-slate-300">'+CONFIG.TERM+'</span><br><span class="text-slate-500">CPU</span>       <span class="text-slate-300">WebAssembly vCPU</span><br><span class="text-slate-500">Memory</span>    <span class="text-slate-300">\u221E MB / \u221E MB</span><br><span class="text-slate-500">Uptime</span>    <span class="text-slate-300">'+uh+'h '+um+'m</span><br><br><span style="color:#ef4444;">\u2588\u2588</span><span style="color:#f59e0b;">\u2588\u2588</span><span style="color:#eab308;">\u2588\u2588</span><span style="color:#22c55e;">\u2588\u2588</span><span style="color:#22d3ee;">\u2588\u2588</span><span style="color:#a855f7;">\u2588\u2588</span><span style="color:#64748b;">\u2588\u2588</span><span style="color:#94a3b8;">\u2588\u2588</span>';
-    var out='<pre style="color:#c084fc;margin:0;display:inline;float:left;line-height:1.4;">'+sa+'</pre><div style="margin-left:8px;display:inline-block;line-height:1.6;">'+info+'</div><div style="clear:both;"></div>';
-    print(out,'raw');
-  },
-
-  ps:function(){print('<span class="text-slate-600">  PID TTY          TIME CMD</span>\n<span class="text-slate-400">    1 ?        00:00:00 init</span>\n<span class="text-slate-400">   42 ?        00:00:00 nginx</span>\n<span class="text-slate-400">  128 pts/0    00:00:00 bash</span>\n<span class="text-cyan-300">  256 pts/0    00:00:00 cyberdeck</span>','raw');},
-  ifconfig:function(){var ip=Math.floor(Math.random()*200)+10;print('<span class="text-cyan-300 font-bold">eth0:</span> <span class="text-slate-500">flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span>\n        <span class="text-slate-500">inet</span> <span class="text-slate-300">'+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*254+1)+'</span>  <span class="text-slate-500">netmask 255.255.255.0</span>\n        <span class="text-slate-500">ether</span> <span class="text-slate-300">de:ad:be:ef:ca:fe</span>','raw');},
+  uptime:function(){var s=Math.floor(Date.now()/1000-CONFIG.UPTIME),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;print('up '+h+'h '+m+'m '+ss+'s, load: 0.'+(Math.floor(Math.random()*30)+10),'info');},
+  uname:function(){var a=Array.from(arguments);if(a.includes('-a'))print('Linux '+CONFIG.HOST+' '+CONFIG.KERNEL+' #1 SMP PREEMPT_DYNAMIC '+CONFIG.ARCH+' GNU/Linux','info');else print('Linux','info');},
+  calc:function(){var expr=Array.from(arguments).join(' ');if(!expr){print('usage: calc [expr]','info');return;}try{var safe=expr.replace(/[^0-9+\-*/().%\s]/g,'');if(safe!==expr.trim()){print('calc: numbers only','error');return;}var r=Function('"use strict";return('+safe+')')();print('<span class="text-slate-500">'+escapeHtml(expr)+'</span> = <span class="text-cyan-300 font-bold">'+r+'</span>','raw');}catch(e){print('calc: invalid','error');}},
+  base64:function(action){var a=Array.from(arguments).slice(1),t=a.join(' ');if(!action||!t){print('usage: base64 [encode|decode] [text]','info');return;}try{if(action==='encode')print(btoa(t),'info');else if(action==='decode')print(escapeHtml(atob(t)),'info');else print('base64: use encode or decode','error');}catch(e){print('base64: invalid','error');}},
+  banner:function(){var el=document.getElementById('ascii-banner'),at=el?el.textContent:'Ap0dexMe0',sa=at.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');var banner='<pre style="color:#c084fc;margin:0 0 8px 0;line-height:1.3;text-shadow:0 0 10px rgba(168,85,247,0.4);">'+sa+'</pre>'+'<span class="gradient-text font-bold text-sm">  Reverse Engineering Writeups</span><br>'+'<span class="text-slate-500 text-xs">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span><br>'+'<span class="text-slate-700 text-xs">  '+('\u2500').repeat(43)+'</span><br>'+'<span class="text-slate-400 text-xs">  &bull; Type <span class="text-cyan-300">\'help\'</span> for commands</span><br>';print(banner,'raw');},
+  neofetch:function(){var us=Math.floor(Date.now()/1000-CONFIG.UPTIME),uh=Math.floor(us/3600),um=Math.floor((us%3600)/60);var el=document.getElementById('neofetch-art'),at=el?el.textContent:'Neo',sa=at.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');var sep='\u2500'.repeat(21);var info='<span class="text-cyan-300 font-bold">'+CONFIG.USER+'@'+CONFIG.HOST+'</span><br><span class="text-slate-600">'+sep+'</span><br><span class="text-slate-500">OS</span>        <span class="text-slate-300">'+CONFIG.OS+'</span><br><span class="text-slate-500">Host</span>      <span class="text-slate-300">GitHub Pages</span><br><span class="text-slate-500">Kernel</span>    <span class="text-slate-300">'+CONFIG.KERNEL+'</span><br><span class="text-slate-500">Shell</span>     <span class="text-slate-300">'+CONFIG.SHELL+'</span><br><span class="text-slate-500">Terminal</span>  <span class="text-slate-300">'+CONFIG.TERM+'</span><br><span class="text-slate-500">CPU</span>       <span class="text-slate-300">WebAssembly vCPU</span><br><span class="text-slate-500">Memory</span>    <span class="text-slate-300">\u221E MB / \u221E MB</span><br><span class="text-slate-500">Uptime</span>    <span class="text-slate-300">'+uh+'h '+um+'m</span><br><br><span style="color:#ef4444;">\u2588\u2588</span><span style="color:#f59e0b;">\u2588\u2588</span><span style="color:#eab308;">\u2588\u2588</span><span style="color:#22c55e;">\u2588\u2588</span><span style="color:#22d3ee;">\u2588\u2588</span><span style="color:#a855f7;">\u2588\u2588</span><span style="color:#64748b;">\u2588\u2588</span><span style="color:#94a3b8;">\u2588\u2588</span>';print('<pre style="color:#c084fc;margin:0;display:inline;float:left;line-height:1.4;">'+sa+'</pre><div style="margin-left:8px;display:inline-block;line-height:1.6;">'+info+'</div><div style="clear:both;"></div>','raw');},
+  ps:function(){print('<span class="text-slate-600">  PID TTY          TIME CMD</span>\n<span class="text-slate-400">    1 ?        00:00:00 init</span>\n<span class="text-slate-400">   42 ?        00:00:00 nginx</span>\n<span class="text-cyan-300">  256 pts/0    00:00:00 cyberdeck</span>','raw');},
+  ifconfig:function(){var ip=Math.floor(Math.random()*200)+10;print('<span class="text-cyan-300 font-bold">eth0:</span> <span class="text-slate-500">flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span>\n        <span class="text-slate-500">inet</span> <span class="text-slate-300">'+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*254+1)+'</span>','raw');},
   ping:function(host){if(!host){print('usage: ping [host]','info');return;}var ip=Math.floor(Math.random()*200)+10;print('PING '+host+' ('+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.1) 56 bytes','info');var c=0;var iv=setInterval(function(){if(c>=4){clearInterval(iv);print('\n--- '+host+' stats ---\n4 packets, 0% loss','system');return;}var ms=(Math.random()*50+5).toFixed(1);print('64 bytes: icmp_seq='+(c+1)+' ttl=64 time=<span class="text-cyan-300">'+ms+'</span> ms','normal',true);c++;},600);},
-
-  ls:function(dir){var t;if(dir){t=resolvePath(dir);if(!t){print("ls: '"+dir+"': not found",'error');return;}}else t=getCurrentDirObj();if(!t)return print('Error','error');var items=Object.keys(t);if(!items.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}var out='<div class="flex flex-wrap gap-x-3 gap-y-1">';items.forEach(function(n){var isDir=typeof t[n]==='object';out+='<span class="'+(isDir?'out-dir':'out-file')+'" style="cursor:pointer" onclick="sidebarClick(\''+n+'\','+isDir+')">'+(isDir?'&#128193;':'&#128196;')+' '+n+(isDir?'/':'')+'</span>';});out+='</div>';print(out);},
-  cd:function(dir){if(!dir||dir==='~'||dir==='/'){shellState.path=[];}else if(dir==='..'){if(shellState.path.length>0)shellState.path.pop();}else if(dir.startsWith('/')){var parts=dir.split('/').filter(function(x){return x;}),cur=fileSystem,np=[];for(var i=0;i<parts.length;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object'){cur=cur[parts[i]];np.push(parts[i]);}else{print("cd: '"+dir+"': not found",'error');return;}}shellState.path=np;}else{var cd=getCurrentDirObj(),clean=dir.replace(/\/$/,'');if(cd&&cd[clean]&&typeof cd[clean]==='object')shellState.path.push(clean);else{print("cd: '"+dir+"': not found",'error');return;}}updatePrompt();},
-  cat:function(file){if(!file){print('usage: cat [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("cat: '"+file+"': not found",'error');return;}if(typeof t==='object'){print("cat: '"+file+"': is a directory",'error');return;}var s=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+s+'</pre>','raw');},
-  head:function(file,n){if(!file){print('usage: head [file] [n]','info');return;}var lines=parseInt(n)||20,t=resolvePathToTarget(file);if(t===null){print("head: '"+file+"': not found",'error');return;}if(typeof t==='object'){print("head: directory",'error');return;}var s=t.split('\n').slice(0,lines).join('\n').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+s+'</pre>','raw');},
-  tail:function(file,n){if(!file){print('usage: tail [file] [n]','info');return;}var lines=parseInt(n)||20,t=resolvePathToTarget(file);if(t===null){print("tail: '"+file+"': not found",'error');return;}if(typeof t==='object'){print("tail: directory",'error');return;}var all=t.split('\n'),s=all.slice(-lines).join('\n').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+s+'</pre>','raw');},
-  wc:function(file){if(!file){print('usage: wc [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("wc: '"+file+"': not found",'error');return;}if(typeof t==='object'){print("wc: directory",'error');return;}var l=t.split('\n').length,w=t.trim().split(/\s+/).length;print('  <span class="text-cyan-300">'+l+'</span>  <span class="text-cyan-300">'+w+'</span> <span class="text-cyan-300">'+t.length+'</span> <span class="out-file">'+file+'</span>','raw');},
-  grep:function(pattern,file){if(!pattern||!file){print('usage: grep [pattern] [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("grep: '"+file+"': not found",'error');return;}if(typeof t==='object'){print("grep: directory",'error');return;}var lines=t.split('\n').filter(function(l){return l.toLowerCase().includes(pattern.toLowerCase());});if(!lines.length){print('no matches','dim');return;}var s=lines.join('\n').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');var re=new RegExp('('+pattern.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');s=s.replace(re,'<span class="bg-purple-500/30 text-purple-300 font-bold">$1</span>');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed">'+s+'</pre>','raw');},
-  file:function(name){if(!name){print('usage: file [name]','info');return;}var t=resolvePathToTarget(name);if(t===null){print("file: '"+name+"': not found",'error');return;}if(typeof t==='object'){print(name+': directory','info');return;}var ext=name.includes('.')?name.split('.').pop().toLowerCase():'';var types={md:'Markdown',txt:'ASCII text',json:'JSON data',js:'JavaScript',py:'Python',sh:'Shell script',html:'HTML',css:'CSS',xml:'XML',yaml:'YAML',c:'C source',rs:'Rust',go:'Go source',log:'Log file'};print(name+': '+(types[ext]||'data'),'info');},
-  view:function(file){if(!file){print('usage: view [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("view: '"+file+"': not found",'error');return;}if(typeof t==='object'){print("view: '"+file+"': is directory",'error');return;}currentFileContent=t;var dn=file.split('/').pop(),ext=dn.includes('.')?dn.split('.').pop().toLowerCase():'txt';var icons={md:'&#128221;',txt:'&#128196;',json:'&#128203;',js:'&#9889;',py:'&#128013;',sh:'&#128424;',html:'&#127760;',css:'&#127912;',log:'&#128203;'};document.getElementById('modal-title').textContent=dn;document.getElementById('modal-icon').innerHTML=icons[ext]||'&#128196;';document.getElementById('modal-ext-badge').textContent='.'+ext;document.getElementById('modal-path').textContent=getFullPath()+'/'+file;document.getElementById('modal-size').textContent=formatBytes(t.length);document.getElementById('modal-content').innerHTML=marked.parse(t);document.getElementById('modal-raw-pre').textContent=t;var lc=t.split('\n').length;document.getElementById('raw-line-numbers').innerHTML=Array.from({length:lc},function(_,i){return '<span class="block">'+(i+1)+'</span>';}).join('');var w=t.trim().split(/\s+/).length;document.getElementById('file-stats').innerHTML='<span>L:<span class="text-purple-400/60">'+lc+'</span></span><span>W:<span class="text-purple-400/60">'+w+'</span></span>';    document.getElementById('modal-content').classList.remove('hidden');document.getElementById('modal-raw').classList.add('hidden');document.getElementById('modal-status').textContent='RENDERED';setTimeout(function(){if(typeof hljs!=='undefined'){document.querySelectorAll('#modal-content pre code').forEach(function(b){hljs.highlightElement(b);});}else{console.warn('highlight.js not loaded');}},10);document.getElementById('file-modal').classList.remove('hidden');print('Opening <span class="out-file">'+dn+'</span>...','info');},
-  tree:function(dir){var cd=dir==='.'?getCurrentDirObj():fileSystem;var lines=[];var build=function(obj,prefix){var keys=Object.keys(obj).sort();keys.forEach(function(k,i){var last=i===keys.length-1,isDir=typeof obj[k]==='object';var conn=last?'\u2514\u2500\u2500 ':'\u251C\u2500\u2500 ';var cls=isDir?'out-dir':'out-file';lines.push('<span class="'+cls+'">'+prefix+conn+k+(isDir?'/':'')+'</span>');if(isDir)build(obj[k],prefix+(last?'    ':'\u2502   '));});};build(cd,'');print(lines.length?'<div class="leading-relaxed">'+lines.join('<br>')+'</div>':'<span class="text-slate-600">(empty)</span>','raw');},
-  find:function(pattern){if(!pattern){print('usage: find [pattern]','info');return;}var results=[];var search=function(obj,path){for(var k in obj){var cp=path?path+'/'+k:k;if(k.toLowerCase().includes(pattern.toLowerCase()))results.push({name:cp,isDir:typeof obj[k]==='object'});if(typeof obj[k]==='object')search(obj[k],cp);}};search(fileSystem);if(!results.length)print("find: no matches for '"+pattern+"'",'error');else results.forEach(function(r){print('<span class="'+(r.isDir?'out-dir':'out-file')+'">'+r.name+(r.isDir?'/':'')+'</span>','normal',true);});},
-  history:function(){var a=Array.prototype.slice.call(arguments);if(a.includes('-c')){shellState.history=[];shellState.historyIndex=-1;print('History cleared','success');return;}if(!shellState.history.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}shellState.history.forEach(function(c,i){print('  <span class="text-slate-600">'+String(i+1).padStart(4,' ')+'</span>  '+c,'raw');});}
+  ls:function(dir){var t=dir?resolvePath(dir):getCurrentDirObj();if(!t){print("ls: '"+escapeHtml(dir)+"': not found",'error');return;}var items=Object.keys(t);if(!items.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}var out='<div class="flex flex-wrap gap-x-3 gap-y-1">';items.forEach(function(n){var isDir=typeof t[n]==='object';var disp=escapeHtml(n)+(isDir?'/':'');var safeName=escapeAttr(n);out+='<span class="'+(isDir?'out-dir':'out-file')+'" style="cursor:pointer" onclick="sidebarClick(\''+safeName+'\','+isDir+')">'+(isDir?'&#128193;':'&#128196;')+' '+disp+'</span>';});out+='</div>';print(out);},
+  cd:function(dir){if(!dir||dir==='~'||dir==='/'){shellState.path=[];}else if(dir==='..'){if(shellState.path.length>0)shellState.path.pop();}else if(dir.startsWith('/')){var parts=dir.split('/').filter(function(x){return x;}),cur=fileSystem,np=[];for(var i=0;i<parts.length;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object'){cur=cur[parts[i]];np.push(parts[i]);}else{print("cd: '"+escapeHtml(dir)+"': not found",'error');return;}}shellState.path=np;}else{var cdObj=getCurrentDirObj(),clean=dir.replace(/\/$/,'');if(cdObj&&cdObj[clean]&&typeof cdObj[clean]==='object')shellState.path.push(clean);else{print("cd: '"+escapeHtml(dir)+"': not found",'error');return;}}updatePrompt();updateSidebar();},
+  cat:function(file){if(!file){print('usage: cat [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("cat: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("cat: '"+escapeHtml(file)+"': is a directory",'error');return;}print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(t)+'</pre>','raw');},
+  head:function(file,n){if(!file){print('usage: head [file] [n]','info');return;}var lines=parseInt(n)||20,t=resolvePathToTarget(file);if(t===null){print("head: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("head: directory",'error');return;}var s=t.split('\n').slice(0,lines).join('\n');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(s)+'</pre>','raw');},
+  tail:function(file,n){if(!file){print('usage: tail [file] [n]','info');return;}var lines=parseInt(n)||20,t=resolvePathToTarget(file);if(t===null){print("tail: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("tail: directory",'error');return;}var all=t.split('\n'),s=all.slice(-lines).join('\n');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(s)+'</pre>','raw');},
+  wc:function(file){if(!file){print('usage: wc [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("wc: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("wc: directory",'error');return;}var l=t.split('\n').length,w=t.trim().split(/\s+/).length;print('  <span class="text-cyan-300">'+l+'</span>  <span class="text-cyan-300">'+w+'</span> <span class="text-cyan-300">'+t.length+'</span> <span class="out-file">'+escapeHtml(file)+'</span>','raw');},
+  grep:function(pattern,file){if(!pattern||!file){print('usage: grep [pattern] [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("grep: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("grep: directory",'error');return;}var lines=t.split('\n').filter(function(l){return l.toLowerCase().includes(pattern.toLowerCase());});if(!lines.length){print('no matches','dim');return;}var s=lines.map(function(l){return escapeHtml(l);}).join('\n');var re=new RegExp('('+pattern.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');s=s.replace(re,'<span class="bg-purple-500/30 text-purple-300 font-bold">$1</span>');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed">'+s+'</pre>','raw');},
+  file:function(name){if(!name){print('usage: file [name]','info');return;}var t=resolvePathToTarget(name);if(t===null){print("file: '"+escapeHtml(name)+"': not found",'error');return;}var ext=name.includes('.')?name.split('.').pop().toLowerCase():'';var types={md:'Markdown',txt:'ASCII text',json:'JSON data',js:'JavaScript',py:'Python',sh:'Shell script',html:'HTML',css:'CSS',log:'Log file'};print(escapeHtml(name)+': '+(types[ext]||'data'),'info');},
+  view:function(file){if(!file){print('usage: view [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("view: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("view: '"+escapeHtml(file)+"': is directory",'error');return;}currentFileContent=t;var dn=file.split('/').pop(),ext=dn.includes('.')?dn.split('.').pop().toLowerCase():'txt';var icons={md:'&#128221;',txt:'&#128196;',json:'&#128203;',js:'&#9889;',py:'&#128013;',sh:'&#128424;',html:'&#127760;',css:'&#127912;',log:'&#128203;'};document.getElementById('modal-title').textContent=dn;document.getElementById('modal-icon').innerHTML=icons[ext]||'&#128196;';document.getElementById('modal-ext-badge').textContent='.'+ext;document.getElementById('modal-path').textContent=getFullPath()+'/'+file;document.getElementById('modal-size').textContent=formatBytes(t.length);document.getElementById('modal-content').innerHTML=marked.parse(t);document.getElementById('modal-raw-pre').textContent=t;var lc=t.split('\n').length;document.getElementById('raw-line-numbers').innerHTML=Array.from({length:lc},function(_,i){return '<span class="block">'+(i+1)+'</span>';}).join('');var w=t.trim().split(/\s+/).length;document.getElementById('file-stats').innerHTML='<span>L:<span class="text-purple-400/60">'+lc+'</span></span><span>W:<span class="text-purple-400/60">'+w+'</span></span>';document.getElementById('modal-content').classList.remove('hidden');document.getElementById('modal-raw').classList.add('hidden');document.getElementById('modal-status').textContent='RENDERED';setTimeout(function(){if(typeof hljs!=='undefined'){document.querySelectorAll('#modal-content pre code').forEach(function(b){hljs.highlightElement(b);});}},10);document.getElementById('file-modal').classList.remove('hidden');print('Opening <span class="out-file">'+escapeHtml(dn)+'</span>...','info');},
+  tree:function(dir){var target=dir?resolvePath(dir):getCurrentDirObj();if(!target){print("tree: '"+escapeHtml(dir)+"': not found",'error');return;}var lines=[];var build=function(obj,prefix){var keys=Object.keys(obj).sort();keys.forEach(function(k,i){var last=i===keys.length-1,isDir=typeof obj[k]==='object';var conn=last?'\u2514\u2500\u2500 ':'\u251C\u2500\u2500 ';var cls=isDir?'out-dir':'out-file';lines.push('<span class="'+cls+'">'+prefix+conn+escapeHtml(k)+(isDir?'/':'')+'</span>');if(isDir)build(obj[k],prefix+(last?'    ':'\u2502   '));});};build(target,'');print(lines.length?'<div class="leading-relaxed">'+lines.join('<br>')+'</div>':'<span class="text-slate-600">(empty)</span>','raw');},
+  find:function(pattern){if(!pattern){print('usage: find [pattern]','info');return;}var results=[];var search=function(obj,path){for(var k in obj){var cp=path?path+'/'+k:k;if(k.toLowerCase().includes(pattern.toLowerCase()))results.push({name:cp,isDir:typeof obj[k]==='object'});if(typeof obj[k]==='object')search(obj[k],cp);}};search(fileSystem.reverse,'');if(!results.length)print("find: no matches for '"+escapeHtml(pattern)+"'",'error');else results.forEach(function(r){print('<span class="'+(r.isDir?'out-dir':'out-file')+'">'+escapeHtml(r.name)+(r.isDir?'/':'')+'</span>','normal',true);});},
+  history:function(){var a=Array.from(arguments);if(a.includes('-c')){shellState.history=[];shellState.historyIndex=-1;print('History cleared','success');return;}if(!shellState.history.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}shellState.history.forEach(function(c,i){print('  <span class="text-slate-600">'+String(i+1).padStart(4,' ')+'</span>  '+escapeHtml(c),'raw');});}
 };
 
-/* ===== MODAL ===== */
 function closeFileModal(){document.getElementById('file-modal').classList.add('hidden');currentFileContent='';document.getElementById('modal-content').classList.remove('hidden');document.getElementById('modal-raw').classList.add('hidden');}
 function toggleRawView(){var r=document.getElementById('modal-raw'),m=document.getElementById('modal-content'),isRaw=!r.classList.contains('hidden');if(isRaw){r.classList.add('hidden');m.classList.remove('hidden');document.getElementById('modal-status').textContent='RENDERED';document.getElementById('raw-btn-text').textContent='Raw';}else{m.classList.add('hidden');r.classList.remove('hidden');document.getElementById('modal-status').textContent='RAW';document.getElementById('raw-btn-text').textContent='Rendered';}}
 function copyModalContent(){if(!currentFileContent)return;navigator.clipboard.writeText(currentFileContent).then(function(){print('Copied to clipboard','success');}).catch(function(){print('Copy failed','error');});}
-function downloadCurrentFile(){if(!currentFileContent)return;var title=document.getElementById('modal-title').textContent||'file',ext=(document.getElementById('modal-ext-badge').textContent||'.txt').replace('.',''),blob=new Blob([currentFileContent],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'.'+ext;a.click();URL.revokeObjectURL(url);print('Downloaded <span class="text-cyan-300">'+title+'.'+ext+'</span>','success');}
+function downloadCurrentFile(){if(!currentFileContent)return;var title=document.getElementById('modal-title').textContent||'file',ext=(document.getElementById('modal-ext-badge').textContent||'.txt').replace('.',''),blob=new Blob([currentFileContent],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'.'+ext;a.click();URL.revokeObjectURL(url);print('Downloaded <span class="text-cyan-300">'+escapeHtml(title+'.'+ext)+'</span>','success');}
 
-/* ===== KEYBOARD ===== */
-function handleKey(e){
-  var inp=document.getElementById('cmd');
-  if(e.key==='Tab'){
-    e.preventDefault();
-    var val=inp.value,cp=inp.selectionStart,before=val.slice(0,cp),words=before.split(/\s+/),lw=words[words.length-1]||'';
-    var isCmd=words.length<=1&&before.trim()===lw,cmd=(words[0]||'').toLowerCase();
-    var isPathArg=words.length===2&&['cat','view','cd','tree','find','ls','head','tail','wc','grep','file'].includes(cmd);
-    var matches=[];
-    if(isCmd){matches=Object.keys(commands).filter(function(c){return c.startsWith(lw.toLowerCase());});}
-    else if(isPathArg){var dir=getCurrentDirObj(),sp=lw.split('/'),partial=sp.pop();if(sp.length>0&&sp[0]){var tmp=dir;for(var j=0;j<sp.length;j++){var dk=Object.keys(tmp).find(function(k){return k.toLowerCase()===sp[j].toLowerCase()&&typeof tmp[k]==='object';});if(dk)tmp=tmp[dk];else{tmp=null;break;}}if(tmp)dir=tmp;}if(dir){var prefix=sp.length>0?sp.join('/')+'/':'';matches=Object.keys(dir).filter(function(n){return n.toLowerCase().startsWith(partial.toLowerCase());}).map(function(n){var isD=typeof dir[n]==='object';return {display:n+(isD?'/':''),full:prefix+n+(isD?'/':'')};});}}
-    var cc=shellState.completion,ctx=before+'|'+val.slice(cp);
-    if(cc.input===ctx&&cc.matches.length>0)cc.index=(cc.index+1)%cc.matches.length;
-    else{cc.input=ctx;cc.matches=matches;cc.index=0;}
-    if(cc.matches.length>0){var sel=isCmd?cc.matches[cc.index]:cc.matches[cc.index].full;var nb=before.slice(0,before.length-lw.length)+sel;inp.value=nb+val.slice(cp);inp.setSelectionRange(nb.length,nb.length);}
-    if(cc.matches.length>1&&cc.index===0&&cc.input===ctx){var sug=cc.matches.map(function(m){var d=isCmd?m:m.display;return '<span class="'+(d.endsWith('/')?'out-dir':'out-file')+'">'+d+'</span>';}).join('<span class="text-slate-700 mx-1">|</span>');print(sug,'raw');}
-    return;
-  }
-  if(e.key==='c'&&(e.ctrlKey||e.metaKey)){e.preventDefault();print('^C','error');inp.value='';return;}
-  if(e.key==='l'&&(e.ctrlKey||e.metaKey)){e.preventDefault();commands.clear();return;}
-  if(e.key==='ArrowUp'){e.preventDefault();if(shellState.historyIndex>0){shellState.historyIndex--;inp.value=shellState.history[shellState.historyIndex];}}
-  else if(e.key==='ArrowDown'){e.preventDefault();if(shellState.historyIndex<shellState.history.length-1){shellState.historyIndex++;inp.value=shellState.history[shellState.historyIndex];}else{shellState.historyIndex=shellState.history.length;inp.value='';}}
-  else if(e.key==='Enter'){
-    var val=inp.value.trim();if(!val)return;
-    print('<span class="out-command"><span class="p-user">'+CONFIG.USER+'</span><span class="p-at">@</span><span class="p-host">'+CONFIG.HOST+'</span><span class="text-slate-600">:</span><span class="p-path">'+getFullPath()+'</span><span class="p-arrow">&#10095;</span></span> <span class="text-slate-300">'+val.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>','raw');
-    shellState.history.push(val);shellState.historyIndex=shellState.history.length;shellState.cmdCount++;
-    var args=val.split(/\s+/),cmd=args.shift().toLowerCase();
-    if(commands[cmd])commands[cmd].apply(null,args);
-    else print("bash: "+cmd+": command not found",'error');
-    inp.value='';updateStatus();
-  }
-}
+function handleKey(e){var inp=document.getElementById('cmd');if(e.key==='Tab'){e.preventDefault();var val=inp.value,cp=inp.selectionStart,before=val.slice(0,cp),words=before.split(/\s+/),lw=words[words.length-1]||'';var isCmd=words.length<=1&&before.trim()===lw,cmd=(words[0]||'').toLowerCase();var isPathArg=words.length===2&&['cat','view','cd','tree','find','ls','head','tail','wc','grep','file'].includes(cmd);var matches=[];if(isCmd){matches=Object.keys(commands).filter(function(c){return c.startsWith(lw.toLowerCase());});}else if(isPathArg){var dir=getCurrentDirObj(),sp=lw.split('/'),partial=sp.pop();if(sp.length>0&&sp[0]){var tmp=dir;for(var j=0;j<sp.length;j++){var dk=Object.keys(tmp).find(function(k){return k.toLowerCase()===sp[j].toLowerCase()&&typeof tmp[k]==='object';});if(dk)tmp=tmp[dk];else{tmp=null;break;}}if(tmp)dir=tmp;}if(dir){var prefix=sp.length>0?sp.join('/')+'/':'';matches=Object.keys(dir).filter(function(n){return n.toLowerCase().startsWith(partial.toLowerCase());}).map(function(n){var isD=typeof dir[n]==='object';return {display:n+(isD?'/':''),full:prefix+n+(isD?'/':'')};});}}var cc=shellState.completion,ctx=before+'|'+val.slice(cp);if(cc.input===ctx&&cc.matches.length>0)cc.index=(cc.index+1)%cc.matches.length;else{cc.input=ctx;cc.matches=matches;cc.index=0;}if(cc.matches.length>0){var sel=isCmd?cc.matches[cc.index]:cc.matches[cc.index].full;var nb=before.slice(0,before.length-lw.length)+sel;inp.value=nb+val.slice(cp);inp.setSelectionRange(nb.length,nb.length);}if(cc.matches.length>1&&cc.index===0&&cc.input===ctx){var sug=cc.matches.map(function(m){var d=isCmd?m:m.display;return '<span class="'+(d.endsWith('/')?'out-dir':'out-file')+'">'+escapeHtml(d)+'</span>';}).join('<span class="text-slate-700 mx-1">|</span>');print(sug,'raw');}return;}if(e.key==='c'&&(e.ctrlKey||e.metaKey)){e.preventDefault();print('^C','error');inp.value='';return;}if(e.key==='l'&&(e.ctrlKey||e.metaKey)){e.preventDefault();commands.clear();return;}if(e.key==='ArrowUp'){e.preventDefault();if(shellState.historyIndex>0){shellState.historyIndex--;inp.value=shellState.history[shellState.historyIndex];}}else if(e.key==='ArrowDown'){e.preventDefault();if(shellState.historyIndex<shellState.history.length-1){shellState.historyIndex++;inp.value=shellState.history[shellState.historyIndex];}else{shellState.historyIndex=shellState.history.length;inp.value='';}}else if(e.key==='Enter'){var val=inp.value.trim();if(!val)return;print('<span class="out-command"><span class="p-user">'+CONFIG.USER+'</span><span class="p-at">@</span><span class="p-host">'+CONFIG.HOST+'</span><span class="text-slate-600">:</span><span class="p-path">'+getFullPath()+'</span><span class="p-arrow">&#10095;</span></span> <span class="text-slate-300">'+escapeHtml(val)+'</span>','raw');shellState.history.push(val);shellState.historyIndex=shellState.history.length;shellState.cmdCount++;var args=val.split(/\s+/),cmd=args.shift().toLowerCase();if(commands[cmd])commands[cmd].apply(null,args);else print("bash: "+escapeHtml(cmd)+": command not found",'error');inp.value='';updateStatus();}}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeFileModal();if(e.ctrlKey&&e.key==='r'&&!document.getElementById('file-modal').classList.contains('hidden')){e.preventDefault();toggleRawView();}});
 
-/* ===== BOOT ===== */
-function playBootSequence(){return new Promise(function(resolve){var log=document.getElementById('boot-log'),statusEl=document.getElementById('boot-status'),pctEl=document.getElementById('boot-percent'),bar=document.getElementById('boot-progress');var msgs=[{t:'['+new Date().toLocaleTimeString()+'] Initializing CyberDeck...',p:8,s:'BIOS'},{t:'[ OK ] Loading kernel '+CONFIG.KERNEL+'...',p:20,s:'Kernel'},{t:'[ OK ] Mounting encrypted filesystem...',p:35,s:'Filesystem'},{t:'[ OK ] Starting network manager...',p:48,s:'Network'},{t:'[ OK ] Loading security modules...',p:60,s:'Security'},{t:'[ OK ] Starting SSH daemon...',p:72,s:'SSH'},{t:'[ OK ] Initializing CyberDeck terminal...',p:85,s:'Terminal'},{t:'[ OK ] Auth: '+CONFIG.USER+' granted',p:95,s:'Auth'},{t:'[ OK ] System ready.',p:100,s:'Ready'}];var i=0;var iv=setInterval(function(){if(i<msgs.length){var m=msgs[i],line=document.createElement('div');line.style.opacity='0';line.style.transition='opacity 0.3s';line.textContent=m.t;log.appendChild(line);requestAnimationFrame(function(){line.style.opacity='1';});statusEl.textContent=m.s;pctEl.textContent=m.p+'%';bar.style.width=m.p+'%';log.scrollTop=log.scrollHeight;i++;}else{clearInterval(iv);setTimeout(function(){var scr=document.getElementById('boot-screen');scr.style.transition='opacity 0.7s';scr.style.opacity='0';setTimeout(function(){scr.style.display='none';resolve();},700);},300);}},220);});}
+function playBootSequence(){return new Promise(function(resolve){var log=document.getElementById('boot-log'),statusEl=document.getElementById('boot-status'),pctEl=document.getElementById('boot-percent'),bar=document.getElementById('boot-progress');var msgs=[{t:'['+new Date().toLocaleTimeString()+'] Initializing CyberDeck...',p:8,s:'BIOS'},{t:'[ OK ] Loading kernel '+CONFIG.KERNEL+'...',p:20,s:'Kernel'},{t:'[ OK ] Mounting encrypted filesystem...',p:35,s:'Filesystem'},{t:'[ OK ] Starting network manager...',p:48,s:'Network'},{t:'[ OK ] Loading security modules...',p:60,s:'Security'},{t:'[ OK ] Starting SSH daemon...',p:72,s:'SSH'},{t:'[ OK ] Initializing CyberDeck terminal...',p:85,s:'Terminal'},{t:'[ OK ] Auth: '+CONFIG.USER+' granted',p:95,s:'Auth'},{t:'[ OK ] System ready.',p:100,s:'Ready'}];var i=0;var iv=setInterval(function(){if(i<msgs.length){var m=msgs[i],line=document.createElement('div');line.style.opacity='0';line.textContent=m.t;log.appendChild(line);requestAnimationFrame(function(){line.style.opacity='1';});statusEl.textContent=m.s;pctEl.textContent=m.p+'%';bar.style.width=m.p+'%';log.scrollTop=log.scrollHeight;i++;}else{clearInterval(iv);setTimeout(function(){var scr=document.getElementById('boot-screen');scr.style.transition='opacity 0.7s';scr.style.opacity='0';setTimeout(function(){scr.style.display='none';resolve();},700);},300);}},220);});}
 
-/* ===== WELCOME ===== */
-function printWelcome(){
-  var el=document.getElementById('ascii-banner'),at=el?el.textContent:'Ap0dexMe0',sa=at.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  var banner='<pre style="color:#c084fc;margin:0 0 8px 0;line-height:1.3;text-shadow:0 0 10px rgba(168,85,247,0.4);">'+sa+'</pre>'+
-  '<span class="gradient-text font-bold text-sm">  Reverse Engineering Writeups</span><br>'+
-  '<span class="text-slate-500 text-xs">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span><br>'+
-  '<span class="text-slate-700 text-xs">  '+('\u2500').repeat(43)+'</span><br>'+
-  '<span class="text-slate-400 text-xs">  &bull; Type <span class="text-cyan-300">\'help\'</span> for commands</span><br>'+
-  print(banner,'raw');
-}
-
-function initTerminal(){printWelcome();document.getElementById('cmd').focus();updatePrompt();updateStatus();updateSidebar();}
-
+function initTerminal(){commands.banner();document.getElementById('cmd').focus();updatePrompt();updateStatus();updateSidebar();}
 window.addEventListener('load',async function(){await playBootSequence();fileSystem=await loadFileSystem();initTerminal();});
 document.addEventListener('click',function(){var m=document.getElementById('file-modal');if(m.classList.contains('hidden'))document.getElementById('cmd').focus();});
 </script>
