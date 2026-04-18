@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ap0dexMe0 // Reverse Shell Terminal</title>
-<meta name="description" content="Reverse Engineering Writeups - Hacker Terminal">
+<title>Ap0dexMe0 // Reverse Shell </title>
+<meta name="description" content="Reverse Engineering Writeups">
 <meta name="theme-color" content="#000000">
 
 <!-- Tailwind CSS -->
@@ -201,7 +201,7 @@ body { font-family: 'Fira Code', 'JetBrains Mono', monospace; background: #000; 
       <div class="text-matrix text-5xl md:text-6xl font-bold tracking-tighter mb-2 animate-flicker" style="text-shadow: 0 0 30px #00ff41, 0 0 60px rgba(0,255,65,0.4);">
         <span class="glitch" data-text="Ap0dexMe0">Ap0dexMe0</span>
       </div>
-      <div class="text-matrixDim text-xs tracking-[0.3em] mt-3">REVERSE ENGINEERING TERMINAL v3.0</div>
+      <div class="text-matrixDim text-xs tracking-[0.3em] mt-3">REVERSE ENGINEERING</div>
     </div>
 
     <!-- Boot Log -->
@@ -285,8 +285,7 @@ body { font-family: 'Fira Code', 'JetBrains Mono', monospace; background: #000; 
   </div>
 </div>
 
-<!-- ===== ASCII BANNER TEMPLATE (no JS escaping issues) ===== -->
-<template id="ascii-banner">
+<script type="text/plain" id="ascii-banner">
   ___        _____     _          ___  ___      _____ 
  / _ \      |  _  |   | |         |  \/  |     |  _  |
 / /_\ \_ __ | |/' | __| | _____  _| .  . | ___ | |/' |
@@ -295,7 +294,16 @@ body { font-family: 'Fira Code', 'JetBrains Mono', monospace; background: #000; 
 \_| |_/ .__/ \___/ \__,_|\___/_/\_\_|  |_/ \___| \___/
       | |                                             
       |_|                                             
-</template>
+</script>
+
+<script type="text/plain" id="neofetch-art">
+     ██████╗ ██╗     ███╗   ███╗
+    ██╔════╝ ██║     ████╗ ████║
+    ██║  ███╗██║     ██╔████╔██║
+    ██║   ██║██║     ██║╚██╔╝██║
+    ╚██████╔╝███████╗██║ ╚═╝ ██║
+     ╚═════╝ ╚══════╝╚═╝     ╚═╝
+</script>
 
 <!-- ===== MAIN TERMINAL ===== -->
 <div class="relative z-10 flex items-center justify-center min-h-screen p-2 md:p-4" onclick="document.getElementById('cmd').focus()">
@@ -691,31 +699,36 @@ const commands = {
 
   banner: () => printWelcome(),
 
-  neofetch: () => {
-    const uptimeSecs = Math.floor((Date.now() / 1000) - CONFIG.UPTIME);
-    const uh = Math.floor(uptimeSecs / 3600); const um = Math.floor((uptimeSecs % 3600) / 60);
-    const art = `<span class="text-matrix" style="text-shadow:0 0 6px #00ff41;">
-     ██████╗ ██╗     ███╗   ███╗
-    ██╔════╝ ██║     ████╗ ████║
-    ██║  ███╗██║     ██╔████╔██║
-    ██║   ██║██║     ██║╚██╔╝██║
-    ╚██████╔╝███████╗██║ ╚═╝ ██║
-     ╚═════╝ ╚══════╝╚═╝     ╚═╝</span>
-<span class="text-matrix/60 ml-2">
-  <span class="out-info font-bold">${CONFIG.USER}@${CONFIG.HOST}</span>
-  ─────────────────────
-  <span class="text-matrix/40">OS</span>        <span class="text-matrix/70">${CONFIG.OS}</span>
-  <span class="text-matrix/40">Host</span>      <span class="text-matrix/70">GitHub Pages</span>
-  <span class="text-matrix/40">Kernel</span>    <span class="text-matrix/70">${CONFIG.KERNEL}</span>
-  <span class="text-matrix/40">Shell</span>     <span class="text-matrix/70">${CONFIG.SHELL}</span>
-  <span class="text-matrix/40">Terminal</span>  <span class="text-matrix/70">${CONFIG.TERM}</span>
-  <span class="text-matrix/40">CPU</span>       <span class="text-matrix/70">WebAssembly vCPU @ 3.2GHz</span>
-  <span class="text-matrix/40">Memory</span>    <span class="text-matrix/70">∞ MB / ∞ MB</span>
-  <span class="text-matrix/40">Uptime</span>    <span class="text-matrix/70">${uh}h ${um}m</span>
+  neofetch: function() {
+    var uptimeSecs = Math.floor((Date.now() / 1000) - CONFIG.UPTIME);
+    var uh = Math.floor(uptimeSecs / 3600);
+    var um = Math.floor((uptimeSecs % 3600) / 60);
 
-  <span style="color:#ff0040;">██</span><span style="color:#ff6600;">██</span><span style="color:#ffe600;">██</span><span style="color:#00ff41;">██</span><span style="color:#00ffff;">██</span><span style="color:#ff00ff;">██</span><span style="color:#888;">██</span><span style="color:#ccc;">██</span>
-</span>`;
-    print(art);
+    var artEl = document.getElementById('neofetch-art');
+    var artText = artEl ? artEl.textContent : 'Neofetch';
+    var safeArt = artText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    var sep = '\u2500'.repeat(21);
+
+    var info =
+      '<span class="out-info font-bold">' + CONFIG.USER + '@' + CONFIG.HOST + '</span><br>' +
+      '<span class="text-matrix/40">' + sep + '</span><br>' +
+      '<span class="text-matrix/40">OS</span>        <span class="text-matrix/70">' + CONFIG.OS + '</span><br>' +
+      '<span class="text-matrix/40">Host</span>      <span class="text-matrix/70">GitHub Pages</span><br>' +
+      '<span class="text-matrix/40">Kernel</span>    <span class="text-matrix/70">' + CONFIG.KERNEL + '</span><br>' +
+      '<span class="text-matrix/40">Shell</span>     <span class="text-matrix/70">' + CONFIG.SHELL + '</span><br>' +
+      '<span class="text-matrix/40">Terminal</span>  <span class="text-matrix/70">' + CONFIG.TERM + '</span><br>' +
+      '<span class="text-matrix/40">CPU</span>       <span class="text-matrix/70">WebAssembly vCPU @ 3.2GHz</span><br>' +
+      '<span class="text-matrix/40">Memory</span>    <span class="text-matrix/70">\u221E MB / \u221E MB</span><br>' +
+      '<span class="text-matrix/40">Uptime</span>    <span class="text-matrix/70">' + uh + 'h ' + um + 'm</span><br>' +
+      '<br>' +
+      '<span style="color:#ff0040;">\u2588\u2588</span><span style="color:#ff6600;">\u2588\u2588</span><span style="color:#ffe600;">\u2588\u2588</span><span style="color:#00ff41;">\u2588\u2588</span><span style="color:#00ffff;">\u2588\u2588</span><span style="color:#ff00ff;">\u2588\u2588</span><span style="color:#888;">\u2588\u2588</span><span style="color:#ccc;">\u2588\u2588</span>';
+
+    var output = '<pre style="color:#00ff41;text-shadow:0 0 6px #00ff41;margin:0;display:inline;float:left;line-height:1.4;">' + safeArt + '</pre>' +
+                 '<div style="margin-left:8px;display:inline-block;line-height:1.6;">' + info + '</div>' +
+                 '<div style="clear:both;"></div>';
+
+    print(output, 'raw');
   },
 
   ps: () => {
@@ -1151,11 +1164,11 @@ async function playBootSequence() {
 ========================================= */
 function printWelcome() {
   var bannerEl = document.getElementById('ascii-banner');
-  var artText = bannerEl ? bannerEl.innerHTML : 'Ap0dexMe0';
+  var artText = bannerEl ? bannerEl.textContent : 'Ap0dexMe0';
   var safeArt = artText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   var banner =
     '<pre style="color:#00ff41;text-shadow:0 0 8px #00ff41;font-weight:bold;margin:0 0 6px 0;line-height:1.3;">' + safeArt + '</pre>' +
-    '<span class="out-highlight font-bold">  Reverse Engineering Writeups</span><br>' +
+    '<span class="out-highlight font-bold">  Reverse Engineering Writeups Terminal</span><br>' +
     '<span class="text-matrix/50 text-xs">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span><br>' +
     '<span class="out-dim text-xs">  ' + '\u2500'.repeat(43) + '</span><br>' +
     '<span class="text-matrix/60 text-xs">  Type <span class="out-info">\'help\'</span> for commands &bull; <span class="out-info">\'neofetch\'</span> for system info</span><br>' +
