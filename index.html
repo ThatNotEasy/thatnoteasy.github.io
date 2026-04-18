@@ -26,10 +26,10 @@ body { font-family: 'Fira Code', monospace; }
 ::-webkit-scrollbar-thumb:hover { background: #ff4444; box-shadow: 0 0 15px #ff4444; }
 
 /* Modal Scrollbar */
-.modal-content::-webkit-scrollbar { width: 10px; }
-.modal-content::-webkit-scrollbar-track { background: #0a0a0a; }
-.modal-content::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
-.modal-content::-webkit-scrollbar-thumb:hover { background: #00cccc; box-shadow: 0 0 15px rgba(0, 255, 255, 0.8); }
+.modal-scroll::-webkit-scrollbar { width: 10px; }
+.modal-scroll::-webkit-scrollbar-track { background: #0a0a0a; }
+.modal-scroll::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+.modal-scroll::-webkit-scrollbar-thumb:hover { background: #00cccc; box-shadow: 0 0 15px rgba(0, 255, 255, 0.8); }
 
 /* CRT Scanline Effect */
 .scanlines {
@@ -81,6 +81,11 @@ body { font-family: 'Fira Code', monospace; }
 @keyframes glitch-anim-2 {
   0% { clip: rect(120px, 9999px, 125px, 0); }
   100% { clip: rect(5px, 9999px, 10px, 0); }
+}
+
+/* Modal Scroll Container */
+.modal-scroll {
+  overscroll-behavior: contain;
 }
 
 /* Prose styles for markdown */
@@ -227,15 +232,20 @@ body { font-family: 'Fira Code', monospace; }
 
 <!-- MODAL FOR FILE VIEWING -->
 <div id="file-modal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-40 flex items-center justify-center p-4 backdrop-blur-sm">
-  <div class="bg-gray-900 border-2 border-cyan-500 rounded-lg shadow-2xl max-w-5xl w-full max-h-[85vh] flex flex-col overflow-hidden modal-animate" style="box-shadow: 0 0 50px rgba(34, 211, 238, 0.3), inset 0 0 50px rgba(34, 211, 238, 0.05);">
-    <!-- Modal Header -->
+  <div class="bg-gray-900 border-2 border-cyan-500 rounded-lg shadow-2xl max-w-5xl w-full max-h-[88vh] flex flex-col overflow-hidden modal-animate" style="box-shadow: 0 0 60px rgba(34, 211, 238, 0.4), inset 0 0 60px rgba(34, 211, 238, 0.1);">
+    <!-- Modal Header - More compact + dynamic icon + extension badge -->
     <div class="bg-black px-4 py-3 border-b-2 border-cyan-500 flex items-center justify-between shrink-0" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.1);">
       <div class="flex items-center gap-3 overflow-hidden">
-        <div class="w-10 h-10 rounded bg-cyan-900 bg-opacity-30 border border-cyan-500 flex items-center justify-center shrink-0">
-          <span class="text-2xl">📄</span>
+        <!-- Dynamic icon -->
+        <div id="modal-icon-container" class="w-10 h-10 rounded bg-cyan-900 bg-opacity-30 border border-cyan-500 flex items-center justify-center shrink-0 transition-all hover:scale-110">
+          <span id="modal-icon" class="text-3xl">📄</span>
         </div>
         <div class="min-w-0">
-          <div id="modal-title" class="text-cyan-400 font-bold text-sm truncate glitch-text" style="text-shadow: 0 0 8px #22d3ee;" data-text="FILE_VIEWER">FILE_VIEWER</div>
+          <div class="flex items-center gap-2">
+            <div id="modal-title" class="text-cyan-400 font-bold text-sm truncate glitch-text" style="text-shadow: 0 0 8px #22d3ee;" data-text="FILE_VIEWER">FILE_VIEWER</div>
+            <!-- Extension badge -->
+            <span id="modal-ext-badge" class="px-2.5 py-px text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-700 rounded-full">.md</span>
+          </div>
           <div class="flex items-center gap-2 text-xs mt-1">
             <span class="text-cyan-600">➜</span>
             <span id="modal-path" class="text-cyan-300 font-mono truncate">/reverse</span>
@@ -244,37 +254,81 @@ body { font-family: 'Fira Code', monospace; }
           </div>
         </div>
       </div>
+
       <div class="flex items-center gap-2">
-        <button onclick="toggleRawView()" class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-3 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400" style="text-shadow: 0 0 6px #22d3ee;">
-          <span class="mr-1">🔍</span> Raw
+        <!-- Toggle Rendered / Raw -->
+        <button onclick="toggleRawView()" 
+                class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400 flex items-center gap-1.5 font-medium"
+                style="text-shadow: 0 0 6px #22d3ee;"
+                aria-label="Toggle between rendered and raw view">
+          <span id="view-mode-icon">🔍</span>
+          <span id="raw-btn-text">Raw</span>
         </button>
-        <button onclick="copyModalContent()" class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-3 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400" style="text-shadow: 0 0 6px #22d3ee;">
-          <span class="mr-1">📋</span> Copy
+
+        <!-- Copy -->
+        <button onclick="copyModalContent()" 
+                class="text-cyan-400 hover:text-cyan-200 hover:bg-cyan-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all text-xs border border-cyan-800 hover:border-cyan-400 flex items-center gap-1.5 font-medium"
+                style="text-shadow: 0 0 6px #22d3ee;"
+                aria-label="Copy raw content to clipboard">
+          <span>📋</span>
+          <span>Copy</span>
         </button>
-        <button onclick="closeFileModal()" class="text-red-400 hover:text-red-200 hover:bg-red-900 hover:bg-opacity-30 rounded px-3 py-1.5 transition-all ml-2 border border-red-800 hover:border-red-400" style="text-shadow: 0 0 6px #ff0000;">
-          <span class="text-lg leading-none">✕</span>
+
+        <!-- Download (NEW) -->
+        <button onclick="downloadCurrentFile()" 
+                class="text-emerald-400 hover:text-emerald-200 hover:bg-emerald-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all text-xs border border-emerald-800 hover:border-emerald-400 flex items-center gap-1.5 font-medium"
+                style="text-shadow: 0 0 6px #10b981;"
+                aria-label="Download file">
+          <span>⬇️</span>
+          <span>Download</span>
+        </button>
+
+        <!-- Close -->
+        <button onclick="closeFileModal()" 
+                class="text-red-400 hover:text-red-200 hover:bg-red-900 hover:bg-opacity-30 rounded px-4 py-1.5 transition-all ml-1 border border-red-800 hover:border-red-400 flex items-center justify-center w-8 h-8"
+                style="text-shadow: 0 0 6px #ff0000;"
+                aria-label="Close modal">
+          ✕
         </button>
       </div>
     </div>
     
-    <!-- Modal Content -->
-    <div id="modal-content-wrapper" class="flex-1 overflow-hidden relative bg-black">
-      <div id="modal-content" class="h-full overflow-y-auto overflow-x-auto p-6 modal-content prose prose-invert max-w-none">
+    <!-- Modal Content Wrapper -->
+    <div id="modal-content-wrapper" class="flex-1 relative bg-black min-h-0 overflow-hidden">
+      <!-- Rendered Markdown -->
+      <div id="modal-content" class="absolute inset-0 overflow-y-auto p-6 modal-scroll prose prose-invert max-w-none">
         <!-- Rendered markdown will go here -->
       </div>
-      <div id="modal-raw" class="hidden h-full overflow-y-auto overflow-x-auto p-6 modal-content">
-        <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap" style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);"></pre>
+
+      <!-- Raw View (NEW: line numbers + synced scroll feel) -->
+      <div id="modal-raw" class="hidden absolute inset-0 bg-black flex flex-col overflow-hidden">
+        <div class="flex flex-1 min-h-0">
+          <!-- Line numbers column -->
+          <div id="raw-line-numbers" 
+               class="w-14 bg-[#0a0a0a] text-cyan-700 font-mono text-sm text-right pr-4 py-6 overflow-y-auto select-none border-r border-cyan-800 leading-[22px] flex-shrink-0">
+          </div>
+          <!-- Raw content -->
+          <pre id="modal-raw-pre" 
+               class="flex-1 p-6 text-green-400 font-mono text-sm whitespace-pre overflow-y-auto leading-[22px] modal-scroll"
+               style="text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);">
+          </pre>
+        </div>
       </div>
     </div>
     
-    <!-- Modal Footer -->
-    <div class="bg-black border-t-2 border-cyan-500 px-4 py-2 flex items-center justify-between shrink-0" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);">
-      <div class="flex items-center gap-2 text-xs text-cyan-700">
+    <!-- Modal Footer - Now with live stats -->
+    <div class="bg-black border-t-2 border-cyan-500 px-4 py-2 flex items-center justify-between shrink-0 text-xs" style="box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);">
+      <div class="flex items-center gap-2 text-cyan-700">
         <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-        <span>Ready</span>
+        <span id="modal-status" class="font-medium">READY • RENDERED</span>
       </div>
-      <div class="text-cyan-700 text-xs font-mono">
-        [ ESC to close ] • [ Ctrl+R for Raw ]
+      
+      <div id="file-stats" class="flex items-center gap-5 text-cyan-700 font-mono">
+        <!-- Populated by JS: Lines • Words -->
+      </div>
+      
+      <div class="text-cyan-700 font-mono">
+        [ ESC ] close • [ Ctrl+R ] toggle raw
       </div>
     </div>
   </div>
@@ -692,54 +746,126 @@ const commands = {
   },
 
   view: async (file) => {
-    if (!file) {
-      print("usage: view [filename]", "info");
-      return;
-    }
-    
-    // Use the path resolver to handle subdirectories and current directory
-    const target = resolvePathToTarget(file);
-    
-    if (target === null) {
-      print(`view: ${file}: No such file or directory`, "error");
-    } else if (typeof target === 'object') {
-      print(`view: ${file}: Is a directory`, "error");
-    } else {
-      // It's a file (string)
-      const content = target;
-      currentFileContent = content; // Store for raw toggle
-      const html = marked.parse(content);
-      
-      // Show in modal
-      const fileSize = (content.length / 1024).toFixed(2);
-      const displayName = file.split('/').pop();
-      const fullPath = shellState.path.length > 0 ? `/reverse/${shellState.path.join("/")}/${file}` : `/reverse/${file}`;
-      
-      document.getElementById('modal-title').textContent = displayName;
-      document.getElementById('modal-title').setAttribute('data-text', displayName);
-      document.getElementById('modal-path').textContent = fullPath;
-      document.getElementById('modal-size').textContent = `${fileSize} KB`;
-      
-      const modalContent = document.getElementById('modal-content');
-      modalContent.innerHTML = html;
-      
-      // Reset raw view
-      document.getElementById('modal-content').classList.remove('hidden');
-      document.getElementById('modal-raw').classList.add('hidden');
-      document.getElementById('modal-raw').querySelector('pre').textContent = content;
-      
-      // Highlight code blocks
-      setTimeout(() => {
-        modalContent.querySelectorAll('pre code').forEach((block) => {
-          hljs.highlightElement(block);
-        });
-      }, 0);
-      
-      // Show modal
-      document.getElementById('file-modal').classList.remove('hidden');
-      print(`[View] Opening ${file}...`, "info");
-    }
-  },
+	  if (!file) {
+		print("usage: view [filename]", "info");
+		return;
+	  }
+	  
+	  const target = resolvePathToTarget(file);
+	  
+	  if (target === null) {
+		print(`view: ${file}: No such file or directory`, "error");
+	  } else if (typeof target === 'object') {
+		print(`view: ${file}: Is a directory`, "error");
+	  } else {
+		const content = target;
+		currentFileContent = content;
+
+		// Extract name & extension
+		const displayName = file.split('/').pop();
+		const ext = displayName.includes('.') ? displayName.split('.').pop().toLowerCase() : 'txt';
+		const icon = (ext === 'md' || ext === 'markdown') ? '📝' : '📄';
+
+		// Size
+		const fileSize = (content.length / 1024).toFixed(2);
+
+		// Populate modal
+		document.getElementById('modal-title').textContent = displayName;
+		document.getElementById('modal-title').setAttribute('data-text', displayName);
+		document.getElementById('modal-icon').textContent = icon;
+		document.getElementById('modal-ext-badge').textContent = `.${ext}`;
+		document.getElementById('modal-path').textContent = shellState.path.length > 0 
+		  ? `/reverse/${shellState.path.join("/")}/${file}` 
+		  : `/reverse/${file}`;
+		document.getElementById('modal-size').textContent = `${fileSize} KB`;
+
+		// Rendered content
+		const html = marked.parse(content);
+		document.getElementById('modal-content').innerHTML = html;
+
+		// Raw content + line numbers (once)
+		document.getElementById('modal-raw-pre').textContent = content;
+		const linesCount = content.split('\n').length;
+		document.getElementById('raw-line-numbers').innerHTML = Array.from(
+		  { length: linesCount }, (_, i) => `<span class="block">${i + 1}</span>`
+		).join('');
+
+		// Stats
+		const words = content.trim().split(/\s+/).length;
+		document.getElementById('file-stats').innerHTML = `
+		  <span>Lines: <span class="text-cyan-400">${linesCount}</span></span>
+		  <span class="text-cyan-700">•</span>
+		  <span>Words: <span class="text-cyan-400">${words}</span></span>
+		`;
+
+		// Reset to rendered view
+		document.getElementById('modal-content').classList.remove('hidden');
+		document.getElementById('modal-raw').classList.add('hidden');
+		document.getElementById('modal-status').textContent = 'READY • RENDERED';
+
+		// Highlight code blocks
+		setTimeout(() => {
+		  document.querySelectorAll('#modal-content pre code').forEach((block) => {
+			hljs.highlightElement(block);
+		  });
+		}, 10);
+
+		// Show modal
+		document.getElementById('file-modal').classList.remove('hidden');
+		print(`[View] Opening <span class="text-yellow-400">${displayName}</span>...`, "info");
+	  }
+	},
+
+	/* Replace toggleRawView */
+	toggleRawView() {
+	  const rendered = document.getElementById('modal-content');
+	  const raw = document.getElementById('modal-raw');
+	  const isCurrentlyRaw = !raw.classList.contains('hidden');
+
+	  if (isCurrentlyRaw) {
+		// switch to rendered
+		raw.classList.add('hidden');
+		rendered.classList.remove('hidden');
+		document.getElementById('modal-status').textContent = 'READY • RENDERED';
+		document.getElementById('raw-btn-text').textContent = 'Raw';
+		document.getElementById('view-mode-icon').textContent = '🔍';
+	  } else {
+		// switch to raw
+		rendered.classList.add('hidden');
+		raw.classList.remove('hidden');
+		document.getElementById('modal-status').textContent = 'READY • RAW';
+		document.getElementById('raw-btn-text').textContent = 'Rendered';
+		document.getElementById('view-mode-icon').textContent = '📜';
+	  }
+	},
+
+	/* Replace copyModalContent */
+	copyModalContent() {
+	  if (!currentFileContent) return;
+	  navigator.clipboard.writeText(currentFileContent).then(() => {
+		print("✓ Raw content copied to clipboard!", "success");
+	  }).catch(() => {
+		print(" Failed to copy", "error");
+	  });
+	},
+
+	/* NEW: Download function */
+	downloadCurrentFile() {
+	  if (!currentFileContent) return;
+	  const title = document.getElementById('modal-title').textContent || 'writeup';
+	  const ext = document.getElementById('modal-ext-badge').textContent.replace('.', '') || 'md';
+	  const filename = `${title}.${ext}`;
+
+	  const blob = new Blob([currentFileContent], { type: 'text/markdown' });
+	  const url = URL.createObjectURL(blob);
+	  const a = document.createElement('a');
+	  a.href = url;
+	  a.download = filename;
+	  a.click();
+	  URL.revokeObjectURL(url);
+
+	  print(`⬇️ Downloaded <span class="text-emerald-400">${filename}</span>`, "success");
+	},
 
   tree: (dir = ".") => {
     const currentDir = dir === "." ? getCurrentDirObj() : fileSystem;
@@ -824,6 +950,10 @@ const commands = {
 function closeFileModal() {
   document.getElementById('file-modal').classList.add('hidden');
   currentFileContent = ""; // Clear stored content
+  
+  // Reset to rendered view for next time
+  document.getElementById('modal-content').classList.remove('hidden');
+  document.getElementById('modal-raw').classList.add('hidden');
 }
 
 function toggleRawView() {
@@ -833,9 +963,13 @@ function toggleRawView() {
   if (raw.classList.contains('hidden')) {
     rendered.classList.add('hidden');
     raw.classList.remove('hidden');
+    // Scroll to top when switching
+    raw.scrollTop = 0;
   } else {
     raw.classList.add('hidden');
     rendered.classList.remove('hidden');
+    // Scroll to top when switching
+    rendered.scrollTop = 0;
   }
 }
 
