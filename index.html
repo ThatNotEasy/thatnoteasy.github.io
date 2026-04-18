@@ -373,7 +373,7 @@ const commands = {
   <span class="text-cyan-400">tree [dir]</span>        Show directory tree
   <span class="text-cyan-400">find [pattern]</span>    Find files by name
   <span class="text-cyan-400">history [-c]</span>      Show/clear command history
-  <span class="text-yellow-400">Ctrl+C</span>           Interrupt/kill current input
+  <span class="text-yellow-400">Ctrl+C</span>            Interrupt/kill current input
 `;
     print(helpText);
   },
@@ -560,23 +560,35 @@ const commands = {
 
   tree: (dir = ".") => {
     const currentDir = dir === "." ? getCurrentDirObj() : fileSystem;
+    const lines = [];
+    
     const buildTree = (obj, prefix = "", isLast = true) => {
-      let output = "";
-      const keys = Object.keys(obj);
+      const keys = Object.keys(obj).sort(); // Sort alphabetically for consistency
       keys.forEach((key, idx) => {
         const isLastItem = idx === keys.length - 1;
         const isDir = typeof obj[key] === 'object';
         const connector = isLastItem ? "└── " : "├── ";
-        output += `<span class="${isDir ? 'text-cyan-400' : 'text-yellow-400'} font-semibold inline-block mr-4" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${prefix}${connector}${key}</span>`;
+        const line = prefix + connector + key;
+        const className = isDir ? 'text-cyan-400 font-semibold' : 'text-yellow-400';
+        const style = isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;';
+        
+        lines.push(`<span class="${className}" style="${style}">${line}</span>`);
+        
         if (isDir) {
           const newPrefix = prefix + (isLastItem ? "    " : "│   ");
-          output += buildTree(obj[key], newPrefix, isLastItem);
+          buildTree(obj[key], newPrefix, isLastItem);
         }
       });
-      return output;
     };
-    const treeOutput = buildTree(currentDir);
-    print(treeOutput || "(empty)", "normal");
+    
+    buildTree(currentDir);
+    
+    if (lines.length === 0) {
+      print("(empty)", "system");
+    } else {
+      // Join with <br> to ensure each entry appears on a new line
+      print(lines.join('<br>'), "raw");
+    }
   },
 
   find: (pattern) => {
