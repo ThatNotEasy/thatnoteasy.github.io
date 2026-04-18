@@ -1,8 +1,4 @@
-# TryBypassMe (TBMKEv1) — Complete Bypass Writeup
-
-> **Educational crackme analysis only. All "malware-like" behavior is simulated for anti-cheat research purposes.**
-
----
+# TryBypassMe (TBMKEv1)
 
 ## Table of Contents
 
@@ -105,11 +101,11 @@ At VMA `0x1400032BC`, the driver reads its own `.text` section from disk via `Zw
 
 #### 3.1.7 Bypass Approach
 
-**We don't fight the driver — we prevent it from loading.**
+**We don't fight the driver - we prevent it from loading.**
 
 The driver is installed and started from a VEH handler in TBM.exe (VMA `0x14005F450`). The VEH is registered via `AddVectoredExceptionHandler` at VMA `0x14005DBA5`. By NOP'ing this single call, the VEH never registers, the driver service is never created, and the kernel driver is never loaded.
 
-This renders ALL Ring-0 protections (handle stripping, VAD scanning, callbacks) completely inert — they simply don't exist.
+This renders ALL Ring-0 protections (handle stripping, VAD scanning, callbacks) completely inert - they simply don't exist.
 
 ---
 
@@ -134,7 +130,7 @@ All strings use position-dependent XOR with key `(i + 0x30) & 0xFF`. Decoded str
 
 #### 3.2.2 Named Pipe Protocol
 
-- **Pipe name**: `\\.\pipe\TBM_WD_{PID}_{CRC32}` — embeds PID and file hash
+- **Pipe name**: `\\.\pipe\TBM_WD_{PID}_{CRC32}` - embeds PID and file hash
 - **Mode**: Duplex, message-mode
 - **Handshake**: Game sends → Watchdog validates → Heartbeat loop starts
 - **Heartbeat interval**: ~1 second
@@ -187,7 +183,7 @@ The most formidable protection. Static analysis found exactly **182 `CreateThrea
 FF 15 xx xx xx xx    call [rip+disp32]  ; TerminateProcess IAT @ 0x140064310
 ```
 
-All 175 sites target the same IAT entry (`0x140064310`). The guard threads monitor each other in a mutual-surveillance graph — disabling one guard causes others to fire.
+All 175 sites target the same IAT entry (`0x140064310`). The guard threads monitor each other in a mutual-surveillance graph - disabling one guard causes others to fire.
 
 **290 `GetTickCount64` calls** provide the timing base for guard threads.
 
@@ -196,16 +192,16 @@ All 175 sites target the same IAT entry (`0x140064310`). The guard threads monit
 | Technique | Count | IAT VMA | Description |
 |-----------|-------|---------|-------------|
 | `IsDebuggerPresent` | 4 | `0x140064178` | Standard PEB check |
-| PEB `CrossProcessFlags` | 2 | — | `gs:[0x60]` → `NtGlobalFlag` inspection |
-| `INT 2D` trap | 7 | — | Debugger skips next instruction |
-| `GetThreadContext` (DR regs) | 4 | — | Hardware breakpoint detection |
-| `CreateToolhelp32Snapshot` | 6 | — | Process/window blacklist scan |
-| PE self-verification | 1 | — | MZ/PE/Authenticode check |
-| `WinVerifyTrust` | 1 | — | Full Authenticode validation |
+| PEB `CrossProcessFlags` | 2 | - | `gs:[0x60]` → `NtGlobalFlag` inspection |
+| `INT 2D` trap | 7 | - | Debugger skips next instruction |
+| `GetThreadContext` (DR regs) | 4 | - | Hardware breakpoint detection |
+| `CreateToolhelp32Snapshot` | 6 | - | Process/window blacklist scan |
+| PE self-verification | 1 | - | MZ/PE/Authenticode check |
+| `WinVerifyTrust` | 1 | - | Full Authenticode validation |
 
 #### 3.3.3 Memory Integrity: CRC32 + IAT Checks
 
-- **24 instances** of CRC32 polynomial `0xEDB88320` in .text — multiple threads compute hashes of the .text section
+- **24 instances** of CRC32 polynomial `0xEDB88320` in .text - multiple threads compute hashes of the .text section
 - **IAT integrity**: `VirtualQuery`-based memory protection checks with hash constant `0x8FF34781`
 - **185 `GetProcAddress` calls** dynamically validate IAT entries at runtime
 
@@ -213,8 +209,8 @@ All 175 sites target the same IAT entry (`0x140064310`). The guard threads monit
 
 | Canary | Locations (VMA) | Purpose |
 |--------|-----------------|---------|
-| `0xDEADC0DE` | `0x140070098`, `0x1400700A8` | Dual canary — mismatch = tampering |
-| `0xB16B00B5` | `0x1400700A0`, `0x1400700B0` | Shadow pair — mismatch = tampering |
+| `0xDEADC0DE` | `0x140070098`, `0x1400700A8` | Dual canary - mismatch = tampering |
+| `0xB16B00B5` | `0x1400700A0`, `0x1400700B0` | Shadow pair - mismatch = tampering |
 | `0xDEADBEEF` | `0x1400700D28` | Integrity marker |
 | `0xFEEDF00D` | `0x1400700C04` | Integrity marker |
 | `0xC0FEC0FE` | `0x1400700FC0` | Integrity marker |
@@ -222,7 +218,7 @@ All 175 sites target the same IAT entry (`0x140064310`). The guard threads monit
 
 #### 3.3.5 Bypass Approach for User-Mode Protections
 
-**We don't need to carefully bypass each check — we remove the kill mechanism.**
+**We don't need to carefully bypass each check - we remove the kill mechanism.**
 
 All protection mechanisms (CRC checks, IAT validation, guard threads, anti-debug) ultimately call `TerminateProcess` as the final kill action. By NOP'ing **all 175 TerminateProcess call sites**, every protection becomes toothless:
 
@@ -231,7 +227,7 @@ All protection mechanisms (CRC checks, IAT validation, guard threads, anti-debug
 - Anti-debug detects debugger → `TerminateProcess` returns immediately → game continues
 - Shadow copy mismatch → `TerminateProcess` returns immediately → game continues
 
-Each `FF 15 xx xx xx xx` (call `[rip+disp32]`, 6 bytes) is patched to `31 C0 C3 90 90 90` (`xor eax,eax; ret; nop; nop; nop`), returning 0 to every caller. The `xor eax,eax; ret` sequence is functionally equivalent to returning `FALSE` (0), which callers interpret as "operation failed" but don't crash — the guard threads simply return to their wait loop.
+Each `FF 15 xx xx xx xx` (call `[rip+disp32]`, 6 bytes) is patched to `31 C0 C3 90 90 90` (`xor eax,eax; ret; nop; nop; nop`), returning 0 to every caller. The `xor eax,eax; ret` sequence is functionally equivalent to returning `FALSE` (0), which callers interpret as "operation failed" but don't crash - the guard threads simply return to their wait loop.
 
 ---
 
@@ -263,7 +259,7 @@ The health system has three critical code points:
    mov [rip+0x2F348], eax    ; [0x140070F10] = 8
    ```
    
-2. **Damage** (VMA `0x140052A49`) — **THE ONLY `DEC` IN THE ENTIRE BINARY**:
+2. **Damage** (VMA `0x140052A49`) - **THE ONLY `DEC` IN THE ENTIRE BINARY**:
    ```asm
    FF 0D C1 E4 01 00    dec [0x140070F10]     ; health -= 1
    ```
@@ -320,17 +316,17 @@ Instead of trying to satisfy every integrity check, we attack the **common kill 
 
 ### Why This Works
 
-1. **CRC32 checks will fail** — the binary is modified. But the CRC check code calls `TerminateProcess` when a mismatch is detected, and we've NOP'd all `TerminateProcess` calls. The check fires, calls `TerminateProcess(0)`, gets `0` back, and continues.
+1. **CRC32 checks will fail** - the binary is modified. But the CRC check code calls `TerminateProcess` when a mismatch is detected, and we've NOP'd all `TerminateProcess` calls. The check fires, calls `TerminateProcess(0)`, gets `0` back, and continues.
 
-2. **Guard threads will timeout** — they monitor execution flow. When they timeout, they call `TerminateProcess`. Since that's patched, they return harmlessly and loop back.
+2. **Guard threads will timeout** - they monitor execution flow. When they timeout, they call `TerminateProcess`. Since that's patched, they return harmlessly and loop back.
 
-3. **Shadow copy checks will fail** — the canary values in `.data` may be corrupted by CRC changes. But the failure path calls `TerminateProcess`, which is a NOP.
+3. **Shadow copy checks will fail** - the canary values in `.data` may be corrupted by CRC changes. But the failure path calls `TerminateProcess`, which is a NOP.
 
-4. **IAT hook detection will fire** — if anything hooks the IAT, the validation calls `TerminateProcess`, which is a NOP.
+4. **IAT hook detection will fire** - if anything hooks the IAT, the validation calls `TerminateProcess`, which is a NOP.
 
-5. **The watchdog is irrelevant** — the pipe is never created, so the watchdog can't connect. Even if someone runs the watchdog separately, it will exit after timeout.
+5. **The watchdog is irrelevant** - the pipe is never created, so the watchdog can't connect. Even if someone runs the watchdog separately, it will exit after timeout.
 
-6. **The driver is irrelevant** — the VEH handler that starts the driver service is patched. The driver file isn't even needed.
+6. **The driver is irrelevant** - the VEH handler that starts the driver service is patched. The driver file isn't even needed.
 
 ---
 
@@ -394,7 +390,7 @@ python3 tbm_patcher.py --dump-info --input TBM.exe
 2. Rename original `TBM.exe` → `TBM_orig.exe`
 3. Rename `TBM_patched.exe` → `TBM.exe`
 4. Delete `TBMKD.sys` and `WatchdogMain.exe` (not needed)
-5. Run `TBM.exe` (Admin NOT required — driver is not loaded)
+5. Run `TBM.exe` (Admin NOT required - driver is not loaded)
 6. Play with cheats active
 
 ---
@@ -420,7 +416,7 @@ python3 tbm_patcher.py --dump-info --input TBM.exe
 | Kernel driver | **NEUTRALIZED** | VEH handler returns 1 (handler "registered" but does nothing) |
 | Handle stripping | **INERT** | Driver never loaded into kernel |
 | Watchdog heartbeat | **INERT** | Pipe never created (`CreateNamedPipeA` returns invalid handle) |
-| 175 guard threads | **NEUTRALIZED** | `TerminateProcess` returns 0 — guards can't kill process |
+| 175 guard threads | **NEUTRALIZED** | `TerminateProcess` returns 0 - guards can't kill process |
 | CRC32 .text checks | **FIRES BUT HARMLESS** | Detection → calls `TerminateProcess` → NOP → continues |
 | Anti-debug | **BYPASSED** | `IsDebuggerPresent` always returns 0 |
 | Shadow copy checks | **FIRES BUT HARMLESS** | Canary mismatch → calls `TerminateProcess` → NOP → continues |
@@ -429,12 +425,12 @@ python3 tbm_patcher.py --dump-info --input TBM.exe
 
 ### What Still Works
 
-- **Game rendering** — unaffected by patches
-- **Input handling** — keyboard/mouse input processing intact
-- **Entity system** — entity spawning, movement, collision all functional
-- **Scoring** — frame/kill counter still increments
-- **Window management** — 512×384 window creates normally
-- **Message loop** — `PeekMessage`/`TranslateMessage`/`DispatchMessage` intact
+- **Game rendering** - unaffected by patches
+- **Input handling** - keyboard/mouse input processing intact
+- **Entity system** - entity spawning, movement, collision all functional
+- **Scoring** - frame/kill counter still increments
+- **Window management** - 512×384 window creates normally
+- **Message loop** - `PeekMessage`/`TranslateMessage`/`DispatchMessage` intact
 
 ---
 
