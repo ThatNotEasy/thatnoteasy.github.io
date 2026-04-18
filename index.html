@@ -686,7 +686,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 /* =========================
-    INPUT HANDLER
+    INPUT HANDLER - FIXED TAB COMPLETION
  ========================= */
 function handleKey(e) {
   const inputField = document.getElementById("cmd");
@@ -724,9 +724,25 @@ function handleKey(e) {
       
       // Navigate through specified path if provided
       if (pathParts.length > 0 && pathParts[0] !== "") {
-        let tempDir = fileSystem;
+        // Relative path: start from current directory
+        let tempDir = currentDir;
         for (const p of pathParts) {
           // Find directory case‑insensitively
+          const dirKey = Object.keys(tempDir).find(k => k.toLowerCase() === p.toLowerCase() && typeof tempDir[k] === 'object');
+          if (dirKey) {
+            tempDir = tempDir[dirKey];
+          } else {
+            tempDir = null;
+            break;
+          }
+        }
+        if (tempDir) currentDir = tempDir;
+      } else if (pathParts.length > 0 && pathParts[0] === "") {
+        // Absolute path: start from root (fileSystem)
+        let tempDir = fileSystem;
+        // Skip the empty first element from the leading slash
+        for (let i = 1; i < pathParts.length; i++) {
+          const p = pathParts[i];
           const dirKey = Object.keys(tempDir).find(k => k.toLowerCase() === p.toLowerCase() && typeof tempDir[k] === 'object');
           if (dirKey) {
             tempDir = tempDir[dirKey];
