@@ -574,13 +574,34 @@ const commands = {
       return;
     }
 
-    let out = "";
+ls: (dir) => {
+  let targetDir;
+  if (dir) {
+    targetDir = resolvePath(dir);
+    if (!targetDir) {
+      print(`ls: cannot access '${dir}': No such directory`, "error");
+      return;
+    }
+  } else {
+    targetDir = getCurrentDirObj();
+  }
+  
+  if (!targetDir) return print("Error: Directory corrupted", "error");
+
+  const items = Object.keys(targetDir);
+  if (items.length === 0) {
+    print("(empty directory)", "system");
+    return;
+  }
+
+  let out = '<div class="flex flex-wrap gap-x-4 gap-y-1">';
     items.forEach(name => {
       const isDir = typeof targetDir[name] === 'object';
       const icon = isDir ? "📁" : "📄";
       const colorClass = isDir ? "text-cyan-400 font-bold" : "text-yellow-400";
-      out += `<span class="${colorClass} block py-1" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon}  ${name}</span>`;
+      out += `<span class="${colorClass}" style="${isDir ? 'text-shadow: 0 0 8px #00ffff;' : 'text-shadow: 0 0 8px #ffff00;'}">${icon} ${name}</span>`;
     });
+    out += '</div>';
     print(out);
   },
 
