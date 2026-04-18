@@ -29,8 +29,6 @@
   - [6.1 Deterministic Key Computation](#61-deterministic-key-computation)
   - [6.2 Token Derivation & Verification](#62-token-derivation--verification)
   - [6.3 Artifact Generation](#63-artifact-generation)
-- [7. Tools & Techniques](#7-tools--techniques)
-- [8. Key Findings & Lessons Learned](#8-key-findings--lessons-learned)
 
 ---
 
@@ -345,40 +343,6 @@ Verification via hook intercepts confirmed a perfect match.
 | **Derived Token**      | `B4BDFEC9E478EDE1`             |
 | **QR Payload**         | `16777216:B4BDFEC9E478EDE1`    |
 | **Artifact**           | `artifact.png`                 |
-
----
-
-## 7. Tools & Techniques
-
-| Tool                  | Usage |
-|-----------------------|-------|
-| `file` / `readelf` / `objdump` | Binary identification & full disassembly |
-| `strings`             | GUI & crypto string extraction |
-| **LD_PRELOAD + dlsym** | Runtime function interception |
-| **Xvfb**              | Headless X11 environment |
-| **Python + Xlib**     | Automated GUI interaction |
-| **Python qrcode**     | QR code generation |
-| **GCC**               | Hook compilation |
-
----
-
-## 8. Key Findings & Lessons Learned
-
-### Vulnerability Analysis
-
-| # | Finding                          | Severity | Lesson |
-|---|----------------------------------|----------|--------|
-| 1 | **25-bit key space**             | 🔴 Critical | Crypto strength is only as strong as its weakest link |
-| 2 | **Interceptable `RAND_bytes`**   | 🔴 Critical | External RNG calls are perfect LD_PRELOAD targets |
-| 3 | **Custom SipHash without secret**| 🟡 Medium | Obscurity ≠ security |
-| 4 | **Deterministic splitmix64 XOR** | 🟢 Low   | Purely obfuscative |
-
-### Methodology Takeaways
-
-- Static + dynamic synergy is essential.
-- OpenSSL API fingerprinting in stripped binaries is extremely powerful.
-- Iterative hook development beats monolithic hooks.
-- Headless RE with Xvfb + LD_PRELOAD is fully viable.
 
 ---
 
