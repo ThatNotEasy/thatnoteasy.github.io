@@ -588,13 +588,13 @@ Decrypted flag: b'ALMOST_W'
 QR payload:     16777232:414C4D4F53545F57
 ```
 
-The PoC generates a PNG image (`/assets/img/poc_artifact.png`) containing a QR code with this payload. When fed to the binary's VERIFY function, it produces **"Access granted."**
+The PoC generates a PNG image [poc_artifact](/assets/img/poc_artifact.png) containing a QR code with this payload. When fed to the binary's VERIFY function, it produces **"Access granted."**
 
 ### 9.4 PoC Artifacts
 
 | File                  | Description                                          |
 |-----------------------|------------------------------------------------------|
-| `poc.py`              | Complete Python PoC script with brute-force solver   |
-| `/assets/img/poc_artifact.png`    | QR code PNG with valid payload (→ Access granted)    |
-| `/assets/img/bad_artifact.png`    | QR code PNG with wrong scalar (→ Access denied)      |
+| [ai.py](/assets/poc/ai.py)              | Complete Python PoC script with brute-force solver   |
+| [poc_artifact](/assets/img/poc_artifact.png) | QR code PNG with valid payload (→ Access granted)    |
+| [bad_artifact](/assets/img/bad_artifact.png) | QR code PNG with wrong scalar (→ Access denied)      |
 ---
