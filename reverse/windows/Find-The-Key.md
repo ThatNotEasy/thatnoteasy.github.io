@@ -9,7 +9,7 @@
 ## Table of Contents
 
 1. [Challenge Overview](#1-challenge-overview)
-2. [Target Analysis — PE File Structure](#2-target-analysis--pe-file-structure)
+2. [Target Analysis - PE File Structure](#2-target-analysis--pe-file-structure)
 3. [Initial Reconnaissance](#3-initial-reconnaissance)
 4. [Deep Dive: String Analysis](#4-deep-dive-string-analysis)
 5. [Reverse Engineering Methodology](#5-reverse-engineering-methodology)
@@ -21,9 +21,6 @@
 11. [Alternative Approaches](#11-alternative-approaches)
 12. [Solution](#12-solution)
 13. [Full Recreation Scripts](#13-full-recreation-scripts)
-14. [Techniques & Tools Reference](#14-techniques--tools-reference)
-15. [Lessons Learned](#15-lessons-learned)
-16. [Further Reading](#16-further-reading)
 
 ---
 
@@ -41,7 +38,7 @@ The binary presents itself as a simple "activation" program that asks the user f
 
 ---
 
-## 2. Target Analysis — PE File Structure
+## 2. Target Analysis - PE File Structure
 
 ### 2.1 File Identification
 
@@ -69,12 +66,12 @@ PE files are organized into sections, each serving a distinct purpose. Understan
 
 | Section | Virtual Size | Characteristics | Contents |
 |---------|-------------|----------------|----------|
-| `.text` | ~0x1000 | EXECUTE \| READ | Main program code — the decryption logic, validation, and control flow |
-| `.rdata` | ~0x1000 | READ | Read-only data — the regex pattern, encoded payload, prefix DWORDs, error strings |
-| `.data` | ~0x100 | READ \| WRITE | Initialized global variables — runtime buffers for user input and computed values |
-| `.pdata` | ~0x300 | READ | Exception handling data — unwind information for x64 structured exception handling |
-| `.rsrc` | ~0x200 | READ | Resource data — potentially icon/version info (not relevant to key recovery) |
-| `.reloc` | ~0x100 | READ | Base relocations — required for ASLR, not relevant to static analysis |
+| `.text` | ~0x1000 | EXECUTE \| READ | Main program code - the decryption logic, validation, and control flow |
+| `.rdata` | ~0x1000 | READ | Read-only data - the regex pattern, encoded payload, prefix DWORDs, error strings |
+| `.data` | ~0x100 | READ \| WRITE | Initialized global variables - runtime buffers for user input and computed values |
+| `.pdata` | ~0x300 | READ | Exception handling data - unwind information for x64 structured exception handling |
+| `.rsrc` | ~0x200 | READ | Resource data - potentially icon/version info (not relevant to key recovery) |
+| `.reloc` | ~0x100 | READ | Base relocations - required for ASLR, not relevant to static analysis |
 
 **Key insight:** The `.rdata` section is where all static constants live. This is the primary hunting ground for the encoded payload, the regex pattern, and the prefix characters. The `.text` section contains the single large function that orchestrates the entire program logic.
 
@@ -87,11 +84,11 @@ The binary imports functions from the Windows CRT (C Runtime) and kernel32, whic
 | `msvcrt.dll` / `ucrtbase.dll` | `printf`, `scanf`, `strcmp`, `strlen` | Console I/O and string comparison for key validation |
 | `kernel32.dll` | `GetStdHandle`, `WriteConsoleA` | Low-level console output (may supplement printf) |
 
-The presence of `strcmp` or a string comparison function is particularly notable — it strongly suggests that the program compares the user-supplied Activation Key against a computed/decrypted reference string using a standard string equality check, rather than a custom comparison routine. This means we need to find the exact string that the key is compared against.
+The presence of `strcmp` or a string comparison function is particularly notable - it strongly suggests that the program compares the user-supplied Activation Key against a computed/decrypted reference string using a standard string equality check, rather than a custom comparison routine. This means we need to find the exact string that the key is compared against.
 
 ### 2.4 Entry Point
 
-The program entry point is located at `0x140001f60`. In PE32+ executables, all addresses are RVA-based with a default image base of `0x140000000`. This single function contains the entire program logic — there are no helper functions, no separate decryption routines, and no library calls beyond the CRT imports listed above. This "monolithic function" structure is common in CTF challenges and simple crackmes, as it reduces the attack surface and makes the challenge self-contained.
+The program entry point is located at `0x140001f60`. In PE32+ executables, all addresses are RVA-based with a default image base of `0x140000000`. This single function contains the entire program logic - there are no helper functions, no separate decryption routines, and no library calls beyond the CRT imports listed above. This "monolithic function" structure is common in CTF challenges and simple crackmes, as it reduces the attack surface and makes the challenge self-contained.
 
 ---
 
@@ -105,11 +102,11 @@ The following strings of interest were found in the `.rdata` section:
 
 | Offset | String | Length | Analysis |
 |--------|--------|--------|----------|
-| `.rdata+0x??` | `^[A-Z]{2}-[A-Z]{2}$` | 17 chars | **Regex pattern** — validates the Magic Number format. The `^` and `$` anchors enforce a full-string match. `[A-Z]{2}` matches exactly two uppercase ASCII letters. The hyphen is a literal separator. This constrains valid input to exactly 5 characters in the format `XX-YY`. |
-| `.rdata+0x??` | `Try Again:` | 9 chars | **Error message** — printed when the Activation Key does not match. The presence of this string tells us there is a comparison somewhere that branches on success vs. failure. |
-| `.rdata+0x??` | `TM3N[YkM1htam3>` | 15 chars | **Encoded payload** — this is NOT plaintext ASCII. It contains a mix of uppercase letters, digits, and special characters (`[`, `>`). The character distribution does not match natural language, strongly suggesting it is an encoded/encrypted string. The trailing `>` is particularly unusual and may be a padding artifact. |
-| `.rdata+0x??` | `Enter Magic Number:` | ~20 chars | **Prompt string** — displayed to the user via `printf`. |
-| `.rdata+0x??` | `Enter Activation Key:` | ~22 chars | **Prompt string** — second user prompt after Magic Number validation. |
+| `.rdata+0x??` | `^[A-Z]{2}-[A-Z]{2}$` | 17 chars | **Regex pattern** - validates the Magic Number format. The `^` and `$` anchors enforce a full-string match. `[A-Z]{2}` matches exactly two uppercase ASCII letters. The hyphen is a literal separator. This constrains valid input to exactly 5 characters in the format `XX-YY`. |
+| `.rdata+0x??` | `Try Again:` | 9 chars | **Error message** - printed when the Activation Key does not match. The presence of this string tells us there is a comparison somewhere that branches on success vs. failure. |
+| `.rdata+0x??` | `TM3N[YkM1htam3>` | 15 chars | **Encoded payload** - this is NOT plaintext ASCII. It contains a mix of uppercase letters, digits, and special characters (`[`, `>`). The character distribution does not match natural language, strongly suggesting it is an encoded/encrypted string. The trailing `>` is particularly unusual and may be a padding artifact. |
+| `.rdata+0x??` | `Enter Magic Number:` | ~20 chars | **Prompt string** - displayed to the user via `printf`. |
+| `.rdata+0x??` | `Enter Activation Key:` | ~22 chars | **Prompt string** - second user prompt after Magic Number validation. |
 
 ### 3.2 DWORD-Stored Characters
 
@@ -139,9 +136,9 @@ Based on the initial reconnaissance, several hypotheses were formed:
 
 2. **The DWORD characters form a prefix that combines with the payload.** The program likely concatenates `Tjw4R` + `TM3N[YkM1htam3>` to form a longer encoded string before further processing.
 
-3. **The Magic Number is not just a password — it is a cryptographic parameter.** The regex pattern enforces a specific format (two letter pairs separated by a hyphen), which suggests the letters themselves carry numeric meaning (their ASCII values). The difference between specific letter positions likely produces a numeric key used in decryption.
+3. **The Magic Number is not just a password - it is a cryptographic parameter.** The regex pattern enforces a specific format (two letter pairs separated by a hyphen), which suggests the letters themselves carry numeric meaning (their ASCII values). The difference between specific letter positions likely produces a numeric key used in decryption.
 
-4. **A two-stage decoding is likely.** The payload has 20 characters (5 prefix + 15 encoded), which is a multiple of 4 — a strong hint at Base64 encoding (since Base64 encodes every 3 bytes as 4 characters, and 20 characters would decode to 15 bytes, which is plausible for a key string).
+4. **A two-stage decoding is likely.** The payload has 20 characters (5 prefix + 15 encoded), which is a multiple of 4 - a strong hint at Base64 encoding (since Base64 encodes every 3 bytes as 4 characters, and 20 characters would decode to 15 bytes, which is plausible for a key string).
 
 ---
 
@@ -206,7 +203,7 @@ The prefix `Tjw4R` is notable because it is itself a valid Base64-like string. I
 Tjw4R (Base64) → bytes: 4E 8F 0E 11
 ```
 
-However, this partial decode is not immediately meaningful on its own. The prefix only makes sense when concatenated with the full payload, suggesting that the program's author intentionally split the encoded string into two parts — a visible prefix stored as DWORDs (for obfuscation) and a contiguous encoded payload — that must be reassembled before decryption.
+However, this partial decode is not immediately meaningful on its own. The prefix only makes sense when concatenated with the full payload, suggesting that the program's author intentionally split the encoded string into two parts - a visible prefix stored as DWORDs (for obfuscation) and a contiguous encoded payload - that must be reassembled before decryption.
 
 ---
 
@@ -269,7 +266,7 @@ The analysis followed a systematic top-down approach:
 
 ### 6.1 High-Level Control Flow
 
-The entire program logic resides within a single large function at **`0x140001f60`**. This function is approximately 200–300 bytes of machine code and contains all the program logic inline — no helper functions are called. The execution follows this sequence:
+The entire program logic resides within a single large function at **`0x140001f60`**. This function is approximately 200–300 bytes of machine code and contains all the program logic inline - no helper functions are called. The execution follows this sequence:
 
 ```
 ┌───────────────────────────────────────────┐
@@ -461,7 +458,7 @@ The most important property of XOR for cryptography is its **self-inverse** natu
 (Plaintext XOR Key) XOR Key = Plaintext
 ```
 
-This means the same operation that encrypts also decrypts — you simply XOR the ciphertext with the same key to recover the plaintext. This is why XOR is called a *symmetric* operation.
+This means the same operation that encrypts also decrypts - you simply XOR the ciphertext with the same key to recover the plaintext. This is why XOR is called a *symmetric* operation.
 
 Additionally:
 - **Commutative:** `A XOR B = B XOR A`
@@ -529,7 +526,7 @@ Concatenation (20 chars):
   PREFIX (5 bytes)     ENCODED PAYLOAD (15 bytes)
 ```
 
-### 8.2 XOR Decryption — Complete Byte-by-Byte Table
+### 8.2 XOR Decryption - Complete Byte-by-Byte Table
 
 With XOR key **K = 3**, each of the 20 bytes is XORed:
 
@@ -562,7 +559,7 @@ With XOR key **K = 3**, each of the 20 bytes is XORed:
 - **Digits (0-9):** 7, 0, 2, 0 (4 chars)
 - **Padding (=):** 1 char at the end
 
-This is NOT a coincidence. The original payload was constructed by Base64-encoding the desired plaintext and then XOR-encrypting it with key 3. The result is ciphertext that, when XORed back with key 3, produces valid Base64 characters — which is by design.
+This is NOT a coincidence. The original payload was constructed by Base64-encoding the desired plaintext and then XOR-encrypting it with key 3. The result is ciphertext that, when XORed back with key 3, produces valid Base64 characters - which is by design.
 
 **XOR Result:** `Wit7QWN0MXZhN2kwbn0=`
 
@@ -589,7 +586,7 @@ Char:   0  1  2  3  4  5  6  7  8  9  +  /
 
 **Padding:** The `=` character is used as padding when the input length is not a multiple of 3 bytes.
 
-### 9.2 Decoding Process — Step by Step
+### 9.2 Decoding Process - Step by Step
 
 The Base64 string `Wit7QWN0MXZhN2kwbn0=` has 20 characters (including 1 padding `=`). Since 20 / 4 = 5 groups, this decodes to approximately 15 bytes of binary data (5 groups × 3 bytes = 15, minus 1 byte for the padding = **14 bytes**).
 
@@ -682,8 +679,8 @@ Group 5: n + }
 The decoded string is 14 bytes long: `Z+{Act1va7i0n}`
 
 Breaking it down:
-- Characters 0-2 (`Z+{`): **Prefix artifacts** — these are the decoded form of the DWORD prefix "Tjw4R". They are not part of the actual Activation Key.
-- Characters 3-13 (`Act1va7i0n}`): **The actual Activation Key** — enclosed in curly braces as is common in CTF flags.
+- Characters 0-2 (`Z+{`): **Prefix artifacts** - these are the decoded form of the DWORD prefix "Tjw4R". They are not part of the actual Activation Key.
+- Characters 3-13 (`Act1va7i0n}`): **The actual Activation Key** - enclosed in curly braces as is common in CTF flags.
 
 Therefore, the Activation Key that the program compares against the user input is:
 
@@ -733,7 +730,7 @@ When `magic[3] == magic[1]`, the XOR key is 0. Since XOR with 0 is the identity 
 "Tjw4RTM3N[YkM1htam3>" XOR 0 = "Tjw4RTM3N[YkM1htam3>"
 ```
 
-This string contains `[` and `>` which are NOT valid Base64 characters (wait — `>` is not in the Base64 alphabet). So the Base64 decode would fail or produce garbage. This confirms that K = 0 does not produce a valid result.
+This string contains `[` and `>` which are NOT valid Base64 characters (wait - `>` is not in the Base64 alphabet). So the Base64 decode would fail or produce garbage. This confirms that K = 0 does not produce a valid result.
 
 ### 10.3 Valid Magic Number Space
 
@@ -790,17 +787,17 @@ for k in range(256):
 K=  3 → XOR: Wit7QWN0MXZhN2kwbn0= → Decoded: Z+{Act1va7i0n}
 ```
 
-Only **K = 3** produces a result that is both valid Base64 AND decodes to fully printable ASCII. This confirms the key with zero knowledge of the program's internal logic — only the assembled encoded string is needed.
+Only **K = 3** produces a result that is both valid Base64 AND decodes to fully printable ASCII. This confirms the key with zero knowledge of the program's internal logic - only the assembled encoded string is needed.
 
 ### 11.2 Dynamic Analysis with a Debugger
 
 An alternative approach would be to attach a debugger (x64dbg, WinDbg, or GDB with Wine) and set breakpoints at strategic points:
 
-1. **Breakpoint on `strcmp`** — When the program calls `strcmp` to compare the user's key with the decoded key, the decoded key will be visible in the register/stack as one of the arguments. Simply inspecting the arguments at this breakpoint reveals the answer immediately.
+1. **Breakpoint on `strcmp`** - When the program calls `strcmp` to compare the user's key with the decoded key, the decoded key will be visible in the register/stack as one of the arguments. Simply inspecting the arguments at this breakpoint reveals the answer immediately.
 
-2. **Breakpoint after XOR loop** — Setting a breakpoint after the XOR decryption loop completes allows inspection of the decrypted buffer, which contains the Base64 string ready for decoding.
+2. **Breakpoint after XOR loop** - Setting a breakpoint after the XOR decryption loop completes allows inspection of the decrypted buffer, which contains the Base64 string ready for decoding.
 
-3. **Breakpoint after Base64 decode** — Setting a breakpoint after the Base64 decode function returns reveals the final decoded string, which is the Activation Key.
+3. **Breakpoint after Base64 decode** - Setting a breakpoint after the Base64 decode function returns reveals the final decoded string, which is the Activation Key.
 
 This approach would be faster than full static analysis but requires a Windows environment (or Wine compatibility layer) and an understanding of x86-64 calling conventions.
 
@@ -830,7 +827,7 @@ This is **leet speak** (also written as "l33tspeak") for the word **"Activation"
 
 | Position | Leet Char | Original | Substitution Rule | Visual Similarity |
 |----------|-----------|----------|-------------------|-------------------|
-| 0 | `{` | `{` | Opening brace (CTF flag format) | — |
+| 0 | `{` | `{` | Opening brace (CTF flag format) | - |
 | 1 | `A` | `A` | Uppercase A | Exact match |
 | 2 | `c` | `c` | Lowercase c | Exact match |
 | 3 | `t` | `t` | Lowercase t | Exact match |
@@ -841,7 +838,7 @@ This is **leet speak** (also written as "l33tspeak") for the word **"Activation"
 | 8 | `i` | `i` | Lowercase i | Exact match |
 | 9 | `0` | `o` | `0` → `o` | Zero looks like lowercase O |
 | 10 | `n` | `n` | Lowercase n | Exact match |
-| 11 | `}` | `}` | Closing brace (CTF flag format) | — |
+| 11 | `}` | `}` | Closing brace (CTF flag format) | - |
 
 Decoded: **`{Activation}`** → Leet encoded: **`{Act1va7i0n}`**
 
@@ -852,7 +849,7 @@ Decoded: **`{Activation}`** → Leet encoded: **`{Act1va7i0n}`**
 | **Magic Number** | `AA-DD` | Produces XOR key K = 3 |
 | **Activation Key** | `{Act1va7i0n}` | The recovered key |
 
-Other valid Magic Numbers include `AB-DE`, `AC-DF`, `ZZ-DC` (where `D - A = 3`), etc. — any `XX-YY` where the first letter of the second group is 3 positions after the second letter of the first group.
+Other valid Magic Numbers include `AB-DE`, `AC-DF`, `ZZ-DC` (where `D - A = 3`), etc. - any `XX-YY` where the first letter of the second group is 3 positions after the second letter of the first group.
 
 ---
 
@@ -871,7 +868,7 @@ import re
 
 def solve():
     print("=" * 60)
-    print("  ActivateMe.exe — Key Recovery Solver")
+    print("  ActivateMe.exe - Key Recovery Solver")
     print("=" * 60)
 
     # ── Step 1: Known components extracted from .rdata ──
@@ -936,7 +933,7 @@ if __name__ == "__main__":
 **Output:**
 ```
 ============================================================
-  ActivateMe.exe — Key Recovery Solver
+  ActivateMe.exe - Key Recovery Solver
 ============================================================
 
 [1] Prefix from DWORDs: Tjw4R

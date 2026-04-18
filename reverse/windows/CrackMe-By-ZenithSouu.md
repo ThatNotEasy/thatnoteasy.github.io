@@ -1,4 +1,4 @@
-# OMEGA CrackMe (2026 Edition) — Reverse Engineering Write-up
+# OMEGA CrackMe (2026 Edition) - Reverse Engineering Write-up
 
 ## Table of Contents
 
@@ -9,13 +9,13 @@
 5. [PE Section Architecture](#5-pe-section-architecture)
 6. [Defense Mechanism Analysis](#6-defense-mechanism-analysis)
 7. [Bypassing the Anti-Analysis Layers](#7-bypassing-the-anti-analysis-layers)
-8. [The `.pdata_c` Section — Deep Dive](#8-the-pdata_c-section--deep-dive)
+8. [The `.pdata_c` Section - Deep Dive](#8-the-pdata_c-section--deep-dive)
 9. [XOR Decryption Algorithm Reversal](#9-xor-decryption-algorithm-reversal)
-10. [Password Recovery — Function 1 (`Check_Real`)](#10-password-recovery--function-1-check_real)
-11. [Password Recovery — Function 2 (The Decoy)](#11-password-recovery--function-2-the-decoy)
+10. [Password Recovery - Function 1 (`Check_Real`)](#10-password-recovery--function-1-check_real)
+11. [Password Recovery - Function 2 (The Decoy)](#11-password-recovery--function-2-the-decoy)
 12. [Verification & Proof of Correctness](#12-verification--proof-of-correctness)
 13. [The Function Dispatch Mechanism](#13-the-function-dispatch-mechanism)
-14. [AY_OBFUSCATE — String Encryption System](#14-ay_obfuscate--string-encryption-system)
+14. [AY_OBFUSCATE - String Encryption System](#14-ay_obfuscate--string-encryption-system)
 15. [LCG Anti-Tamper Seed](#16-lcg-anti-tamper-seed)
 16. [Conclusion](#17-conclusion)
 
@@ -25,7 +25,7 @@
 
 The OMEGA CrackMe (2026 Edition) by **ZenithSouu** is a high-level reverse engineering challenge targeting Windows x64. It was designed to "neutralize 99% of automated analysis tools (VirusTotal, Filescan.io, CAPE) and make manual analysis (IDA/Ghidra) extremely painful." The challenge provides a password-protected binary, and the objective is to discover the secret password that triggers the `[+] ACCESS GRANTED` message.
 
-This write-up documents the complete static analysis methodology used to recover the password from the binary on a Linux environment — rendering all Windows-specific anti-analysis protections completely inert.
+This write-up documents the complete static analysis methodology used to recover the password from the binary on a Linux environment - rendering all Windows-specific anti-analysis protections completely inert.
 
 ---
 
@@ -55,7 +55,7 @@ This write-up documents the complete static analysis methodology used to recover
 | Python 3 (struct, re) | Custom analysis scripts for decryption |
 | `readelf` | Section metadata verification |
 
-**Key Advantage:** Performing analysis on Linux means all Windows anti-debug, anti-VM, BSOD triggers, sandbox evasion, and watchdog threads are completely neutralized — they simply cannot execute.
+**Key Advantage:** Performing analysis on Linux means all Windows anti-debug, anti-VM, BSOD triggers, sandbox evasion, and watchdog threads are completely neutralized - they simply cannot execute.
 
 ---
 
@@ -74,10 +74,10 @@ The binary is a 64-bit PE executable for Windows. The presence of 7 sections (ra
 
 Initial string extraction revealed:
 
-- **Imported API functions** — `IsDebuggerPresent`, `CheckRemoteDebuggerPresent`, `GetThreadContext`, `CreateToolhelp32Snapshot`, `NtRaiseHardError` (implied), `VirtualProtect`, `AddVectoredExceptionHandler`, `FindWindowA` (anti-debug tool blacklist).
-- **Standard library symbols** — `std::cout`, `std::cin`, `strcmp`, `memcmp`, `malloc`, `free`, `system`.
-- **Registry path** — `SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000` (GPU device detection).
-- **Base62 character set** — `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz` (used in polymorphic filename generation).
+- **Imported API functions** - `IsDebuggerPresent`, `CheckRemoteDebuggerPresent`, `GetThreadContext`, `CreateToolhelp32Snapshot`, `NtRaiseHardError` (implied), `VirtualProtect`, `AddVectoredExceptionHandler`, `FindWindowA` (anti-debug tool blacklist).
+- **Standard library symbols** - `std::cout`, `std::cin`, `strcmp`, `memcmp`, `malloc`, `free`, `system`.
+- **Registry path** - `SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000` (GPU device detection).
+- **Base62 character set** - `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz` (used in polymorphic filename generation).
 - **Notable absence:** No plaintext password strings, no "ACCESS GRANTED", no "wrong password", all strings are protected by `AY_OBFUSCATE`.
 
 ### 4.3 Interesting Wide Strings
@@ -112,12 +112,12 @@ Idx Name          Size      VMA               File off  Algn
 
 | Section | Size | Purpose |
 |---|---|---|
-| **`.text`** | 76,547 bytes | Main code — anti-VM, anti-debug, watchdog thread, main function, AY_OBFUSCATE routines |
+| **`.text`** | 76,547 bytes | Main code - anti-VM, anti-debug, watchdog thread, main function, AY_OBFUSCATE routines |
 | **`.pdata_c`** | **891 bytes** | **Contains `Check_Real` the password verification function** |
-| `.rdata` | 33,550 bytes | Read-only data — import tables, RTTI, exception handling, .rdata string metadata |
-| `.data` | 1,536 bytes | Global variables — TLS indices, function flags, decoy data |
+| `.rdata` | 33,550 bytes | Read-only data - import tables, RTTI, exception handling, .rdata string metadata |
+| `.data` | 1,536 bytes | Global variables - TLS indices, function flags, decoy data |
 | `.pdata` | 3,540 bytes | Exception handling unwind data |
-| `.rsrc` | 480 bytes | Windows resources — manifest (UAC `asInvoker`) |
+| `.rsrc` | 480 bytes | Windows resources - manifest (UAC `asInvoker`) |
 | `.reloc` | 332 bytes | Base relocation table |
 
 **The `.pdata_c` section is the crown jewel.** At only 891 bytes, it contains the entire password verification logic. According to the challenge guide, this section should be XOR-encrypted on disk, but in this build it was stored in plaintext, a critical oversight (or deliberate simplification) that allows direct static analysis.
@@ -182,7 +182,7 @@ By performing **pure static analysis on Linux**, all four defense pillars were s
 
 ---
 
-## 8. The `.pdata_c` Section — Deep Dive
+## 8. The `.pdata_c` Section - Deep Dive
 
 ### 8.1 Section Metadata
 
@@ -200,12 +200,12 @@ The section contains three functions:
 
 | Offset (within section) | Size | Purpose |
 |---|---|---|
-| `0x000` | 343 bytes | `Check_Real` — Primary password verification function |
-| `0x160` | 38 bytes | Init function — Zeroes the decrypted password buffer in TLS storage |
+| `0x000` | 343 bytes | `Check_Real` - Primary password verification function |
+| `0x160` | 38 bytes | Init function - Zeroes the decrypted password buffer in TLS storage |
 | `0x190` | 293 bytes | Secondary check function (DECOY) |
-| `0x2D0` | 38 bytes | Init function — Zeroes the decoy buffer in TLS storage |
-| `0x300` | 59 bytes | CryptSection toggle — Clears "initialized" flag for Function 1 |
-| `0x340` | 59 bytes | CryptSection toggle — Clears "initialized" flag for Function 2 |
+| `0x2D0` | 38 bytes | Init function - Zeroes the decoy buffer in TLS storage |
+| `0x300` | 59 bytes | CryptSection toggle - Clears "initialized" flag for Function 1 |
+| `0x340` | 59 bytes | CryptSection toggle - Clears "initialized" flag for Function 2 |
 
 ### 8.3 Hex Dump (First 48 Bytes)
 
@@ -244,7 +244,7 @@ void decrypt_password(char* buffer, int length, uint64_t xor_key) {
 ### 9.2 Key Characteristics
 
 - **8-byte XOR key** stored as an immediate value via `movabs` (10-byte instruction: `49 BA XX XX XX XX XX XX XX XX`)
-- **Accumulator-based key rotation** — the accumulator `acc += i` provides a secondary transformation, but since it always resets to 0 at `i > 1,000,000`, for strings shorter than ~1414 characters it simply equals `i*(i-1)/2` and **never overflows**. This means the accumulator adds zero effective obfuscation for short strings.
+- **Accumulator-based key rotation** - the accumulator `acc += i` provides a secondary transformation, but since it always resets to 0 at `i > 1,000,000`, for strings shorter than ~1414 characters it simply equals `i*(i-1)/2` and **never overflows**. This means the accumulator adds zero effective obfuscation for short strings.
 - **Byte selection** uses `i & 7` to cycle through the 8 key bytes
 - **Encrypted data** is embedded directly in the binary via `movl` / `movw` instructions that construct the buffer on the stack or in TLS storage
 
@@ -262,14 +262,14 @@ The accumulator value is **always** `i*(i-1)/2` which is `<= 0xF4240` for `i < 1
 
 ---
 
-## 10. Password Recovery — Function 1 (`Check_Real`)
+## 10. Password Recovery - Function 1 (`Check_Real`)
 
 ### 10.1 Function Disassembly (Annotated)
 
 ```
 Function 1: Check_Real (offset 0x0000 in .pdata_c, VMA 0x140014000)
 
-  ; Prologue — save non-volatile registers
+  ; Prologue - save non-volatile registers
   0x000: mov    %rbx, 0x18(%rsp)
   0x005: push   %rdi
   0x006: sub    $0x20, %rsp
@@ -459,7 +459,7 @@ movabs $0x85FF1D7FCFAB4173, %r10
 
 ---
 
-## 11. Password Recovery — Function 2 (The Decoy)
+## 11. Password Recovery - Function 2 (The Decoy)
 
 ### 11.1 Function Overview
 
@@ -624,7 +624,7 @@ This detects single-stepping in debuggers (IDA, x64dbg) where each instruction t
 
 ---
 
-## 14. AY_OBFUSCATE — String Encryption System
+## 14. AY_OBFUSCATE - String Encryption System
 
 ### 14.1 Overview
 
@@ -730,9 +730,9 @@ The most effective approach to this CrackMe was **cross-platform static analysis
 
 ---
 
-## 17. Conclusion
+## 16. Conclusion
 
-The OMEGA CrackMe implements an impressive array of anti-analysis techniques — four interleaved defense layers, 64+ obfuscated strings, decoy functions, timing checks, and anti-tamper mechanisms. However, the fundamental weakness is that **the password verification logic must exist somewhere in the binary**, and the `.pdata_c` section's XOR encryption was either intentionally left unencrypted for this build or was a compilation oversight.
+The OMEGA CrackMe implements an impressive array of anti-analysis techniques - four interleaved defense layers, 64+ obfuscated strings, decoy functions, timing checks, and anti-tamper mechanisms. However, the fundamental weakness is that **the password verification logic must exist somewhere in the binary**, and the `.pdata_c` section's XOR encryption was either intentionally left unencrypted for this build or was a compilation oversight.
 
 The decoy function (`DEAD_BEEF_`) is a clever misdirection that would waste time for anyone relying solely on pattern matching or automated string extraction. The three-condition verification (length, content, LCG) makes naive patching more difficult. But ultimately, static analysis of the decryption algorithm provides a direct, reliable path to the password.
 
