@@ -23,68 +23,48 @@ setInterval(updateClocks,1000);updateClocks();
 
 var CONFIG={USER:"reverse101",HOST:"ap0dexme0",SHELL:"/bin/bash",KERNEL:"6.8.0-generic",OS:"Ap0dexMe0 OS 1.0",TERM:"xterm-256color",ARCH:"x86_64",UPTIME:Math.floor(Date.now()/1000)};
 
-/* === MARKED RENDERER (compatible with marked v4+) === */
-function normalizeMarkedHeadingArgs(textOrToken, depth){
-  if(textOrToken&&typeof textOrToken==='object'){
-    return {text:textOrToken.text||'',depth:textOrToken.depth||1};
-  }
-  return {text:textOrToken||'',depth:depth||1};
-}
-function normalizeMarkedCodeArgs(codeOrToken, infoOrLang){
-  if(codeOrToken&&typeof codeOrToken==='object'){
-    return {code:codeOrToken.text||'',lang:codeOrToken.lang||''};
-  }
-  return {code:codeOrToken||'',lang:infoOrLang||''};
-}
-function normalizeMarkedLinkArgs(hrefOrToken, title, text){
-  if(hrefOrToken&&typeof hrefOrToken==='object'){
-    return {href:hrefOrToken.href||'',title:hrefOrToken.title||'',text:hrefOrToken.text||''};
-  }
-  return {href:hrefOrToken||'',title:title||'',text:text||''};
-}
-function normalizeMarkedInlineArg(textOrToken){
-  if(textOrToken&&typeof textOrToken==='object'){
-    return textOrToken.text||'';
-  }
-  return textOrToken||'';
-}
-const renderer = {
-  heading(text, depth) {
-    var normalized=normalizeMarkedHeadingArgs(text,depth);
-    const colors = {1:'#c084fc',2:'#22d3ee',3:'#a855f7',4:'#ec4899',5:'#f59e0b',6:'#ef4444'};
-    return `<h${normalized.depth} style="color:${colors[normalized.depth]||'#c084fc'}">${normalized.text}</h${normalized.depth}>`;
-  },
-  code(code, infostring) {
-    var normalized=normalizeMarkedCodeArgs(code,infostring);
-    const lang = (normalized.lang || '').split(' ')[0] || 'text';
-    return `<pre data-lang="${escapeAttr(lang.toUpperCase())}"><code class="language-${escapeAttr(lang)}">${escapeHtml(normalized.code)}</code></pre>`;
-  },
-  codespan(text) {
-    var content=normalizeMarkedInlineArg(text);
-    return `<code>${escapeHtml(content)}</code>`;
-  },
-  link(href, title, text) {
-    var normalized=normalizeMarkedLinkArgs(href,title,text);
-    var safeHref=sanitizeUrl(normalized.href);
-    var label=normalized.text||safeHref||'link';
-    if(!safeHref)return `<span class="out-dim">${escapeHtml(label)}</span>`;
-    var safeTitle=normalized.title?` title="${escapeAttr(normalized.title)}"`:'';
-    return `<a href="${escapeAttr(safeHref)}" target="_blank" rel="noopener noreferrer nofollow"${safeTitle}>${label}</a>`;
-  },
-  image(href, title, text){
-    var normalized=normalizeMarkedLinkArgs(href,title,text);
-    var safeSrc=sanitizeUrl(normalized.href);
-    if(!safeSrc)return '<span class="out-dim">[blocked image]</span>';
-    var safeAlt=escapeAttr(normalized.text||'image');
-    var safeTitle=normalized.title?` title="${escapeAttr(normalized.title)}"`:'';
-    return `<img src="${escapeAttr(safeSrc)}" alt="${safeAlt}" loading="lazy" decoding="async"${safeTitle}>`;
-  },
-  html(html){
-    return `<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">${escapeHtml(html)}</pre>`;
-  }
-};
+/* === MARKDOWN RENDERING === */
+marked.setOptions({ gfm: true, breaks: true });
+function renderMarkdownSafe(markdown){
+  var parsed = marked.parse(markdown || '');
+  if(typeof parsed !== 'string') return '';
+  var template = document.createElement('template');
+  template.innerHTML = parsed;
 
-marked.use({ renderer, gfm: true, breaks: true });
+  template.content.querySelectorAll('script,iframe,object,embed').forEach(function(node){ node.remove(); });
+  template.content.querySelectorAll('a').forEach(function(link){
+    var safeHref = sanitizeUrl(link.getAttribute('href') || '');
+    if(!safeHref){
+      var fallback = document.createElement('span');
+      fallback.className = 'out-dim';
+      fallback.textContent = link.textContent || 'link';
+      link.replaceWith(fallback);
+      return;
+    }
+    link.setAttribute('href', safeHref);
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener noreferrer nofollow');
+  });
+  template.content.querySelectorAll('img').forEach(function(img){
+    var safeSrc = sanitizeUrl(img.getAttribute('src') || '');
+    if(!safeSrc){
+      var blocked = document.createElement('span');
+      blocked.className = 'out-dim';
+      blocked.textContent = '[blocked image]';
+      img.replaceWith(blocked);
+      return;
+    }
+    img.setAttribute('src', safeSrc);
+    img.setAttribute('loading', 'lazy');
+    img.setAttribute('decoding', 'async');
+  });
+  template.content.querySelectorAll('pre > code').forEach(function(code){
+    var cls = code.className || '';
+    var m = cls.match(/language-([a-zA-Z0-9_-]+)/);
+    if(m && code.parentElement) code.parentElement.setAttribute('data-lang', String(m[1]).toUpperCase());
+  });
+  return template.innerHTML;
+}
 function postProcessMarkdown(container){
   if(!container)return;
   container.querySelectorAll('table').forEach(function(table){
@@ -163,7 +143,8 @@ var commands={
     document.getElementById('modal-size').textContent=formatBytes(t.length);
     var html;
     try {
-      html = marked.parse(t);
+      html = renderMarkdownSafe(t);
+      if(!html.trim()) throw new Error('Empty rendered markdown');
     } catch(e) {
       console.warn('Markdown parsing failed, using raw display', e);
       html = '<div class="mb-4 px-3 py-2 rounded-lg border border-amber-400/30 bg-amber-500/10 text-amber-200 text-xs font-mono">Render failed, switched to raw-safe view.</div><pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
