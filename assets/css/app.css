@@ -101,6 +101,17 @@ body{
 .prose-cyber pre::before{content:attr(data-lang);position:absolute;top:0;right:0;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:0.6em;padding:0.15em 0.6em;border-bottom-left-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
 .prose-cyber code:not(pre code){background:rgba(168,85,247,0.15);color:#c084fc;padding:0.15em 0.4em;border-radius:4px;font-size:0.88em}
 .prose-cyber pre code{background:transparent;color:#e2e8f0;padding:0;border:none}
+.prose-cyber .hljs{background:transparent;padding:0;color:#e6edf3}
+.prose-cyber .hljs-comment,.prose-cyber .hljs-quote{color:#8b949e;font-style:italic}
+.prose-cyber .hljs-keyword,.prose-cyber .hljs-selector-tag,.prose-cyber .hljs-subst{color:#ff7b72}
+.prose-cyber .hljs-string,.prose-cyber .hljs-doctag,.prose-cyber .hljs-regexp{color:#a5d6ff}
+.prose-cyber .hljs-number,.prose-cyber .hljs-literal{color:#79c0ff}
+.prose-cyber .hljs-title,.prose-cyber .hljs-section,.prose-cyber .hljs-selector-id{color:#d2a8ff}
+.prose-cyber .hljs-function .hljs-title,.prose-cyber .hljs-title.function_{color:#8ddb8c}
+.prose-cyber .hljs-attr,.prose-cyber .hljs-attribute,.prose-cyber .hljs-property,.prose-cyber .hljs-variable{color:#79c0ff}
+.prose-cyber .hljs-built_in,.prose-cyber .hljs-builtin-name,.prose-cyber .hljs-type,.prose-cyber .hljs-class .hljs-title{color:#ffa657}
+.prose-cyber .hljs-meta{color:#c9d1d9}
+.prose-cyber .hljs-symbol,.prose-cyber .hljs-bullet,.prose-cyber .hljs-link{color:#f2cc60}
 .prose-cyber a{color:#22d3ee;text-decoration:none;border-bottom:1px solid rgba(34,211,238,0.3);transition:all 0.2s}
 .prose-cyber a:hover{color:#67e8f9;border-bottom-color:#22d3ee;text-shadow:0 0 8px rgba(34,211,238,0.4)}
 .prose-cyber img{max-width:100%;border:2px solid rgba(34,211,238,0.3);border-radius:8px;box-shadow:0 0 20px rgba(34,211,238,0.15);transition:all 0.3s;margin:1em 0}
@@ -115,6 +126,7 @@ body{
 .table-wrap table{margin:0;min-width:520px}
 .prose-cyber th,.prose-cyber td{border:1px solid rgba(168,85,247,0.15);padding:0.5em 0.8em;text-align:left}
 .prose-cyber th{background:rgba(168,85,247,0.1);color:#c084fc;font-weight:600}
+.prose-cyber table code{background:#202839;color:#9ed0ff}
 .out-error{color:#f87171;font-weight:600}
 .out-success{color:#34d399;font-weight:600}
 .out-system{color:#fbbf24;font-style:italic}
