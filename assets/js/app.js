@@ -24,8 +24,13 @@ setInterval(updateClocks,1000);updateClocks();
 var CONFIG={USER:"reverse101",HOST:"ap0dexme0",SHELL:"/bin/bash",KERNEL:"6.8.0-generic",OS:"Ap0dexMe0 OS 1.0",TERM:"xterm-256color",ARCH:"x86_64",UPTIME:Math.floor(Date.now()/1000)};
 
 /* === MARKDOWN RENDERING === */
-marked.setOptions({ gfm: true, breaks: true });
+if(typeof marked!=='undefined'){
+  marked.setOptions({ gfm: true, breaks: true });
+}
 function renderMarkdownSafe(markdown){
+  if(typeof marked==='undefined'){
+    throw new Error('Markdown parser unavailable');
+  }
   var parsed = marked.parse(markdown || '');
   if(typeof parsed !== 'string') return '';
   var template = document.createElement('template');
@@ -80,6 +85,10 @@ function postProcessMarkdown(container){
     table.parentNode.insertBefore(wrap,table);
     wrap.appendChild(table);
   });
+}
+function isMarkdownFile(ext){
+  var mdExts={md:true,markdown:true,mdown:true,mkdn:true,mkd:true,mdx:true};
+  return !!mdExts[String(ext||'').toLowerCase()];
 }
 
 /* === FILESYSTEM === */
@@ -188,12 +197,17 @@ var commands={
     m.path.textContent=getDisplayPath(file);
     m.size.textContent=formatBytes(t.length);
     var html;
+    var shouldRenderMarkdown=isMarkdownFile(ext);
     try {
-      html = renderMarkdownSafe(t);
-      if(!html.trim()) throw new Error('Empty rendered markdown');
+      if(shouldRenderMarkdown){
+        html = renderMarkdownSafe(t);
+        if(!html.trim()) throw new Error('Empty rendered markdown');
+      }else{
+        html = '<pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
+      }
     } catch(e) {
-      console.warn('Markdown parsing failed, using raw display', e);
-      html = '<div class="mb-4 px-3 py-2 rounded-lg border border-amber-400/30 bg-amber-500/10 text-amber-200 text-xs font-mono">Render failed, switched to raw-safe view.</div><pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
+      console.warn('File rendering failed, using raw display', e);
+      html = '<div class="mb-4 px-3 py-2 rounded-lg border border-amber-400/30 bg-amber-500/10 text-amber-200 text-xs font-mono">'+(shouldRenderMarkdown?'Markdown render failed, switched to raw-safe view.':'Preview render failed, switched to raw-safe view.')+'</div><pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
     }
     m.content.innerHTML=html;
     postProcessMarkdown(m.content);
