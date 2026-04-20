@@ -107,6 +107,12 @@ function getCurrentDirObj(){var c=fileSystem["reverse"];if(!c)return null;for(va
 function resolvePath(p){if(!p)return null;var cur,parts=p.split('/').filter(function(x){return x!=='';});if(p.startsWith('/'))cur=fileSystem;else cur=getCurrentDirObj();if(!cur)return null;for(var i=0;i<parts.length;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object')cur=cur[parts[i]];else return null;}return cur;}
 function resolvePathToTarget(p){if(!p)return null;var cur,parts=p.split('/').filter(function(x){return x!=='';});if(p.startsWith('/'))cur=fileSystem;else cur=getCurrentDirObj();if(!cur)return null;for(var i=0;i<parts.length-1;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object')cur=cur[parts[i]];else return null;}var t=parts[parts.length-1];return cur.hasOwnProperty(t)?cur[t]:null;}
 function getFullPath(){var p=shellState.path.join('/');return p?'/reverse/'+p:'/reverse';}
+function getDisplayPath(filePath){
+  if(!filePath)return getFullPath();
+  if(filePath.startsWith('/reverse/'))return '/reverse/'+filePath.slice('/reverse/'.length);
+  if(filePath.startsWith('/'))return '/reverse/'+filePath.slice(1);
+  return getFullPath()+'/'+filePath;
+}
 function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(1)+' MB';}
 
 function updateSidebar(){var el=document.getElementById('sidebar-tree');if(!el||!fileSystem.reverse)return;var html='';var build=function(obj,depth,path){var keys=Object.keys(obj).sort();for(var i=0;i<keys.length;i++){var k=keys[i],isDir=typeof obj[k]==='object';var indent=depth*12;var fullPath=path?path+'/'+k:k;var icon=isDir?'&#128193;':'&#128196;';var color=isDir?'text-cyan-400/70':'text-yellow-400/70';var safeFull=escapeAttr(fullPath);html+='<div class="cursor-pointer hover:text-purple-300 transition-colors truncate '+color+'" style="padding-left:'+indent+'px" title="'+safeFull+'" onclick="sidebarClick(\''+safeFull+'\','+isDir+')">'+icon+' '+escapeHtml(k)+(isDir?'/':'')+'</div>';if(isDir)build(obj[k],depth+1,fullPath);}};build(fileSystem.reverse,0,'');el.innerHTML=html||'<div class="text-slate-600">No files loaded</div>';}
@@ -153,7 +159,7 @@ var commands={
     document.getElementById('modal-title').textContent=dn;
     document.getElementById('modal-icon').innerHTML=icons[ext]||'&#128196;';
     document.getElementById('modal-ext-badge').textContent='.'+ext;
-    document.getElementById('modal-path').textContent=getFullPath()+'/'+file;
+    document.getElementById('modal-path').textContent=getDisplayPath(file);
     document.getElementById('modal-size').textContent=formatBytes(t.length);
     var html;
     try {
