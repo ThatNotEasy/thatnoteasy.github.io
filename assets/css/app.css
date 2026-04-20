@@ -111,6 +111,8 @@ body{
 .prose-cyber li::marker{color:#a855f7}
 .prose-cyber hr{border:none;border-top:1px solid rgba(168,85,247,0.15);margin:1.5em 0}
 .prose-cyber table{width:100%;border-collapse:collapse;margin:1em 0}
+.table-wrap{overflow-x:auto;margin:1em 0}
+.table-wrap table{margin:0;min-width:520px}
 .prose-cyber th,.prose-cyber td{border:1px solid rgba(168,85,247,0.15);padding:0.5em 0.8em;text-align:left}
 .prose-cyber th{background:rgba(168,85,247,0.1);color:#c084fc;font-weight:600}
 .out-error{color:#f87171;font-weight:600}
