@@ -93,6 +93,7 @@ function getCurrentDirObj(){var c=fileSystem["reverse"];if(!c)return null;for(va
 function resolvePath(p){if(!p)return null;var cur,parts=p.split('/').filter(function(x){return x!=='';});if(p.startsWith('/'))cur=fileSystem;else cur=getCurrentDirObj();if(!cur)return null;for(var i=0;i<parts.length;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object')cur=cur[parts[i]];else return null;}return cur;}
 function resolvePathToTarget(p){if(!p)return null;var cur,parts=p.split('/').filter(function(x){return x!=='';});if(p.startsWith('/'))cur=fileSystem;else cur=getCurrentDirObj();if(!cur)return null;for(var i=0;i<parts.length-1;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object')cur=cur[parts[i]];else return null;}var t=parts[parts.length-1];return cur.hasOwnProperty(t)?cur[t]:null;}
 function getFullPath(){var p=shellState.path.join('/');return p?'/reverse/'+p:'/reverse';}
+function getCurrentRelativePath(){return shellState.path.join('/');}
 function normalizeReversePath(path){
   var input=String(path||'').trim();
   if(!input)return '/reverse';
@@ -105,10 +106,25 @@ function getDisplayPath(filePath){
   if(filePath.startsWith('/'))return normalizeReversePath(filePath);
   return normalizeReversePath(getFullPath()+'/'+filePath);
 }
+function parseLineCount(n, fallback){
+  if(n===undefined||n===null||n==='')return fallback;
+  var parsed=parseInt(n,10);
+  if(Number.isNaN(parsed))return fallback;
+  if(parsed<0)return 0;
+  return parsed;
+}
+function countLines(text){
+  if(text==='')return 0;
+  return text.split('\n').length;
+}
+function countWords(text){
+  var trimmed=text.trim();
+  return trimmed?trimmed.split(/\s+/).length:0;
+}
 function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(1)+' MB';}
 
 function updateSidebar(){var el=document.getElementById('sidebar-tree');if(!el||!fileSystem.reverse)return;var html='';var build=function(obj,depth,path){var keys=Object.keys(obj).sort();for(var i=0;i<keys.length;i++){var k=keys[i],isDir=typeof obj[k]==='object';var indent=depth*12;var fullPath=path?path+'/'+k:k;var icon=isDir?'&#128193;':'&#128196;';var color=isDir?'text-cyan-400/70':'text-yellow-400/70';var safeFull=escapeAttr(fullPath);html+='<div class="cursor-pointer hover:text-purple-300 transition-colors truncate '+color+'" style="padding-left:'+indent+'px" title="'+safeFull+'" onclick="sidebarClick(\''+safeFull+'\','+isDir+')">'+icon+' '+escapeHtml(k)+(isDir?'/':'')+'</div>';if(isDir)build(obj[k],depth+1,fullPath);}};build(fileSystem.reverse,0,'');el.innerHTML=html||'<div class="text-slate-600">No files loaded</div>';}
-function sidebarClick(path,isDir){ if(isDir){ shellState.path=path.split('/'); updatePrompt(); updateSidebar(); } else { commands.view('/reverse/'+path); } }
+function sidebarClick(path,isDir){ if(isDir){ shellState.path=path.split('/'); updatePrompt(); updateSidebar(); } else { commands.view(normalizeReversePath(path)); } }
 function getModalEls(){
   return {
     modal:document.getElementById('file-modal'),
@@ -148,12 +164,12 @@ var commands={
   ps:function(){print('<span class="text-slate-600">  PID TTY          TIME CMD</span>\n<span class="text-slate-400">    1 ?        00:00:00 init</span>\n<span class="text-slate-400">   42 ?        00:00:00 nginx</span>\n<span class="text-cyan-300">  256 pts/0    00:00:00 cyberdeck</span>','raw');},
   ifconfig:function(){var ip=Math.floor(Math.random()*200)+10;print('<span class="text-cyan-300 font-bold">eth0:</span> <span class="text-slate-500">flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span>\n        <span class="text-slate-500">inet</span> <span class="text-slate-300">'+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*254+1)+'</span>','raw');},
   ping:function(host){if(!host){print('usage: ping [host]','info');return;}var ip=Math.floor(Math.random()*200)+10;print('PING '+host+' ('+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.1) 56 bytes','info');var c=0;var iv=setInterval(function(){if(c>=4){clearInterval(iv);print('\n--- '+host+' stats ---\n4 packets, 0% loss','system');return;}var ms=(Math.random()*50+5).toFixed(1);print('64 bytes: icmp_seq='+(c+1)+' ttl=64 time=<span class="text-cyan-300">'+ms+'</span> ms','normal',true);c++;},600);},
-  ls:function(dir){var t=dir?resolvePath(dir):getCurrentDirObj();if(!t){print("ls: '"+escapeHtml(dir)+"': not found",'error');return;}var items=Object.keys(t);if(!items.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}var out='<div class="flex flex-wrap gap-x-3 gap-y-1">';items.forEach(function(n){var isDir=typeof t[n]==='object';var disp=escapeHtml(n)+(isDir?'/':'');var safeName=escapeAttr(n);out+='<span class="'+(isDir?'out-dir':'out-file')+'" style="cursor:pointer" onclick="sidebarClick(\''+safeName+'\','+isDir+')">'+(isDir?'&#128193;':'&#128196;')+' '+disp+'</span>';});out+='</div>';print(out);},
+  ls:function(dir){var t=dir?resolvePath(dir):getCurrentDirObj();if(!t){print("ls: '"+escapeHtml(dir)+"': not found",'error');return;}var items=Object.keys(t);if(!items.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}var out='<div class="flex flex-wrap gap-x-3 gap-y-1">';var base=getCurrentRelativePath();items.forEach(function(n){var isDir=typeof t[n]==='object';var disp=escapeHtml(n)+(isDir?'/':'');var itemPath=base?(base+'/'+n):n;var safePath=escapeAttr(itemPath);out+='<span class="'+(isDir?'out-dir':'out-file')+'" style="cursor:pointer" onclick="sidebarClick(\''+safePath+'\','+isDir+')">'+(isDir?'&#128193;':'&#128196;')+' '+disp+'</span>';});out+='</div>';print(out);},
   cd:function(dir){if(!dir||dir==='~'||dir==='/'){shellState.path=[];}else if(dir==='..'){if(shellState.path.length>0)shellState.path.pop();}else if(dir.startsWith('/')){var parts=dir.split('/').filter(function(x){return x;}),cur=fileSystem,np=[];for(var i=0;i<parts.length;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object'){cur=cur[parts[i]];np.push(parts[i]);}else{print("cd: '"+escapeHtml(dir)+"': not found",'error');return;}}shellState.path=np;}else{var cdObj=getCurrentDirObj(),clean=dir.replace(/\/$/,'');if(cdObj&&cdObj[clean]&&typeof cdObj[clean]==='object')shellState.path.push(clean);else{print("cd: '"+escapeHtml(dir)+"': not found",'error');return;}}updatePrompt();updateSidebar();},
   cat:function(file){if(!file){print('usage: cat [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("cat: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("cat: '"+escapeHtml(file)+"': is a directory",'error');return;}print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(t)+'</pre>','raw');},
-  head:function(file,n){if(!file){print('usage: head [file] [n]','info');return;}var lines=parseInt(n)||20,t=resolvePathToTarget(file);if(t===null){print("head: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("head: directory",'error');return;}var s=t.split('\n').slice(0,lines).join('\n');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(s)+'</pre>','raw');},
-  tail:function(file,n){if(!file){print('usage: tail [file] [n]','info');return;}var lines=parseInt(n)||20,t=resolvePathToTarget(file);if(t===null){print("tail: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("tail: directory",'error');return;}var all=t.split('\n'),s=all.slice(-lines).join('\n');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(s)+'</pre>','raw');},
-  wc:function(file){if(!file){print('usage: wc [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("wc: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("wc: directory",'error');return;}var l=t.split('\n').length,w=t.trim().split(/\s+/).length;print('  <span class="text-cyan-300">'+l+'</span>  <span class="text-cyan-300">'+w+'</span> <span class="text-cyan-300">'+t.length+'</span> <span class="out-file">'+escapeHtml(file)+'</span>','raw');},
+  head:function(file,n){if(!file){print('usage: head [file] [n]','info');return;}var lines=parseLineCount(n,20),t=resolvePathToTarget(file);if(t===null){print("head: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("head: directory",'error');return;}var s=t.split('\n').slice(0,lines).join('\n');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(s)+'</pre>','raw');},
+  tail:function(file,n){if(!file){print('usage: tail [file] [n]','info');return;}var lines=parseLineCount(n,20),t=resolvePathToTarget(file);if(t===null){print("tail: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("tail: directory",'error');return;}var all=t.split('\n'),s=lines===0?'':all.slice(-lines).join('\n');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed out-file">'+escapeHtml(s)+'</pre>','raw');},
+  wc:function(file){if(!file){print('usage: wc [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("wc: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("wc: directory",'error');return;}var l=countLines(t),w=countWords(t);print('  <span class="text-cyan-300">'+l+'</span>  <span class="text-cyan-300">'+w+'</span> <span class="text-cyan-300">'+t.length+'</span> <span class="out-file">'+escapeHtml(file)+'</span>','raw');},
   grep:function(pattern,file){if(!pattern||!file){print('usage: grep [pattern] [file]','info');return;}var t=resolvePathToTarget(file);if(t===null){print("grep: '"+escapeHtml(file)+"': not found",'error');return;}if(typeof t==='object'){print("grep: directory",'error');return;}var lines=t.split('\n').filter(function(l){return l.toLowerCase().includes(pattern.toLowerCase());});if(!lines.length){print('no matches','dim');return;}var s=lines.map(function(l){return escapeHtml(l);}).join('\n');var re=new RegExp('('+pattern.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');s=s.replace(re,'<span class="bg-purple-500/30 text-purple-300 font-bold">$1</span>');print('<pre class="whitespace-pre-wrap text-xs leading-relaxed">'+s+'</pre>','raw');},
   file:function(name){if(!name){print('usage: file [name]','info');return;}var t=resolvePathToTarget(name);if(t===null){print("file: '"+escapeHtml(name)+"': not found",'error');return;}var ext=name.includes('.')?name.split('.').pop().toLowerCase():'';var types={md:'Markdown',txt:'ASCII text',json:'JSON data',js:'JavaScript',py:'Python',sh:'Shell script',html:'HTML',css:'CSS',log:'Log file'};print(escapeHtml(name)+': '+(types[ext]||'data'),'info');},
   view:function(file){
@@ -182,9 +198,9 @@ var commands={
     m.content.innerHTML=html;
     postProcessMarkdown(m.content);
     m.rawPre.textContent=t;
-    var lc=t.split('\n').length;
+    var lc=countLines(t);
     m.rawLineNumbers.innerHTML=Array.from({length:lc},function(_,i){return '<span class="block">'+(i+1)+'</span>';}).join('');
-    var w=t.trim().split(/\s+/).length;
+    var w=countWords(t);
     m.stats.innerHTML='<span>L:<span class="text-purple-400/60">'+lc+'</span></span><span>W:<span class="text-purple-400/60">'+w+'</span></span>';
     m.content.classList.remove('hidden');
     m.raw.classList.add('hidden');
@@ -201,12 +217,74 @@ var commands={
 
 function closeFileModal(){var m=getModalEls();m.modal.classList.add('hidden');currentFileContent='';m.content.classList.remove('hidden');m.raw.classList.add('hidden');}
 function toggleRawView(){var e=getModalEls(),isRaw=!e.raw.classList.contains('hidden');if(isRaw){e.raw.classList.add('hidden');e.content.classList.remove('hidden');e.status.textContent='RENDERED';e.rawBtnText.textContent='Raw';}else{e.content.classList.add('hidden');e.raw.classList.remove('hidden');e.status.textContent='RAW';e.rawBtnText.textContent='Rendered';}}
-function copyModalContent(){if(!currentFileContent)return;navigator.clipboard.writeText(currentFileContent).then(function(){print('Copied to clipboard','success');}).catch(function(){print('Copy failed','error');});}
-function downloadCurrentFile(){if(!currentFileContent)return;var title=document.getElementById('modal-title').textContent||'file',ext=(document.getElementById('modal-ext-badge').textContent||'.txt').replace('.',''),blob=new Blob([currentFileContent],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'.'+ext;a.click();URL.revokeObjectURL(url);print('Downloaded <span class="text-cyan-300">'+escapeHtml(title+'.'+ext)+'</span>','success');}
+function copyModalContent(){if(!currentFileContent)return;try{if(!navigator.clipboard||!navigator.clipboard.writeText){print('Copy unavailable in this browser context','error');return;}navigator.clipboard.writeText(currentFileContent).then(function(){print('Copied to clipboard','success');}).catch(function(){print('Copy failed','error');});}catch(e){print('Copy failed','error');}}
+function downloadCurrentFile(){if(!currentFileContent)return;var title=(document.getElementById('modal-title').textContent||'file').trim(),ext=(document.getElementById('modal-ext-badge').textContent||'.txt').replace(/^\./,'').trim().toLowerCase(),blob=new Blob([currentFileContent],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;var hasExt=ext&&title.toLowerCase().endsWith('.'+ext);var fileName=hasExt||!ext?title:(title+'.'+ext);a.download=fileName;a.click();URL.revokeObjectURL(url);print('Downloaded <span class="text-cyan-300">'+escapeHtml(fileName)+'</span>','success');}
 function toggleSidebar(){var panel=document.getElementById('sidebar-panel'),backdrop=document.getElementById('sidebar-backdrop');if(!panel||!backdrop||window.innerWidth>768)return;var isOpen=panel.classList.contains('open');panel.classList.toggle('open',!isOpen);backdrop.classList.toggle('active',!isOpen);}
 function closeSidebar(){var panel=document.getElementById('sidebar-panel'),backdrop=document.getElementById('sidebar-backdrop');if(!panel||!backdrop)return;panel.classList.remove('open');backdrop.classList.remove('active');}
 
-function handleKey(e){var inp=document.getElementById('cmd');if(e.key==='Tab'){e.preventDefault();var val=inp.value,cp=inp.selectionStart,before=val.slice(0,cp),words=before.split(/\s+/),lw=words[words.length-1]||'';var isCmd=words.length<=1&&before.trim()===lw,cmd=(words[0]||'').toLowerCase();var isPathArg=words.length===2&&['cat','view','cd','tree','find','ls','head','tail','wc','grep','file'].includes(cmd);var matches=[];if(isCmd){matches=Object.keys(commands).filter(function(c){return c.startsWith(lw.toLowerCase());});}else if(isPathArg){var dir=getCurrentDirObj(),sp=lw.split('/'),partial=sp.pop();if(sp.length>0&&sp[0]){var tmp=dir;for(var j=0;j<sp.length;j++){var dk=Object.keys(tmp).find(function(k){return k.toLowerCase()===sp[j].toLowerCase()&&typeof tmp[k]==='object';});if(dk)tmp=tmp[dk];else{tmp=null;break;}}if(tmp)dir=tmp;}if(dir){var prefix=sp.length>0?sp.join('/')+'/':'';matches=Object.keys(dir).filter(function(n){return n.toLowerCase().startsWith(partial.toLowerCase());}).map(function(n){var isD=typeof dir[n]==='object';return {display:n+(isD?'/':''),full:prefix+n+(isD?'/':'')};});}}var cc=shellState.completion,ctx=before+'|'+val.slice(cp);if(cc.input===ctx&&cc.matches.length>0)cc.index=(cc.index+1)%cc.matches.length;else{cc.input=ctx;cc.matches=matches;cc.index=0;}if(cc.matches.length>0){var sel=isCmd?cc.matches[cc.index]:cc.matches[cc.index].full;var nb=before.slice(0,before.length-lw.length)+sel;inp.value=nb+val.slice(cp);inp.setSelectionRange(nb.length,nb.length);}if(cc.matches.length>1&&cc.index===0&&cc.input===ctx){var sug=cc.matches.map(function(m){var d=isCmd?m:m.display;return '<span class="'+(d.endsWith('/')?'out-dir':'out-file')+'">'+escapeHtml(d)+'</span>';}).join('<span class="text-slate-700 mx-1">|</span>');print(sug,'raw');}return;}if(e.key==='c'&&(e.ctrlKey||e.metaKey)){e.preventDefault();print('^C','error');inp.value='';return;}if(e.key==='l'&&(e.ctrlKey||e.metaKey)){e.preventDefault();commands.clear();return;}if(e.key==='ArrowUp'){e.preventDefault();if(shellState.historyIndex>0){shellState.historyIndex--;inp.value=shellState.history[shellState.historyIndex];}}else if(e.key==='ArrowDown'){e.preventDefault();if(shellState.historyIndex<shellState.history.length-1){shellState.historyIndex++;inp.value=shellState.history[shellState.historyIndex];}else{shellState.historyIndex=shellState.history.length;inp.value='';}}else if(e.key==='Enter'){var val=inp.value.trim();if(!val)return;print('<span class="out-command"><span class="p-user">'+CONFIG.USER+'</span><span class="p-at">@</span><span class="p-host">'+CONFIG.HOST+'</span><span class="text-slate-600">:</span><span class="p-path">'+getFullPath()+'</span><span class="p-arrow">&#10095;</span></span> <span class="text-slate-300">'+escapeHtml(val)+'</span>','raw');shellState.history.push(val);shellState.historyIndex=shellState.history.length;shellState.cmdCount++;var args=val.split(/\s+/),cmd=args.shift().toLowerCase();if(commands[cmd])commands[cmd].apply(null,args);else print("bash: "+escapeHtml(cmd)+": command not found",'error');inp.value='';updateStatus();}}
+function handleKey(e){
+  var inp=document.getElementById('cmd');
+  if(e.key==='Tab'){
+    e.preventDefault();
+    var val=inp.value,cp=inp.selectionStart,before=val.slice(0,cp),words=before.split(/\s+/),lw=words[words.length-1]||'';
+    var isCmd=words.length<=1&&before.trim()===lw,cmd=(words[0]||'').toLowerCase();
+    var singlePathCmds=['cat','view','cd','tree','find','ls','head','tail','wc','file'];
+    var activeArgIndex=Math.max(0,words.length-1); // command=0, first arg=1, ...
+    var isPathArg=(singlePathCmds.includes(cmd)&&activeArgIndex===1)||(cmd==='grep'&&activeArgIndex===2);
+    var matches=[];
+    if(isCmd){
+      matches=Object.keys(commands).filter(function(c){return c.startsWith(lw.toLowerCase());});
+    }else if(isPathArg){
+      var dir=getCurrentDirObj(),sp=lw.split('/'),partial=sp.pop();
+      if(sp.length>0&&sp[0]){
+        var tmp=dir;
+        for(var j=0;j<sp.length;j++){
+          var dk=Object.keys(tmp).find(function(k){return k.toLowerCase()===sp[j].toLowerCase()&&typeof tmp[k]==='object';});
+          if(dk)tmp=tmp[dk];else{tmp=null;break;}
+        }
+        if(tmp)dir=tmp;
+      }
+      if(dir){
+        var prefix=sp.length>0?sp.join('/')+'/':'';
+        matches=Object.keys(dir).filter(function(n){return n.toLowerCase().startsWith(partial.toLowerCase());}).map(function(n){var isD=typeof dir[n]==='object';return {display:n+(isD?'/':''),full:prefix+n+(isD?'/':'')};});
+      }
+    }
+    var cc=shellState.completion,ctx=before+'|'+val.slice(cp);
+    if(cc.input===ctx&&cc.matches.length>0)cc.index=(cc.index+1)%cc.matches.length;else{cc.input=ctx;cc.matches=matches;cc.index=0;}
+    if(cc.matches.length>0){
+      var sel=isCmd?cc.matches[cc.index]:cc.matches[cc.index].full;
+      var nb=before.slice(0,before.length-lw.length)+sel;
+      inp.value=nb+val.slice(cp);
+      inp.setSelectionRange(nb.length,nb.length);
+    }
+    if(cc.matches.length>1&&cc.index===0&&cc.input===ctx){
+      var sug=cc.matches.map(function(m){var d=isCmd?m:m.display;return '<span class="'+(d.endsWith('/')?'out-dir':'out-file')+'">'+escapeHtml(d)+'</span>';}).join('<span class="text-slate-700 mx-1">|</span>');
+      print(sug,'raw');
+    }
+    return;
+  }
+  if(e.key==='c'&&(e.ctrlKey||e.metaKey)){e.preventDefault();print('^C','error');inp.value='';return;}
+  if(e.key==='l'&&(e.ctrlKey||e.metaKey)){e.preventDefault();commands.clear();return;}
+  if(e.key==='ArrowUp'){
+    e.preventDefault();
+    if(shellState.historyIndex>0){shellState.historyIndex--;inp.value=shellState.history[shellState.historyIndex];}
+  }else if(e.key==='ArrowDown'){
+    e.preventDefault();
+    if(shellState.historyIndex<shellState.history.length-1){shellState.historyIndex++;inp.value=shellState.history[shellState.historyIndex];}
+    else{shellState.historyIndex=shellState.history.length;inp.value='';}
+  }else if(e.key==='Enter'){
+    var val=inp.value.trim();
+    if(!val)return;
+    print('<span class="out-command"><span class="p-user">'+CONFIG.USER+'</span><span class="p-at">@</span><span class="p-host">'+CONFIG.HOST+'</span><span class="text-slate-600">:</span><span class="p-path">'+getFullPath()+'</span><span class="p-arrow">&#10095;</span></span> <span class="text-slate-300">'+escapeHtml(val)+'</span>','raw');
+    shellState.history.push(val);
+    shellState.historyIndex=shellState.history.length;
+    shellState.cmdCount++;
+    var args=val.split(/\s+/),cmd=args.shift().toLowerCase();
+    if(commands[cmd])commands[cmd].apply(null,args);else print("bash: "+escapeHtml(cmd)+": command not found",'error');
+    inp.value='';
+    updateStatus();
+  }
+}
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeFileModal();closeSidebar();}if(e.ctrlKey&&e.key==='r'&&!document.getElementById('file-modal').classList.contains('hidden')){e.preventDefault();toggleRawView();}});
 
 function playBootSequence(){return new Promise(function(resolve){var log=document.getElementById('boot-log'),statusEl=document.getElementById('boot-status'),pctEl=document.getElementById('boot-percent'),bar=document.getElementById('boot-progress');var msgs=[{t:'['+new Date().toLocaleTimeString()+'] Initializing CyberDeck...',p:8,s:'BIOS'},{t:'[ OK ] Loading kernel '+CONFIG.KERNEL+'...',p:20,s:'Kernel'},{t:'[ OK ] Mounting encrypted filesystem...',p:35,s:'Filesystem'},{t:'[ OK ] Starting network manager...',p:48,s:'Network'},{t:'[ OK ] Loading security modules...',p:60,s:'Security'},{t:'[ OK ] Starting SSH daemon...',p:72,s:'SSH'},{t:'[ OK ] Initializing CyberDeck terminal...',p:85,s:'Terminal'},{t:'[ OK ] Auth: '+CONFIG.USER+' granted',p:95,s:'Auth'},{t:'[ OK ] System ready.',p:100,s:'Ready'}];var i=0;var iv=setInterval(function(){if(i<msgs.length){var m=msgs[i],line=document.createElement('div');line.style.opacity='0';line.textContent=m.t;log.appendChild(line);requestAnimationFrame(function(){line.style.opacity='1';});statusEl.textContent=m.s;pctEl.textContent=m.p+'%';bar.style.width=m.p+'%';log.scrollTop=log.scrollHeight;i++;}else{clearInterval(iv);setTimeout(function(){var scr=document.getElementById('boot-screen');scr.style.transition='opacity 0.7s';scr.style.opacity='0';setTimeout(function(){scr.style.display='none';resolve();},700);},300);}},220);});}
