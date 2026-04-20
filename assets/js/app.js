@@ -87,11 +87,17 @@ function getCurrentDirObj(){var c=fileSystem["reverse"];if(!c)return null;for(va
 function resolvePath(p){if(!p)return null;var cur,parts=p.split('/').filter(function(x){return x!=='';});if(p.startsWith('/'))cur=fileSystem;else cur=getCurrentDirObj();if(!cur)return null;for(var i=0;i<parts.length;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object')cur=cur[parts[i]];else return null;}return cur;}
 function resolvePathToTarget(p){if(!p)return null;var cur,parts=p.split('/').filter(function(x){return x!=='';});if(p.startsWith('/'))cur=fileSystem;else cur=getCurrentDirObj();if(!cur)return null;for(var i=0;i<parts.length-1;i++){if(cur[parts[i]]&&typeof cur[parts[i]]==='object')cur=cur[parts[i]];else return null;}var t=parts[parts.length-1];return cur.hasOwnProperty(t)?cur[t]:null;}
 function getFullPath(){var p=shellState.path.join('/');return p?'/reverse/'+p:'/reverse';}
+function normalizeReversePath(path){
+  var input=String(path||'').trim();
+  if(!input)return '/reverse';
+  var parts=input.split('/').filter(function(x){return x!=='';});
+  if(parts[0]&&parts[0].toLowerCase()==='reverse')parts.shift();
+  return '/reverse'+(parts.length?'/'+parts.join('/'):'');
+}
 function getDisplayPath(filePath){
-  if(!filePath)return getFullPath();
-  if(filePath.startsWith('/reverse/'))return '/reverse/'+filePath.slice('/reverse/'.length);
-  if(filePath.startsWith('/'))return '/reverse/'+filePath.slice(1);
-  return getFullPath()+'/'+filePath;
+  if(!filePath)return normalizeReversePath(getFullPath());
+  if(filePath.startsWith('/'))return normalizeReversePath(filePath);
+  return normalizeReversePath(getFullPath()+'/'+filePath);
 }
 function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';return (b/1048576).toFixed(1)+' MB';}
 
