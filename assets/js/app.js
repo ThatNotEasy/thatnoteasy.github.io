@@ -24,30 +24,59 @@ setInterval(updateClocks,1000);updateClocks();
 var CONFIG={USER:"reverse101",HOST:"ap0dexme0",SHELL:"/bin/bash",KERNEL:"6.8.0-generic",OS:"Ap0dexMe0 OS 1.0",TERM:"xterm-256color",ARCH:"x86_64",UPTIME:Math.floor(Date.now()/1000)};
 
 /* === MARKED RENDERER (compatible with marked v4+) === */
+function normalizeMarkedHeadingArgs(textOrToken, depth){
+  if(textOrToken&&typeof textOrToken==='object'){
+    return {text:textOrToken.text||'',depth:textOrToken.depth||1};
+  }
+  return {text:textOrToken||'',depth:depth||1};
+}
+function normalizeMarkedCodeArgs(codeOrToken, infoOrLang){
+  if(codeOrToken&&typeof codeOrToken==='object'){
+    return {code:codeOrToken.text||'',lang:codeOrToken.lang||''};
+  }
+  return {code:codeOrToken||'',lang:infoOrLang||''};
+}
+function normalizeMarkedLinkArgs(hrefOrToken, title, text){
+  if(hrefOrToken&&typeof hrefOrToken==='object'){
+    return {href:hrefOrToken.href||'',title:hrefOrToken.title||'',text:hrefOrToken.text||''};
+  }
+  return {href:hrefOrToken||'',title:title||'',text:text||''};
+}
+function normalizeMarkedInlineArg(textOrToken){
+  if(textOrToken&&typeof textOrToken==='object'){
+    return textOrToken.text||'';
+  }
+  return textOrToken||'';
+}
 const renderer = {
   heading(text, depth) {
+    var normalized=normalizeMarkedHeadingArgs(text,depth);
     const colors = {1:'#c084fc',2:'#22d3ee',3:'#a855f7',4:'#ec4899',5:'#f59e0b',6:'#ef4444'};
-    return `<h${depth} style="color:${colors[depth]||'#c084fc'}">${text}</h${depth}>`;
+    return `<h${normalized.depth} style="color:${colors[normalized.depth]||'#c084fc'}">${normalized.text}</h${normalized.depth}>`;
   },
   code(code, infostring) {
-    const lang = (infostring || '').split(' ')[0] || 'text';
-    return `<pre data-lang="${escapeAttr(lang.toUpperCase())}"><code class="language-${escapeAttr(lang)}">${escapeHtml(code)}</code></pre>`;
+    var normalized=normalizeMarkedCodeArgs(code,infostring);
+    const lang = (normalized.lang || '').split(' ')[0] || 'text';
+    return `<pre data-lang="${escapeAttr(lang.toUpperCase())}"><code class="language-${escapeAttr(lang)}">${escapeHtml(normalized.code)}</code></pre>`;
   },
   codespan(text) {
-    return `<code>${escapeHtml(text)}</code>`;
+    var content=normalizeMarkedInlineArg(text);
+    return `<code>${escapeHtml(content)}</code>`;
   },
   link(href, title, text) {
-    var safeHref=sanitizeUrl(href);
-    var label=text||safeHref||'link';
+    var normalized=normalizeMarkedLinkArgs(href,title,text);
+    var safeHref=sanitizeUrl(normalized.href);
+    var label=normalized.text||safeHref||'link';
     if(!safeHref)return `<span class="out-dim">${escapeHtml(label)}</span>`;
-    var safeTitle=title?` title="${escapeAttr(title)}"`:'';
+    var safeTitle=normalized.title?` title="${escapeAttr(normalized.title)}"`:'';
     return `<a href="${escapeAttr(safeHref)}" target="_blank" rel="noopener noreferrer nofollow"${safeTitle}>${label}</a>`;
   },
   image(href, title, text){
-    var safeSrc=sanitizeUrl(href);
+    var normalized=normalizeMarkedLinkArgs(href,title,text);
+    var safeSrc=sanitizeUrl(normalized.href);
     if(!safeSrc)return '<span class="out-dim">[blocked image]</span>';
-    var safeAlt=escapeAttr(text||'image');
-    var safeTitle=title?` title="${escapeAttr(title)}"`:'';
+    var safeAlt=escapeAttr(normalized.text||'image');
+    var safeTitle=normalized.title?` title="${escapeAttr(normalized.title)}"`:'';
     return `<img src="${escapeAttr(safeSrc)}" alt="${safeAlt}" loading="lazy" decoding="async"${safeTitle}>`;
   },
   html(html){
@@ -131,7 +160,7 @@ var commands={
       html = marked.parse(t);
     } catch(e) {
       console.warn('Markdown parsing failed, using raw display', e);
-      html = '<pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
+      html = '<div class="mb-4 px-3 py-2 rounded-lg border border-amber-400/30 bg-amber-500/10 text-amber-200 text-xs font-mono">Render failed, switched to raw-safe view.</div><pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
     }
     document.getElementById('modal-content').innerHTML=html;
     postProcessMarkdown(document.getElementById('modal-content'));
