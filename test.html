@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>✦ Markdown Renderer · simple live preview</title>
+  <!-- marked.js – lightweight markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f4f6fa 0%, #eef0f3 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding: 1.5rem;
+    }
+
+    /* fallback font stack */
+    @supports (font-variation-settings: normal) {
+      body { font-family: 'Inter Variable', sans-serif; }
+    }
+
+    .app-card {
+      max-width: 1400px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 32px;
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15), 0 4px 18px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .app-header {
+      padding: 1.5rem 2rem 0.8rem 2rem;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .app-header h1 {
+      font-weight: 550;
+      font-size: 1.9rem;
+      letter-spacing: -0.02em;
+      color: #1e1e2a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-header h1::before {
+      content: "📝";
+      font-size: 1.8rem;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 0.5rem 1.2rem;
+      border-radius: 60px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #1e1e2a;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: white;
+      border-color: rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 14px -8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn i {
+      font-style: normal;
+      font-size: 1.1em;
+    }
+
+    .editor-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    /* panels */
+    .pane {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 1.8rem 1.8rem 2rem 1.8rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 550px;
+      height: 70vh;
+      max-height: 800px;
+    }
+
+    .pane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .pane-header h2 {
+      font-weight: 500;
+      font-size: 1.3rem;
+      color: #2c2c3a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pane-header h2 .badge {
+      background: #d0d4dd;
+      color: #1e1e2a;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 30px;
+      margin-left: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    .editor-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      padding: 1.2rem 1.4rem;
+      font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      background: #fdfdfe;
+      border: 1px solid #e2e4e9;
+      border-radius: 20px;
+      resize: vertical;
+      color: #1a1a24;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.03);
+      transition: border 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: #8f9bb3;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.03), 0 0 0 3px rgba(100, 120, 200, 0.15);
+    }
+
+    .preview-box {
+      flex: 1;
+      background: #fdfdfe;
+      border-radius: 20px;
+      padding: 1.4rem 1.8rem;
+      border: 1px solid #e2e4e9;
+      overflow-y: auto;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+      color: #1f1f2e;
+      scroll-behavior: smooth;
+    }
+
+    /* --- markdown rendered styles (preview) --- */
+    .preview-box :first-child { margin-top: 0; }
+    .preview-box :last-child { margin-bottom: 0; }
+
+    .preview-box h1, .preview-box h2, .preview-box h3,
+    .preview-box h4, .preview-box h5, .preview-box h6 {
+      margin-top: 1.6em;
+      margin-bottom: 0.6em;
+      font-weight: 550;
+      line-height: 1.25;
+      color: #15151f;
+    }
+    .preview-box h1 { font-size: 2rem; border-bottom: 2px solid #eaeef2; padding-bottom: 0.3rem; }
+    .preview-box h2 { font-size: 1.6rem; border-bottom: 1px solid #eaeef2; padding-bottom: 0.2rem; }
+    .preview-box h3 { font-size: 1.35rem; }
+    .preview-box p { margin: 1.1em 0; line-height: 1.65; }
+    .preview-box a { color: #2563eb; text-decoration: none; border-bottom: 1px dotted #90b4f0; }
+    .preview-box a:hover { color: #0f3b9e; border-bottom: 1px solid; }
+    .preview-box ul, .preview-box ol { padding-left: 1.8rem; margin: 1.2em 0; }
+    .preview-box li { margin: 0.4em 0; }
+    .preview-box blockquote {
+      margin: 1.5em 0;
+      padding: 0.6rem 1.4rem;
+      border-left: 5px solid #7c8db0;
+      background: #f2f5f9;
+      border-radius: 0 16px 16px 0;
+      color: #2e384d;
+      font-style: normal;
+    }
+    .preview-box code {
+      background: #eef2f7;
+      padding: 0.2em 0.45em;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.9em;
+      color: #b13e6b;
+    }
+    .preview-box pre {
+      background: #1e1e2a;
+      color: #e3e3f0;
+      padding: 1.2rem 1.5rem;
+      border-radius: 18px;
+      overflow-x: auto;
+      margin: 1.6em 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      box-shadow: 0 6px 12px -6px rgba(0,0,0,0.2);
+    }
+    .preview-box pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+      border-radius: 0;
+    }
+    .preview-box hr { margin: 2.5rem 0; border: 0; height: 1px; background: linear-gradient(to right, #ccc0, #b0b8c5, #ccc0); }
+    .preview-box table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1.8em 0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .preview-box th, .preview-box td {
+      border: 1px solid #d7dce3;
+      padding: 0.7rem 1rem;
+      text-align: left;
+    }
+    .preview-box th {
+      background: #e9edf3;
+      font-weight: 600;
+    }
+    .preview-box img { max-width: 100%; border-radius: 14px; margin: 1rem 0; }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      body { padding: 0.8rem; }
+      .app-header { padding: 1.2rem 1.2rem 0.8rem; }
+      .app-header h1 { font-size: 1.6rem; }
+      .editor-preview-grid { grid-template-columns: 1fr; }
+      .pane { min-height: 450px; height: auto; max-height: 700px; }
+    }
+
+    .footer-note {
+      padding: 0.9rem 2rem 1.2rem;
+      font-size: 0.8rem;
+      color: #5e6f8d;
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid rgba(0,0,0,0.03);
+      background: rgba(255,255,255,0.3);
+    }
+
+    .footer-note span { opacity: 0.7; }
+  </style>
+</head>
+<body>
+
+<div class="app-card">
+  <header class="app-header">
+    <h1>Markdown Renderer</h1>
+    <div class="toolbar">
+      <button class="btn" id="sampleBtn" title="Load sample markdown">
+        <i>📋</i> Sample
+      </button>
+      <button class="btn" id="clearBtn" title="Clear editor">
+        <i>🧹</i> Clear
+      </button>
+    </div>
+  </header>
+
+  <!-- main two‑column layout -->
+  <div class="editor-preview-grid">
+    <!-- left: editor -->
+    <section class="pane">
+      <div class="pane-header">
+        <h2>✎ Editor <span class="badge">Markdown</span></h2>
+        <span style="font-size:0.8rem; opacity:0.6;">live · instant</span>
+      </div>
+      <div class="editor-wrapper">
+        <textarea id="markdownInput" placeholder="# Write your markdown here…" spellcheck="false"></textarea>
+      </div>
+    </section>
+
+    <!-- right: preview -->
+    <section class="pane">
+      <div class="pane-header">
+        <h2>👁️ Preview <span class="badge">HTML</span></h2>
+        <span style="font-size:0.8rem; opacity:0.6;">rendered</span>
+      </div>
+      <div id="previewOutput" class="preview-box">
+        <!-- rendered markdown will appear here -->
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer-note">
+    <span>⚡ powered by marked · simple & clean</span>
+  </footer>
+</div>
+
+<script>
+  (function() {
+    'use strict';
+
+    // ----- elements -----
+    const textarea = document.getElementById('markdownInput');
+    const previewDiv = document.getElementById('previewOutput');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // ----- sample markdown (rich enough to show features) -----
+    const SAMPLE_MARKDOWN = `# ✨ Markdown magic
+
+## Type anything on the left → see it rendered
+
+### Quick demo
+
+- **Bold** and *italic* and \`inline code\`
+- Lists are easy
+- [Link to marked.js](https://marked.js.org/)
+
+> “Simplicity is the soul of efficiency.”  
+> – Austin Freeman
+
+---
+
+### Code block
+
+\`\`\`javascript
+// a friendly greeting
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+console.log(greet('Markdown'));
+\`\`\`
+
+### Table example
+
+| Feature   | Support |
+|-----------|---------|
+| headings  | ✅      |
+| lists     | ✅      |
+| **bold**  | ✅      |
+| *italic*  | ✅      |
+
+---
+
+**Try it:** edit me or use the *Sample* button ↻
+`;
+
+    // ----- render function using marked -----
+    function renderMarkdown() {
+      const rawText = textarea.value;
+      if (typeof marked !== 'undefined') {
+        // marked.parse returns html string
+        try {
+          // using marked options (safe, but we trust our input)
+          const html = marked.parse(rawText, { 
+            breaks: true,        // convert line breaks to <br>
+            gfm: true,           // github flavored markdown
+            headerIds: false,
+            mangle: false
+          });
+          previewDiv.innerHTML = html;
+        } catch (e) {
+          previewDiv.innerHTML = `<p style="color: #b91c1c;">⚠️ Rendering error: ${e.message}</p>`;
+          console.warn('Marked error:', e);
+        }
+      } else {
+        previewDiv.innerHTML = '<p style="color: #b85e00;">⚠️ Marked library not loaded. Please refresh.</p>';
+      }
+    }
+
+    // ----- initial load: set sample and render -----
+    function loadSample() {
+      textarea.value = SAMPLE_MARKDOWN;
+      renderMarkdown();
+    }
+
+    // ----- clear editor (keep minimal placeholder) -----
+    function clearEditor() {
+      textarea.value = '';
+      renderMarkdown();  // will show empty preview (or just nothing)
+    }
+
+    // ----- event listeners -----
+    textarea.addEventListener('input', renderMarkdown);
+
+    sampleBtn.addEventListener('click', loadSample);
+
+    clearBtn.addEventListener('click', function() {
+      // soft clear – we leave a tiny hint
+      textarea.value = '';
+      // but we can also set a minimal placeholder-like text, but let's keep empty
+      renderMarkdown();
+      // optional: put a very short prompt in preview
+      if (previewDiv.innerHTML.trim() === '') {
+        previewDiv.innerHTML = '<p style="color: #6f7c91; font-style: italic;">✨ Your rendered markdown will appear here…</p>';
+      }
+    });
+
+    // ----- initialize with sample markdown -----
+    // (make sure marked is available; if CDN is slow, fallback)
+    if (typeof marked !== 'undefined') {
+      loadSample();
+    } else {
+      // If marked hasn't loaded yet (rare), wait a bit
+      previewDiv.innerHTML = '<p>Loading parser…</p>';
+      let attempts = 0;
+      const checkMarked = setInterval(function() {
+        if (typeof marked !== 'undefined') {
+          clearInterval(checkMarked);
+          loadSample();
+        } else if (++attempts > 20) {
+          clearInterval(checkMarked);
+          previewDiv.innerHTML = '<p style="color: #a00;">❌ Marked library failed to load. Check connection.</p>';
+        }
+      }, 80);
+    }
+
+    // small extra: if preview becomes empty after clear, show hint.
+    // we already handle in clear, but also after manual deletion
+    const originalRender = renderMarkdown;
+    renderMarkdown = function() {
+      if (typeof marked !== 'undefined') {
+        try {
+          const html = marked.parse(textarea.value, { breaks: true, gfm: true, headerIds: false, mangle: false });
+          previewDiv.innerHTML = html;
+          // if empty content, show a soft placeholder
+          if (textarea.value.trim() === '') {
+            previewDiv.innerHTML = '<p style="color: #6f7c91; font-style: italic;">✨ Your rendered markdown will appear here…</p>';
+          }
+        } catch (e) {
+          previewDiv.innerHTML = `<p style="color: #b91c1c;">⚠️ Rendering error: ${e.message}</p>`;
+        }
+      }
+    };
+    // rebind
+    textarea.removeEventListener('input', originalRender);
+    textarea.addEventListener('input', renderMarkdown);
+    // update clear to use new render
+    const originalClear = clearEditor;
+    clearEditor = function() {
+      textarea.value = '';
+      renderMarkdown();
+    };
+    clearBtn.removeEventListener('click', originalClear);
+    clearBtn.addEventListener('click', clearEditor);
+    // re-run sample with new render
+    const originalSample = loadSample;
+    loadSample = function() {
+      textarea.value = SAMPLE_MARKDOWN;
+      renderMarkdown();
+    };
+    sampleBtn.removeEventListener('click', originalSample);
+    sampleBtn.addEventListener('click', loadSample);
+
+    // final re-trigger if needed
+    if (textarea.value === SAMPLE_MARKDOWN) {
+      renderMarkdown();
+    } else {
+      // ensure sample is shown on start (if marked loaded normally)
+      if (typeof marked !== 'undefined') {
+        loadSample();
+      }
+    }
+
+    // handle window resize? not needed.
+    // tiny quality: sync height when window changes (no action needed)
+  })();
+</script>
+
+<!-- optional small fix for marked and empty state -->
+</body>
+</html>
