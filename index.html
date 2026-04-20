@@ -28,6 +28,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/armasm.min.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -65,7 +67,7 @@
 </div>
 
 <div id="file-modal" tabindex="-1" class="hidden fixed inset-0 bg-cyber-900/90 z-[45] flex items-center justify-center p-2 md:p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-content">
-  <div class="animate-fade-up glass-strong rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden glow-purple">
+  <div class="animate-fade-up glass-strong rounded-2xl max-w-6xl w-full h-[90vh] flex flex-col overflow-hidden glow-purple">
     <div class="px-4 py-3 border-b border-purple-500/20 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3 min-w-0">
         <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0"><span id="modal-icon" class="text-lg"></span></div>
@@ -80,11 +82,11 @@
       </div>
     </div>
     <div id="modal-content-wrapper" class="flex-1 relative bg-cyber-900/50 min-h-0 overflow-hidden">
-      <div id="modal-content" class="absolute inset-0 overflow-y-auto p-5 md:p-8 modal-scroll prose-cyber"></div>
+      <div id="modal-content" class="absolute inset-0 overflow-y-auto p-5 md:p-8 modal-scroll prose-cyber text-[13px] leading-relaxed"></div>
       <div id="modal-raw" class="hidden absolute inset-0 bg-cyber-900 flex flex-col overflow-hidden">
         <div class="flex flex-1 min-h-0">
           <div id="raw-line-numbers" class="w-12 bg-cyber-800 text-purple-500/20 font-mono text-xs text-right pr-3 py-5 overflow-y-auto select-none border-r border-purple-500/10 leading-[20px] shrink-0"></div>
-          <pre id="modal-raw-pre" class="flex-1 p-5 text-purple-200 font-mono text-xs whitespace-pre overflow-y-auto leading-[20px] modal-scroll"></pre>
+          <pre id="modal-raw-pre" class="flex-1 p-5 text-slate-300 font-mono text-[13px] whitespace-pre overflow-y-auto leading-[20px] modal-scroll"></pre>
         </div>
       </div>
     </div>
