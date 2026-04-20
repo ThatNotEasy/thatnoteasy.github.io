@@ -31,7 +31,13 @@ function renderMarkdownSafe(markdown){
   var template = document.createElement('template');
   template.innerHTML = parsed;
 
-  template.content.querySelectorAll('script,iframe,object,embed').forEach(function(node){ node.remove(); });
+  template.content.querySelectorAll('script,iframe,object,embed,style,link,meta,base').forEach(function(node){ node.remove(); });
+  template.content.querySelectorAll('*').forEach(function(node){
+    Array.from(node.attributes).forEach(function(attr){
+      var name=(attr.name||'').toLowerCase();
+      if(name.startsWith('on')) node.removeAttribute(attr.name);
+    });
+  });
   template.content.querySelectorAll('a').forEach(function(link){
     var safeHref = sanitizeUrl(link.getAttribute('href') || '');
     if(!safeHref){
@@ -103,6 +109,23 @@ function formatBytes(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toF
 
 function updateSidebar(){var el=document.getElementById('sidebar-tree');if(!el||!fileSystem.reverse)return;var html='';var build=function(obj,depth,path){var keys=Object.keys(obj).sort();for(var i=0;i<keys.length;i++){var k=keys[i],isDir=typeof obj[k]==='object';var indent=depth*12;var fullPath=path?path+'/'+k:k;var icon=isDir?'&#128193;':'&#128196;';var color=isDir?'text-cyan-400/70':'text-yellow-400/70';var safeFull=escapeAttr(fullPath);html+='<div class="cursor-pointer hover:text-purple-300 transition-colors truncate '+color+'" style="padding-left:'+indent+'px" title="'+safeFull+'" onclick="sidebarClick(\''+safeFull+'\','+isDir+')">'+icon+' '+escapeHtml(k)+(isDir?'/':'')+'</div>';if(isDir)build(obj[k],depth+1,fullPath);}};build(fileSystem.reverse,0,'');el.innerHTML=html||'<div class="text-slate-600">No files loaded</div>';}
 function sidebarClick(path,isDir){ if(isDir){ shellState.path=path.split('/'); updatePrompt(); updateSidebar(); } else { commands.view('/reverse/'+path); } }
+function getModalEls(){
+  return {
+    modal:document.getElementById('file-modal'),
+    content:document.getElementById('modal-content'),
+    raw:document.getElementById('modal-raw'),
+    rawPre:document.getElementById('modal-raw-pre'),
+    rawLineNumbers:document.getElementById('raw-line-numbers'),
+    status:document.getElementById('modal-status'),
+    rawBtnText:document.getElementById('raw-btn-text'),
+    title:document.getElementById('modal-title'),
+    icon:document.getElementById('modal-icon'),
+    extBadge:document.getElementById('modal-ext-badge'),
+    path:document.getElementById('modal-path'),
+    size:document.getElementById('modal-size'),
+    stats:document.getElementById('file-stats')
+  };
+}
 
 function print(text,type,animate){var o=document.getElementById('output'),d=document.createElement('div');var cm={normal:'',success:'out-success',error:'out-error',system:'out-system',info:'out-info',command:'out-command',dir:'out-dir',file:'out-file',raw:'',dim:'out-dim',highlight:'out-highlight',accent:'out-accent'};d.className=cm[type]||'';if(animate){d.style.opacity='0';d.style.transform='translateY(4px)';d.style.transition='all 0.2s ease-out';}d.innerHTML=text;o.appendChild(d);if(animate)requestAnimationFrame(function(){d.style.opacity='1';d.style.transform='translateY(0)';});o.scrollTop=o.scrollHeight;}
 function updatePrompt(){var p=getFullPath();document.getElementById('prompt').innerHTML='<span class="p-user">'+CONFIG.USER+'</span><span class="p-at">@</span><span class="p-host">'+CONFIG.HOST+'</span><span class="text-slate-600">:</span><span class="p-path">'+p+'</span><span class="p-arrow">&#10095; </span>';document.getElementById('status-path').textContent=p;}
@@ -120,8 +143,8 @@ var commands={
   uname:function(){var a=Array.from(arguments);if(a.includes('-a'))print('Linux '+CONFIG.HOST+' '+CONFIG.KERNEL+' #1 SMP PREEMPT_DYNAMIC '+CONFIG.ARCH+' GNU/Linux','info');else print('Linux','info');},
   calc:function(){var expr=Array.from(arguments).join(' ');if(!expr){print('usage: calc [expr]','info');return;}try{var safe=expr.replace(/[^0-9+\-*/().%\s]/g,'');if(safe!==expr.trim()){print('calc: numbers only','error');return;}var r=Function('"use strict";return('+safe+')')();print('<span class="text-slate-500">'+escapeHtml(expr)+'</span> = <span class="text-cyan-300 font-bold">'+r+'</span>','raw');}catch(e){print('calc: invalid','error');}},
   base64:function(action){var a=Array.from(arguments).slice(1),t=a.join(' ');if(!action||!t){print('usage: base64 [encode|decode] [text]','info');return;}try{if(action==='encode')print(btoa(t),'info');else if(action==='decode')print(escapeHtml(atob(t)),'info');else print('base64: use encode or decode','error');}catch(e){print('base64: invalid','error');}},
-  banner:function(){var sa=ASCII_BANNER.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');var banner='<pre style="color:#c084fc;margin:0 0 8px 0;line-height:1.3;text-shadow:0 0 10px rgba(168,85,247,0.4);">'+sa+'</pre>'+'<span class="gradient-text font-bold text-sm">  Reverse Engineering Writeups</span><br>'+'<span class="text-slate-500 text-xs">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span><br>'+'<span class="text-slate-700 text-xs">  '+('\u2500').repeat(43)+'</span><br>'+'<span class="text-slate-400 text-xs">  &bull; Type <span class="text-cyan-300">\'help\'</span> for commands</span><br>';print(banner,'raw');},
-  neofetch:function(){var us=Math.floor(Date.now()/1000-CONFIG.UPTIME),uh=Math.floor(us/3600),um=Math.floor((us%3600)/60);var sa=NEOFETCH_ART.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');var sep='\u2500'.repeat(21);var info='<span class="text-cyan-300 font-bold">'+CONFIG.USER+'@'+CONFIG.HOST+'</span><br><span class="text-slate-600">'+sep+'</span><br><span class="text-slate-500">OS</span>        <span class="text-slate-300">'+CONFIG.OS+'</span><br><span class="text-slate-500">Host</span>      <span class="text-slate-300">GitHub Pages</span><br><span class="text-slate-500">Kernel</span>    <span class="text-slate-300">'+CONFIG.KERNEL+'</span><br><span class="text-slate-500">Shell</span>     <span class="text-slate-300">'+CONFIG.SHELL+'</span><br><span class="text-slate-500">Terminal</span>  <span class="text-slate-300">'+CONFIG.TERM+'</span><br><span class="text-slate-500">CPU</span>       <span class="text-slate-300">WebAssembly vCPU</span><br><span class="text-slate-500">Memory</span>    <span class="text-slate-300">\u221E MB / \u221E MB</span><br><span class="text-slate-500">Uptime</span>    <span class="text-slate-300">'+uh+'h '+um+'m</span><br><br><span style="color:#ef4444;">\u2588\u2588</span><span style="color:#f59e0b;">\u2588\u2588</span><span style="color:#eab308;">\u2588\u2588</span><span style="color:#22c55e;">\u2588\u2588</span><span style="color:#22d3ee;">\u2588\u2588</span><span style="color:#a855f7;">\u2588\u2588</span><span style="color:#64748b;">\u2588\u2588</span><span style="color:#94a3b8;">\u2588\u2588</span>';print('<pre style="color:#c084fc;margin:0;display:inline;float:left;line-height:1.4;">'+sa+'</pre><div style="margin-left:8px;display:inline-block;line-height:1.6;">'+info+'</div><div style="clear:both;"></div>','raw');},
+  banner:function(){var sa=escapeHtml(ASCII_BANNER);var banner='<pre style="color:#c084fc;margin:0 0 8px 0;line-height:1.3;text-shadow:0 0 10px rgba(168,85,247,0.4);">'+sa+'</pre>'+'<span class="gradient-text font-bold text-sm">  Reverse Engineering Writeups</span><br>'+'<span class="text-slate-500 text-xs">  Platforms: Linux &bull; Windows &bull; Android &bull; Web</span><br>'+'<span class="text-slate-700 text-xs">  '+('\u2500').repeat(43)+'</span><br>'+'<span class="text-slate-400 text-xs">  &bull; Type <span class="text-cyan-300">\'help\'</span> for commands</span><br>';print(banner,'raw');},
+  neofetch:function(){var us=Math.floor(Date.now()/1000-CONFIG.UPTIME),uh=Math.floor(us/3600),um=Math.floor((us%3600)/60);var sa=escapeHtml(NEOFETCH_ART);var sep='\u2500'.repeat(21);var info='<span class="text-cyan-300 font-bold">'+CONFIG.USER+'@'+CONFIG.HOST+'</span><br><span class="text-slate-600">'+sep+'</span><br><span class="text-slate-500">OS</span>        <span class="text-slate-300">'+CONFIG.OS+'</span><br><span class="text-slate-500">Host</span>      <span class="text-slate-300">GitHub Pages</span><br><span class="text-slate-500">Kernel</span>    <span class="text-slate-300">'+CONFIG.KERNEL+'</span><br><span class="text-slate-500">Shell</span>     <span class="text-slate-300">'+CONFIG.SHELL+'</span><br><span class="text-slate-500">Terminal</span>  <span class="text-slate-300">'+CONFIG.TERM+'</span><br><span class="text-slate-500">CPU</span>       <span class="text-slate-300">WebAssembly vCPU</span><br><span class="text-slate-500">Memory</span>    <span class="text-slate-300">\u221E MB / \u221E MB</span><br><span class="text-slate-500">Uptime</span>    <span class="text-slate-300">'+uh+'h '+um+'m</span><br><br><span style="color:#ef4444;">\u2588\u2588</span><span style="color:#f59e0b;">\u2588\u2588</span><span style="color:#eab308;">\u2588\u2588</span><span style="color:#22c55e;">\u2588\u2588</span><span style="color:#22d3ee;">\u2588\u2588</span><span style="color:#a855f7;">\u2588\u2588</span><span style="color:#64748b;">\u2588\u2588</span><span style="color:#94a3b8;">\u2588\u2588</span>';print('<pre style="color:#c084fc;margin:0;display:inline;float:left;line-height:1.4;">'+sa+'</pre><div style="margin-left:8px;display:inline-block;line-height:1.6;">'+info+'</div><div style="clear:both;"></div>','raw');},
   ps:function(){print('<span class="text-slate-600">  PID TTY          TIME CMD</span>\n<span class="text-slate-400">    1 ?        00:00:00 init</span>\n<span class="text-slate-400">   42 ?        00:00:00 nginx</span>\n<span class="text-cyan-300">  256 pts/0    00:00:00 cyberdeck</span>','raw');},
   ifconfig:function(){var ip=Math.floor(Math.random()*200)+10;print('<span class="text-cyan-300 font-bold">eth0:</span> <span class="text-slate-500">flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span>\n        <span class="text-slate-500">inet</span> <span class="text-slate-300">'+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*254+1)+'</span>','raw');},
   ping:function(host){if(!host){print('usage: ping [host]','info');return;}var ip=Math.floor(Math.random()*200)+10;print('PING '+host+' ('+ip+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.1) 56 bytes','info');var c=0;var iv=setInterval(function(){if(c>=4){clearInterval(iv);print('\n--- '+host+' stats ---\n4 packets, 0% loss','system');return;}var ms=(Math.random()*50+5).toFixed(1);print('64 bytes: icmp_seq='+(c+1)+' ttl=64 time=<span class="text-cyan-300">'+ms+'</span> ms','normal',true);c++;},600);},
@@ -142,11 +165,12 @@ var commands={
     var dn=file.split('/').pop(),
         ext=dn.includes('.')?dn.split('.').pop().toLowerCase():'txt';
     var icons={md:'&#128221;',txt:'&#128196;',json:'&#128203;',js:'&#9889;',py:'&#128013;',sh:'&#128424;',html:'&#127760;',css:'&#127912;',log:'&#128203;'};
-    document.getElementById('modal-title').textContent=dn;
-    document.getElementById('modal-icon').innerHTML=icons[ext]||'&#128196;';
-    document.getElementById('modal-ext-badge').textContent='.'+ext;
-    document.getElementById('modal-path').textContent=getDisplayPath(file);
-    document.getElementById('modal-size').textContent=formatBytes(t.length);
+    var m=getModalEls();
+    m.title.textContent=dn;
+    m.icon.innerHTML=icons[ext]||'&#128196;';
+    m.extBadge.textContent='.'+ext;
+    m.path.textContent=getDisplayPath(file);
+    m.size.textContent=formatBytes(t.length);
     var html;
     try {
       html = renderMarkdownSafe(t);
@@ -155,19 +179,19 @@ var commands={
       console.warn('Markdown parsing failed, using raw display', e);
       html = '<div class="mb-4 px-3 py-2 rounded-lg border border-amber-400/30 bg-amber-500/10 text-amber-200 text-xs font-mono">Render failed, switched to raw-safe view.</div><pre class="whitespace-pre-wrap">'+escapeHtml(t)+'</pre>';
     }
-    document.getElementById('modal-content').innerHTML=html;
-    postProcessMarkdown(document.getElementById('modal-content'));
-    document.getElementById('modal-raw-pre').textContent=t;
+    m.content.innerHTML=html;
+    postProcessMarkdown(m.content);
+    m.rawPre.textContent=t;
     var lc=t.split('\n').length;
-    document.getElementById('raw-line-numbers').innerHTML=Array.from({length:lc},function(_,i){return '<span class="block">'+(i+1)+'</span>';}).join('');
+    m.rawLineNumbers.innerHTML=Array.from({length:lc},function(_,i){return '<span class="block">'+(i+1)+'</span>';}).join('');
     var w=t.trim().split(/\s+/).length;
-    document.getElementById('file-stats').innerHTML='<span>L:<span class="text-purple-400/60">'+lc+'</span></span><span>W:<span class="text-purple-400/60">'+w+'</span></span>';
-    document.getElementById('modal-content').classList.remove('hidden');
-    document.getElementById('modal-raw').classList.add('hidden');
-    document.getElementById('modal-status').textContent='RENDERED';
+    m.stats.innerHTML='<span>L:<span class="text-purple-400/60">'+lc+'</span></span><span>W:<span class="text-purple-400/60">'+w+'</span></span>';
+    m.content.classList.remove('hidden');
+    m.raw.classList.add('hidden');
+    m.status.textContent='RENDERED';
     setTimeout(function(){if(typeof hljs!=='undefined'){document.querySelectorAll('#modal-content pre code').forEach(function(b){hljs.highlightElement(b);});}},10);
-    document.getElementById('file-modal').classList.remove('hidden');
-    document.getElementById('file-modal').focus();
+    m.modal.classList.remove('hidden');
+    m.modal.focus();
     print('Opening <span class="out-file">'+escapeHtml(dn)+'</span>...','info');
   },
   tree:function(dir){var target=dir?resolvePath(dir):getCurrentDirObj();if(!target){print("tree: '"+escapeHtml(dir)+"': not found",'error');return;}var lines=[];var build=function(obj,prefix){var keys=Object.keys(obj).sort();keys.forEach(function(k,i){var last=i===keys.length-1,isDir=typeof obj[k]==='object';var conn=last?'\u2514\u2500\u2500 ':'\u251C\u2500\u2500 ';var cls=isDir?'out-dir':'out-file';lines.push('<span class="'+cls+'">'+prefix+conn+escapeHtml(k)+(isDir?'/':'')+'</span>');if(isDir)build(obj[k],prefix+(last?'    ':'\u2502   '));});};build(target,'');print(lines.length?'<div class="leading-relaxed">'+lines.join('<br>')+'</div>':'<span class="text-slate-600">(empty)</span>','raw');},
@@ -175,8 +199,8 @@ var commands={
   history:function(){var a=Array.from(arguments);if(a.includes('-c')){shellState.history=[];shellState.historyIndex=-1;print('History cleared','success');return;}if(!shellState.history.length){print('<span class="text-slate-600">(empty)</span>','raw');return;}shellState.history.forEach(function(c,i){print('  <span class="text-slate-600">'+String(i+1).padStart(4,' ')+'</span>  '+escapeHtml(c),'raw');});}
 };
 
-function closeFileModal(){document.getElementById('file-modal').classList.add('hidden');currentFileContent='';document.getElementById('modal-content').classList.remove('hidden');document.getElementById('modal-raw').classList.add('hidden');}
-function toggleRawView(){var r=document.getElementById('modal-raw'),m=document.getElementById('modal-content'),isRaw=!r.classList.contains('hidden');if(isRaw){r.classList.add('hidden');m.classList.remove('hidden');document.getElementById('modal-status').textContent='RENDERED';document.getElementById('raw-btn-text').textContent='Raw';}else{m.classList.add('hidden');r.classList.remove('hidden');document.getElementById('modal-status').textContent='RAW';document.getElementById('raw-btn-text').textContent='Rendered';}}
+function closeFileModal(){var m=getModalEls();m.modal.classList.add('hidden');currentFileContent='';m.content.classList.remove('hidden');m.raw.classList.add('hidden');}
+function toggleRawView(){var e=getModalEls(),isRaw=!e.raw.classList.contains('hidden');if(isRaw){e.raw.classList.add('hidden');e.content.classList.remove('hidden');e.status.textContent='RENDERED';e.rawBtnText.textContent='Raw';}else{e.content.classList.add('hidden');e.raw.classList.remove('hidden');e.status.textContent='RAW';e.rawBtnText.textContent='Rendered';}}
 function copyModalContent(){if(!currentFileContent)return;navigator.clipboard.writeText(currentFileContent).then(function(){print('Copied to clipboard','success');}).catch(function(){print('Copy failed','error');});}
 function downloadCurrentFile(){if(!currentFileContent)return;var title=document.getElementById('modal-title').textContent||'file',ext=(document.getElementById('modal-ext-badge').textContent||'.txt').replace('.',''),blob=new Blob([currentFileContent],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'.'+ext;a.click();URL.revokeObjectURL(url);print('Downloaded <span class="text-cyan-300">'+escapeHtml(title+'.'+ext)+'</span>','success');}
 function toggleSidebar(){var panel=document.getElementById('sidebar-panel'),backdrop=document.getElementById('sidebar-backdrop');if(!panel||!backdrop||window.innerWidth>768)return;var isOpen=panel.classList.contains('open');panel.classList.toggle('open',!isOpen);backdrop.classList.toggle('active',!isOpen);}
