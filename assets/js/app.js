@@ -24,14 +24,21 @@ setInterval(updateClocks,1000);updateClocks();
 var CONFIG={USER:"reverse101",HOST:"ap0dexme0",SHELL:"/bin/bash",KERNEL:"6.8.0-generic",OS:"Ap0dexMe0 OS 1.0",TERM:"xterm-256color",ARCH:"x86_64",UPTIME:Math.floor(Date.now()/1000)};
 
 /* === MARKDOWN RENDERING === */
-if(typeof marked!=='undefined'){
-  marked.setOptions({ gfm: true, breaks: true });
+function getMarkedApi(){
+  if(typeof window!=='undefined'&&window.marked)return window.marked;
+  if(typeof marked!=='undefined')return marked;
+  return null;
+}
+var markedApi=getMarkedApi();
+if(markedApi&&typeof markedApi.setOptions==='function'){
+  markedApi.setOptions({ gfm: true, breaks: true });
 }
 function renderMarkdownSafe(markdown){
-  if(typeof marked==='undefined'){
+  var md=getMarkedApi();
+  if(!md||typeof md.parse!=='function'){
     throw new Error('Markdown parser unavailable');
   }
-  var parsed = marked.parse(markdown || '');
+  var parsed = md.parse(markdown || '');
   if(typeof parsed !== 'string') return '';
   var template = document.createElement('template');
   template.innerHTML = parsed;
