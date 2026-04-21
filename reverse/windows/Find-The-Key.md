@@ -1,8 +1,4 @@
-# Reverse Engineering Writeup: ActivateMe.exe
-
-> **Challenge Category:** Reverse Engineering / Crackme
-> **Difficulty:** Intermediate
-> **Objective:** Reverse-engineer a Windows executable to recover the hidden Activation Key
+# ActiveMe.exe - Reverse Engineering Writeup
 
 ---
 
@@ -51,14 +47,15 @@ ActivateMe.exe: PE32+ executable (console) x86-64, 6 sections
 
 Key observations from the initial file analysis:
 
-| Attribute | Value | Significance |
-|-----------|-------|--------------|
-| **Format** | PE32+ (64-bit) | Modern x86-64 executable, requires 64-bit analysis tools |
-| **Subsystem** | Console (IMAGE_SUBSYSTEM_WINDOWS_CUI) | Runs in a terminal window, likely uses `printf`/`scanf` for I/O |
-| **Architecture** | x86-64 | AMD64/Intel 64 instruction set |
-| **Linker Version** | 14.x (Visual Studio 2015+) | Compiled with MSVC, suggests C/C++ source and CRT usage |
-| **Sections** | 6 | Standard PE layout: `.text`, `.rdata`, `.data`, `.pdata`, `.rsrc`, `.reloc` |
-| **Packer/Protector** | None detected | No UPX, Themida, VMProtect, or similar packing observed |
+| Property | Value |
+|---|---|
+| **Format** | PE32+ (64-bit) |
+| **Subsystem** | Console (IMAGE_SUBSYSTEM_WINDOWS_CUI) |
+| **Architecture** | x86-64 |
+| **Linker Version** | 14.x (Visual Studio 2015+) |
+| **Sections** | 6 |
+| **Packer/Protector** | None detected |
+
 
 ### 2.2 Section Analysis
 

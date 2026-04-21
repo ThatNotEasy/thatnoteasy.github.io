@@ -226,7 +226,7 @@ var commands={
     m.content.classList.remove('hidden');
     m.raw.classList.add('hidden');
     m.status.textContent='RENDERED';
-    setTimeout(function(){if(typeof hljs!=='undefined'){document.querySelectorAll('#modal-content pre code').forEach(function(b){hljs.highlightElement(b);});}},10);
+    setTimeout(function(){if(typeof hljs!=='undefined'){document.querySelectorAll('#modal-content pre code').forEach(function(b){var pre=b.parentElement;if(b.className.includes('language-assembly')){b.classList.remove('language-assembly');b.classList.add('language-x86asm');if(pre)pre.setAttribute('data-lang','X86ASM');}var hasLang=Array.from(b.classList).some(function(c){return c.startsWith('language-');});if(hasLang){hljs.highlightElement(b);}else{try{var guessList=['x86asm','armasm','c','cpp','python','bash','json','javascript','rust'];var result=hljs.highlightAuto(b.textContent,guessList);b.innerHTML=result.value;b.classList.add('hljs');if(result.language){b.classList.add('language-'+result.language);if(pre)pre.setAttribute('data-lang',String(result.language).toUpperCase());}else{if(pre)pre.setAttribute('data-lang','TXT');}}catch(e){if(pre)pre.setAttribute('data-lang','TXT');}}});}},10);
     m.modal.classList.remove('hidden');
     m.modal.focus();
     print('Opening <span class="out-file">'+escapeHtml(dn)+'</span>...','info');

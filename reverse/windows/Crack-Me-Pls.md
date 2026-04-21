@@ -1,5 +1,38 @@
 # crackmepls.exe — Reverse Engineering Writeup
 
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Initial Reconnaissance](#initial-reconnaissance)
+   - [2.1 File Identification](#21-file-identification)
+   - [2.2 Strings Analysis](#22-strings-analysis)
+3. [Disassembly & Static Analysis](#disassembly--static-analysis)
+   - [3.1 Locating the Main Function](#31-locating-the-main-function)
+   - [3.2 Program Flow](#32-program-flow)
+4. [String Initialization](#string-initialization)
+5. [Input Prompting and Reading](#input-prompting-and-reading)
+   - [5.1 Print "User: "](#51-print-user-)
+   - [5.2 Read Username](#52-read-username)
+   - [5.3 Print "Pass: "](#53-print-pass-)
+   - [5.4 Read Password](#54-read-password)
+6. [Custom Hash Algorithm — Core Logic](#custom-hash-algorithm--core-logic)
+   - [6.1 Hash Computation](#61-hash-computation)
+   - [6.2 Post-Processing](#62-post-processing)
+   - [6.3 Deconstructing the Hash Algorithm](#63-deconstructing-the-hash-algorithm)
+   - [6.4 Hash Algorithm in C](#64-hash-algorithm-in-c)
+7. [Integer-to-String Conversion](#integer-to-string-conversion)
+   - [7.1 Function at 0x140001610 — Analysis](#71-function-at-0x140001610--analysis)
+8. [Password Comparison](#password-comparison)
+9. [Result Output](#result-output)
+10. [Complete Algorithm Summary](#complete-algorithm-summary)
+11. [Solver / Keygen](#solver--keygen)
+    - [11.1 Example Outputs](#111-example-outputs)
+    - [11.2 Step-by-Step Walkthrough for Username "admin"](#112-step-by-step-walkthrough-for-username-admin)
+
+---
+
 ## Overview
 
 | Property | Value |

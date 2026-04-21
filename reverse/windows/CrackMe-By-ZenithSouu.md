@@ -1,31 +1,75 @@
 # OMEGA CrackMe (2026 Edition) - Reverse Engineering Write-up
 
+---
+
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
 2. [Challenge Overview](#2-challenge-overview)
 3. [Tooling & Environment](#3-tooling--environment)
 4. [Initial Binary Analysis](#4-initial-binary-analysis)
+   - [4.1 File Identification](#41-file-identification)
+   - [4.2 String Extraction](#42-string-extraction)
+   - [4.3 Interesting Wide Strings](#43-interesting-wide-strings)
 5. [PE Section Architecture](#5-pe-section-architecture)
+   - [5.1 Section Analysis](#51-section-analysis)
+   - [5.2 Hex Dump (First 48 Bytes)](#52-hex-dump-first-48-bytes)
 6. [Defense Mechanism Analysis](#6-defense-mechanism-analysis)
+   - [6.1 Early Detection & Sandbox Evasion (OMEGA Mode)](#61-early-detection--sandbox-evasion-omega-mode)
+   - [6.2 Ghost Dropper & Mutation](#62-ghost-dropper--mutation)
+   - [6.3 Runtime Section Encryption (S-Box)](#63-runtime-section-encryption-s-box)
+   - [6.4 Anti-Debug Watchdog (The Bloodhound)](#64-anti-debug-watchdog-the-bloodhound)
 7. [Bypassing the Anti-Analysis Layers](#7-bypassing-the-anti-analysis-layers)
 8. [The `.pdata_c` Section - Deep Dive](#8-the-pdata_c-section--deep-dive)
+   - [8.1 Section Metadata](#81-section-metadata)
+   - [8.2 Structure Overview](#82-structure-overview)
+   - [8.3 Hex Dump (First 48 Bytes)](#83-hex-dump-first-48-bytes)
 9. [XOR Decryption Algorithm Reversal](#9-xor-decryption-algorithm-reversal)
+   - [9.1 Algorithm (Pseudocode)](#91-algorithm-pseudocode)
+   - [9.2 Key Characteristics](#92-key-characteristics)
+   - [9.3 Simplified Decryption (for strings < 1414 chars)](#93-simplified-decryption-for-strings--1414-chars)
 10. [Password Recovery - Function 1 (`Check_Real`)](#10-password-recovery--function-1-check_real)
+    - [10.1 Function Disassembly (Annotated)](#101-function-disassembly-annotated)
+    - [10.2 Encrypted Data Extraction](#102-encrypted-data-extraction)
+    - [10.3 XOR Key](#103-xor-key)
+    - [10.4 Byte-by-Byte Decryption](#104-byte-by-byte-decryption)
+    - [10.5 Result](#105-result)
 11. [Password Recovery - Function 2 (The Decoy)](#11-password-recovery--function-2-the-decoy)
+    - [11.1 Function Overview](#111-function-overview)
+    - [11.2 Decryption Result](#112-decryption-result)
+    - [11.3 Why Function 2 is a Decoy](#113-why-function-2-is-a-decoy)
 12. [Verification & Proof of Correctness](#12-verification--proof-of-correctness)
+    - [12.1 Consistency Checks](#121-consistency-checks)
+    - [12.2 Python Verification Script](#122-python-verification-script)
+    - [12.3 LCG Verification](#123-lcg-verification)
 13. [The Function Dispatch Mechanism](#13-the-function-dispatch-mechanism)
+    - [13.1 Call Chain](#131-call-chain)
+    - [13.2 Indirect Call Setup](#132-indirect-call-setup)
+    - [13.3 Anti-Timing Check](#133-anti-timing-check)
 14. [AY_OBFUSCATE - String Encryption System](#14-ay_obfuscate--string-encryption-system)
-15. [LCG Anti-Tamper Seed](#16-lcg-anti-tamper-seed)
-16. [Conclusion](#17-conclusion)
+    - [14.1 Overview](#141-overview)
+    - [14.2 Pattern](#142-pattern)
+    - [14.3 Identified Encrypted Strings](#143-identified-encrypted-strings)
+15. [LCG Anti-Tamper Seed](#15-lcg-anti-tamper-seed)
+16. [Summary of Findings](#16-summary-of-findings)
+17. [Conclusion](#17-conclusion)
 
 ---
 
 ## 1. Introduction
 
-The OMEGA CrackMe (2026 Edition) by **ZenithSouu** is a high-level reverse engineering challenge targeting Windows x64. It was designed to "neutralize 99% of automated analysis tools (VirusTotal, Filescan.io, CAPE) and make manual analysis (IDA/Ghidra) extremely painful." The challenge provides a password-protected binary, and the objective is to discover the secret password that triggers the `[+] ACCESS GRANTED` message.
+| Property | Value |
+|---|---|
+| **Binary** | `Crack Me.exe` |
+| **Architecture** | PE32+ executable (x86-64) |
+| **Subsystem** | Windows Console |
+| **Compiler** | Visual Studio 2022 (MSVC x64 Release) |
+| **Linked Libraries** | `crypt32.lib`, `ws2_32.lib`, `wininet.lib`, `iphlpapi.lib`, `KERNEL32.dll`, `USER32.dll`, `ADVAPI32.dll`, `SHELL32.dll`, `MSVCP140.dll`, `VCRUNTIME140.dll` |
+| **File Size** | 118,272 bytes (0x1CE00) |
+| **PDB Path** | `C:\Users\ZenithSouu\source\repos\Crack Me\x64\Release\Crack Me.pdb` |
+| **Objective** | Find the password that produces `[+] ACCESS GRANTED` |
 
-This write-up documents the complete static analysis methodology used to recover the password from the binary on a Linux environment - rendering all Windows-specific anti-analysis protections completely inert.
+The OMEGA CrackMe (2026 Edition) by **ZenithSouu** is a high-level reverse engineering challenge targeting Windows x64. It was designed to "neutralize 99% of automated analysis tools (VirusTotal, Filescan.io, CAPE) and make manual analysis (IDA/Ghidra) extremely painful." The challenge provides a password-protected binary, and the objective is to discover the secret password that triggers the `[+] ACCESS GRANTED` message.
 
 ---
 

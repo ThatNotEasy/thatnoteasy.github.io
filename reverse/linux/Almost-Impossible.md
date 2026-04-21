@@ -5,22 +5,52 @@
 1. [Overview](#1-overview)
 2. [Binary Profiling](#2-binary-profiling)
 3. [Imported Libraries & Their Roles](#3-imported-libraries--their-roles)
+   - [3.1 libcrypto.so.3 (OpenSSL 3.0)](#31-libcryptoso3-openssl-30)
+   - [3.2 libpng16.so.16](#32-libpng16so16)
+   - [3.3 libzbar.so.0](#33-libzbarso0)
+   - [3.4 libX11.so.6](#34-libx11so6)
 4. [Application Architecture](#4-application-architecture)
+   - [4.1 Startup Flow (Main Function at `0x65f9`)](#41-startup-flow-main-function-at-0x65f9)
+   - [4.2 Key GUI Controls](#42-key-gui-controls)
 5. [Target Generation Algorithm](#5-target-generation-algorithm)
+   - [Step 1: Random Scalar Generation (`0x6a76`)](#step-1-random-scalar-generation-0x6a76)
+   - [Step 2: EC Group Setup (`0x6b5b` - `0x6bbc`)](#step-2-ec-group-setup-0x6b5b---0x6bbc)
+   - [Step 3: EC Point Computation (`0x6c6a` - `0x6cf3`)](#step-3-ec-point-computation-0x6c6a---0x6cf3)
+   - [Step 4: Point Serialization (`0x6d32`)](#step-4-point-serialization-0x6d32)
+   - [Step 5: Encryption of Target Data](#step-5-encryption-of-target-data)
 6. [Cryptographic Primitives](#6-cryptographic-primitives)
+   - [6.1 SplitMix64 PRNG (`0x7b2a`)](#61-splitmix64-prng-0x7b2a)
+   - [6.2 XOR Stream Cipher (`0x89ad` / `0x8a9c`)](#62-xor-stream-cipher-0x89ad--0x8a9c)
+   - [6.3 Key Derivation](#63-key-derivation)
 7. [The Validation Pipeline](#7-the-validation-pipeline)
+   - [Stage 1: PNG Reading](#stage-1-png-reading)
+   - [Stage 2: QR Code Scanning](#stage-2-qr-code-scanning)
+   - [Stage 3: QR Payload Parsing](#stage-3-qr-payload-parsing)
+   - [Stage 4: EC Point Computation](#stage-4-ec-point-computation)
+   - [Stage 5: First Check - EC Point Comparison](#stage-5-first-check---ec-point-comparison)
+   - [Stage 6: Second Check - Flag Comparison](#stage-6-second-check---flag-comparison)
+   - [Stage 7: Final Decision](#stage-7-final-decision)
 8. [Why Only One Input Works](#8-why-only-one-input-works)
+   - [8.1 The Elliptic Curve Discrete Logarithm Problem (ECDLP)](#81-the-elliptic-curve-discrete-logarithm-problem-ecdlp)
+   - [8.2 The Double-Lock Mechanism](#82-the-double-lock-mechanism)
+   - [8.3 The "Almost Impossible" Design](#83-the-almost-impossible-design)
 9. [Proof of Concept](#9-proof-of-concept)
+   - [9.1 Attack Strategy](#91-attack-strategy)
+   - [9.2 PoC Script](#92-poc-script)
+   - [9.3 Demo Run](#93-demo-run)
+   - [9.4 PoC Artifacts](#94-poc-artifacts)
 
 ---
 
 ## 1. Overview
 
-**Binary:** `almost`  
-**Type:** ELF 64-bit LSB PIE executable, x86-64, stripped  
-**Size:** 166,320 bytes  
-**Title:** "AI - Almost Impossible"  
-**Purpose:** An X11 GUI application that reads a PNG image containing a QR code, validates the QR payload against an internally generated cryptographic target, and grants or denies access accordingly.
+| Property | Value |
+|---|---|
+| **Binary** | `almost` |
+| **Type** | ELF 64-bit LSB PIE executable, x86-64, stripped |
+| **Size** | 166,320 bytes |
+| **Title** | AI - Almost Impossible |
+| **Purpose** | X11 GUI application that reads a PNG image containing a QR code, validates the QR payload against an internally generated cryptographic target |
 
 The binary presents itself as an "almost impossible" challenge - it generates a fresh cryptographic target on every launch using randomness, displays encrypted/encoded target data, and requires the user to provide a PNG artifact (image with QR code) containing the exact secret that satisfies two independent cryptographic checks. The catch? The secret space is deliberately constrained to 25 bits, making brute-force search entirely feasible - the challenge is *almost* impossible, but not quite.
 
