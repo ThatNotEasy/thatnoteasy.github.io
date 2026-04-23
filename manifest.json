@@ -8,7 +8,8 @@
       "VM-Rust.md"
     ],
     "linux": [
-      "Almost-Impossible.md"
+      "Almost-Impossible.md",
+      "Brain-Fuck.md"
     ],
     "android": []
   },
