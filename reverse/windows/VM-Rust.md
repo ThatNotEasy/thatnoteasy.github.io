@@ -348,7 +348,7 @@ The most robust approach combines both: recover the key to understand the protec
 
 ## 8. PoC Script
 
-The complete PoC is provided in `poc_vm_rust.py`. It:
+The complete PoC is provided in [poc_vm_rust.py](/assets/poc/poc_vm_rust.py). It:
 
 1. Extracts and hashes the `.text` section
 2. Recovers the 128-bit derived key
